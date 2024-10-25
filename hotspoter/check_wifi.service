@@ -1,0 +1,9 @@
+[Unit]
+Description=Check Wi-Fi Connection and handle Hotspot
+After=network.target
+
+[Service]
+ExecStart=/usr/local/bin/check_wifi.sh
+
+[Install]
+WantedBy=multi-user.target
