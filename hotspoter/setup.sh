@@ -25,12 +25,23 @@ interface wlan0
 EOL
 sudo systemctl restart dhcpcd
 
+## Step 2.1: add custom dns record
+echo "Adding dns record..."
+if ! grep -q "192.168.4.1    anectdot.fun" /etc/hosts; then
+    sudo tee -a /etc/hosts > /dev/null <<EOL
+192.168.4.1    anectdot.fun
+EOL
+else
+    echo "DNS record already exists."
+fi
+
 # Step 3: Configure dnsmasq
 echo "Configuring dnsmasq..."
 sudo mv /etc/dnsmasq.conf /etc/dnsmasq.conf.orig || true
 sudo tee /etc/dnsmasq.conf > /dev/null <<EOL
 interface=wlan0
 dhcp-range=192.168.4.2,192.168.4.20,255.255.255.0,24h
+address=/#/192.168.4.1
 EOL
 
 # Step 4: Configure hostapd
@@ -66,6 +77,10 @@ sudo sh -c "iptables-save > /etc/iptables.ipv4.nat"
 sudo tee -a /etc/rc.local > /dev/null <<EOL
 iptables-restore < /etc/iptables.ipv4.nat
 EOL
+
+sudo iptables -t nat -A PREROUTING -p tcp --dport 80 -j DNAT --to-destination 192.168.4.1:80
+sudo iptables -A INPUT -p tcp --dport 80 -j ACCEPT
+
 
 # Step 7: Start hostapd and dnsmasq
 echo "Starting hostapd and dnsmasq..."

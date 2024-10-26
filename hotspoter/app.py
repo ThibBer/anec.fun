@@ -1,7 +1,16 @@
-from flask import Flask, render_template, request
+from flask import Flask, render_template, request, redirect  # Add 'redirect' here
+
 import subprocess
 
 app = Flask(__name__)
+
+
+@app.route("/generate_204")
+@app.route("/ncsi.txt")
+@app.route("/hotspot-detect.html")
+def captive_portal_redirect():
+    # Redirect to the captive portal page
+    return redirect("/")
 
 
 @app.route("/", methods=["GET", "POST"])
@@ -14,7 +23,7 @@ def index():
     return render_template("index.html")
 
 
-def configure_wifi(ssid, psk):
+def configure_wifi(ssid: str, psk: str):
     # Configure services
     subprocess.run(["sudo", "systemctl", "stop", "hostapd"])
     subprocess.run(["sudo", "systemctl", "start", "NetworkManager"])
@@ -37,4 +46,4 @@ def configure_wifi(ssid, psk):
 
 
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=5000)
+    app.run(host="0.0.0.0", port=80)

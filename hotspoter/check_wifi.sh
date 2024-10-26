@@ -12,6 +12,17 @@ is_python_app_running() {
     pgrep -f "python3 $FLASK_APP_DIR/app.py" > /dev/null
 }
 
+# Wait for up to 30 seconds for Wi-Fi to connect at boot
+for _ in {1..6}; do
+    if nmcli connection show --active | grep -q "wifi"; then
+        echo "Wi-Fi connection established."
+        break
+    else
+        echo "Waiting for Wi-Fi connection..."
+        sleep 5
+    fi
+done
+
 # Start hotspot if no WiFi connection
 while true;
 do
