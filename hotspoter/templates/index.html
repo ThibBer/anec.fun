@@ -1,81 +1,104 @@
-<!doctype html>
-<html>
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Dynamic Cards with Refresh</title>
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='styles.css') }}"
+    />
+  </head>
 
-<head>
-    <title>Configure Wi-Fi</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            background-color: #f4f4f9;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-            margin: 0;
-        }
-
-        .container {
-            background-color: #fff;
-            padding: 20px;
-            border-radius: 8px;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-            max-width: 400px;
-            width: 100%;
-        }
-
-        h1,
-        h2 {
-            text-align: center;
-            font-size: 24px;
-            color: #333;
-        }
-
-        label {
-            font-size: 16px;
-            color: #333;
-        }
-
-        input[type="text"],
-        input[type="password"] {
-            width: 100%;
-            padding: 10px;
-            margin: 10px 0 20px 0;
-            border: 1px solid #ccc;
-            border-radius: 4px;
-            font-size: 14px;
-            box-sizing: border-box;
-            /* Ensures padding is included in the width calculation */
-        }
-
-        input[type="submit"] {
-            width: 100%;
-            background-color: #007BFF;
-            color: white;
-            padding: 10px;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-            font-size: 16px;
-        }
-
-        input[type="submit"]:hover {
-            background-color: #0056b3;
-        }
-    </style>
-</head>
-
-<body>
-    <div class="container">
-        <h1>AnectDotFun</h1>
-        <h2>Enter Wi-Fi Credentials</h2>
-        <form method="post">
-            <label for="ssid">Wi-Fi SSID:</label>
-            <input type="text" id="ssid" name="ssid" required><br>
-            <label for="password">Wi-Fi Password:</label>
-            <input type="password" id="password" name="password" required><br>
-            <input type="submit" value="Submit">
-        </form>
+  <body>
+    <div class="card-container" id="card-container">
+      {% for card in cards %}
+      <div class="card">
+        <div class="card-content">
+          <h2 class="card-title">{{ card.title }}</h2>
+          <p class="card-description">{{ card.description }}</p>
+          <a href="{{ card.button_link }}" class="card-button"
+            >{{ card.button_text }}</a
+          >
+        </div>
+      </div>
+      {% endfor %}
     </div>
-</body>
 
+    <div class="scanner hidden floating-scanner">
+      <p class="scanner-text">Scanning for networks...</p>
+      <p class="scanner-text status-text-seconds">seconds remaining</p>
+      <p class="scanner-text">Note : You may be disconnected from the hotspot but results will be saved so just connect again.</p>
+      <div class="scanner-background">
+        <div class="scanner-line"></div>
+      </div>
+      <div class="networks">
+        <!-- Placeholder for dynamically added networks -->
+      </div>
+    </div>
+
+    <!-- Floating Refresh Button -->
+    <button
+      onclick="startTask()"
+      id="refresh-button"
+      class="floating-refresh-button"
+    >
+      Scan for networks
+    </button>
+
+    <!-- Add manually Button -->
+    <button onclick="add()" id="add-button" class="add-button">
+      Add manually
+    </button>
+
+    <script src="{{ url_for('static', filename='socket.io.min.js') }}"></script>
+    <script>
+      const socket = io();
+      function sleep(ms) {
+        return new Promise((resolve) => setTimeout(resolve, ms));
+      }
+      async function startTask() {
+        fetch("/refresh_cards")
+          .then((response) => response.json()) // Parse the response as JSON
+          .then((data) => {
+            document.querySelector(".scanner").classList.remove("hidden");
+            countdown(data).then();
+          })
+          .catch((error) => console.error("Error fetching scan time:", error));
+      }
+      async function countdown(data) {
+        const remaining_time = document.getElementsByClassName(
+          "status-text-seconds"
+        )[0];
+        while (data > 0) {
+          remaining_time.innerText = data + " seconds remaining";
+          data--;
+          await sleep(1000);
+        }
+        document.querySelector(".scanner").classList.add("hidden")
+      }
+      function add() {
+        window.location.href = "/connect";
+      }
+      socket.on("task_complete", (data) => {
+        console.log("task completed");
+        const cards = data.result;
+        const cardContainer = document.getElementById("card-container");
+        cardContainer.innerHTML = "";
+
+        cards.forEach((card) => {
+          const cardElement = document.createElement("div");
+          cardElement.classList.add("card");
+          cardElement.innerHTML = `
+                    <div class="card-content">
+                        <h2 class="card-title">${card.title}</h2>
+                        <p class="card-description">${card.description}</p>
+                        <a href="${card.button_link}" class="card-button">${card.button_text}</a>
+                    </div>
+                `;
+          cardContainer.appendChild(cardElement);
+        });
+      });
+    </script>
+  </body>
 </html>

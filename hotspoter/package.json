@@ -1,0 +1,16 @@
+{
+  "name": "hotspoter",
+  "version": "1.0.0",
+  "description": "A simple script to create a Wi-Fi hotspot on a Raspberry Pi that allows users to connect the Pi to a Wi-Fi network without needing a monitor or keyboard.",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "htmlhint": "^1.1.4",
+    "stylelint": "^16.10.0",
+    "stylelint-config-standard": "^36.0.1"
+  }
+}

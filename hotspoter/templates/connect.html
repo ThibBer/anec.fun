@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Configure Wi-Fi</title>
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='connect_style.css') }}"
+    />
+  </head>
+
+  <body>
+    <div class="container">
+      <h1>AnectDotFun</h1>
+      <h2>Enter Wi-Fi Credentials</h2>
+      <form method="post">
+        <label for="ssid">Wi-Fi SSID:</label>
+        <input
+          type="text"
+          id="ssid"
+          name="ssid"
+          value="{{ ssid }}"
+          required
+        /><br />
+        <label for="password">Wi-Fi Password:</label>
+        <input type="password" id="password" name="password" required /><br />
+        <input type="submit" value="Submit" />
+      </form>
+    </div>
+  </body>
+</html>

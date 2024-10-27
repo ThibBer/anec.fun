@@ -92,12 +92,13 @@ sudo systemctl start dnsmasq
 
 # Step 8: Set up Flask web server for Wi-Fi configuration
 echo "Setting up Flask web server..."
-sudo mkdir -p $FLASK_APP_DIR/templates
 sudo cp app.py $FLASK_APP_DIR/app.py
-sudo cp templates/index.html $FLASK_APP_DIR/templates/index.html
+sudo cp -r templates $FLASK_APP_DIR
+sudo cp -r static $FLASK_APP_DIR
 python3 -m venv $FLASK_APP_DIR/.venv
 source $FLASK_APP_DIR/.venv/bin/activate
 pip install flask
+pip install flask_socketio
 
 # Step 9: Create Wi-Fi check script to disable hotspot after Wi-Fi connection
 echo "Creating Wi-Fi check script..."

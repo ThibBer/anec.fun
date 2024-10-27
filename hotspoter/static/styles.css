@@ -1,0 +1,207 @@
+/* Floating button styling */
+.floating-refresh-button {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    padding: 15px 20px;
+    font-size: 1em;
+    color: #fff;
+    background-color: #28a745;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    box-shadow: 0 4px 8px rgba(0 0 0 0.3);
+    transition: background-color 0.3s, transform 0.2s;
+}
+
+.floating-refresh-button:hover {
+    background-color: #218838;
+    transform: scale(1.1);
+}
+
+.add-button {
+    position: fixed;
+    bottom: 20px;
+    left: 20px;
+    padding: 15px 20px;
+    font-size: 1em;
+    color: #fff;
+    background-color: #28a745;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    box-shadow: 0 4px 8px rgba(0 0 0 0.3);
+    transition: background-color 0.3s, transform 0.2s;
+}
+
+.add-button:hover {
+    background-color: #218838;
+    transform: scale(1.1);
+}
+
+/* Responsive adjustments for mobile */
+@media (width < 600px) {
+    /* Stack both buttons vertically on the right */
+    .floating-refresh-button {
+        bottom: 80px;
+        right: 20px;
+    }
+
+    .add-button {
+        bottom: 20px;
+        right: 20px;
+        left: auto;
+    }
+}
+
+body {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0;
+    font-family: Arial, sans-serif;
+    background-color: #f4f4f9;
+}
+
+.card-container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 20px;
+    justify-content: center;
+    padding: 20px;
+}
+
+.card {
+    width: 300px;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 4px 8px rgba(0 0 0 0.1);
+    background-color: #fff;
+    transition: transform 0.3s;
+}
+
+.card:hover {
+    transform: translateY(-5px);
+}
+
+.card-img {
+    width: 100%;
+    height: auto;
+}
+
+.card-content {
+    padding: 20px;
+    text-align: center;
+}
+
+.card-title {
+    font-size: 1.5em;
+    margin: 0;
+    color: #333;
+}
+
+.card-description {
+    font-size: 1em;
+    color: #666;
+    margin: 10px 0;
+}
+
+.card-button {
+    display: inline-block;
+    padding: 10px 20px;
+    margin-top: 10px;
+    font-size: 1em;
+    color: #fff;
+    background-color: #007bff;
+    text-decoration: none;
+    border-radius: 4px;
+    transition: background-color 0.3s;
+}
+
+.card-button:hover {
+    background-color: #0056b3;
+}
+
+/* Network scan animation */
+
+.scanner {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 300px;
+    height: 300px;
+    background-color: #f0f0f0;
+    border-radius: 8px;
+    overflow: hidden;
+    border: 1px solid #ccc;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    box-shadow: 0 4px 8px rgba(0 0 0 0.3);
+}
+
+.hidden {
+    display: none;
+}
+
+.scanner-text {
+    font-family: Arial, sans-serif;
+    color: #0096ff;
+    font-size: 1.2em;
+    font-weight: bold;
+    text-align: center;
+    margin: 10px 0;
+}
+
+.status-text-seconds {
+    font-size: 1em;
+    color: #ff6347;
+    font-weight: normal;
+    animation: pulse 1s ease-in-out infinite;
+}
+
+/* Pulse animation for the status text */
+@keyframes pulse {
+    0%,
+    100% {
+        opacity: 1;
+    }
+
+    50% {
+        opacity: 0.5;
+    }
+}
+
+/* Styling for the scanning line animation */
+.scanner-background {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(0 150 255 0.1), transparent);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.scanner-line {
+    position: absolute;
+    width: 100%;
+    height: 2px;
+    background: #0096ff;
+    top: 0;
+    animation: scan 2s linear infinite;
+}
+
+/* Scanner line animation */
+@keyframes scan {
+    from {
+        top: 0;
+    }
+
+    to {
+        top: 100%;
+    }
+}
