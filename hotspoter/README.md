@@ -23,3 +23,7 @@ A simple script to create a Wi-Fi hotspot on a Raspberry Pi that allows users to
 - `check_wifi.sh` - Script that checks if the device is connected to a Wi-Fi network and if not, starts the hotspot
 - `check_wifi.service` - Systemd service file that runs the `check_wifi.sh` script on boot
 - `hostapd.conf` - Configuration file for the hostapd service
+
+## TODO
+
+- uncomment captive portal code and do a prescan before starting the hotspot as this should be enough for our purposes (while still offering manual scan just in case)
