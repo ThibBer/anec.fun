@@ -1,0 +1,95 @@
+2024.11.02 13:36:02 INFO  Started: Metals version 1.4.0 in folders 'D:\2024-2025\Master\Master2\Q1\Projet en informatique ambiante et mobile\Projet_2024-2025\Groupe_01\anec.fun' for client Visual Studio Code 1.95.0.
+2024.11.02 13:36:02 WARN  Flyway upgrade recommended: H2 2.3.232 is newer than this version of Flyway and support has not been tested. The latest supported version of H2 is 2.2.224.
+2024.11.02 13:36:03 INFO  no build target found for D:\2024-2025\Master\Master2\Q1\Projet en informatique ambiante et mobile\Projet_2024-2025\Groupe_01\anec.fun\boite\main\build.sbt. Using presentation compiler with project's scala-library version: 3.3.4
+2024.11.02 13:36:21 INFO  no build target found for D:\2024-2025\Master\Master2\Q1\Projet en informatique ambiante et mobile\Projet_2024-2025\Groupe_01\anec.fun\boite\main\build.sbt. Using presentation compiler with project's scala-library version: 3.3.4
+2024.11.02 13:36:21 INFO  no build target found for D:\2024-2025\Master\Master2\Q1\Projet en informatique ambiante et mobile\Projet_2024-2025\Groupe_01\anec.fun\boite\main\src\main\scala\be\unamur\anecdotfun\main.scala. Using presentation compiler with project's scala-library version: 3.3.4
+2024.11.02 13:36:23 INFO  no build target found for D:\2024-2025\Master\Master2\Q1\Projet en informatique ambiante et mobile\Projet_2024-2025\Groupe_01\anec.fun\boite\main\src\main\scala\be\unamur\anecdotfun\main.scala. Using presentation compiler with project's scala-library version: 3.3.4
+2024.11.02 13:36:55 INFO  no build target found for D:\2024-2025\Master\Master2\Q1\Projet en informatique ambiante et mobile\Projet_2024-2025\Groupe_01\anec.fun\boite\main\src\main\scala\be\unamur\anecdotfun\main.scala. Using presentation compiler with project's scala-library version: 3.3.4
+2024.11.02 13:36:59 INFO  no build target found for D:\2024-2025\Master\Master2\Q1\Projet en informatique ambiante et mobile\Projet_2024-2025\Groupe_01\anec.fun\boite\main\src\main\scala\be\unamur\anecdotfun\main.scala. Using presentation compiler with project's scala-library version: 3.3.4
+2024.11.02 13:43:11 INFO  no build target found for D:\2024-2025\Master\Master2\Q1\Projet en informatique ambiante et mobile\Projet_2024-2025\Groupe_01\anec.fun\boite\main\src\main\scala\be\unamur\anecdotfun\main.scala. Using presentation compiler with project's scala-library version: 3.3.4
+2024.11.02 14:14:07 INFO  no build target found for D:\2024-2025\Master\Master2\Q1\Projet en informatique ambiante et mobile\Projet_2024-2025\Groupe_01\anec.fun\boite\main\src\main\scala\be\unamur\anecdotfun\main.scala. Using presentation compiler with project's scala-library version: 3.3.4
+2024.11.02 14:14:17 INFO  no build target found for D:\2024-2025\Master\Master2\Q1\Projet en informatique ambiante et mobile\Projet_2024-2025\Groupe_01\anec.fun\boite\main\src\main\scala\be\unamur\anecdotfun\main.scala. Using presentation compiler with project's scala-library version: 3.3.4
+2024.11.02 14:25:32 INFO  no build target found for D:\2024-2025\Master\Master2\Q1\Projet en informatique ambiante et mobile\Projet_2024-2025\Groupe_01\anec.fun\boite\main\src\main\scala\be\unamur\anecdotfun\main.scala. Using presentation compiler with project's scala-library version: 3.3.4
+2024.11.02 14:25:32 INFO  no build target found for D:\2024-2025\Master\Master2\Q1\Projet en informatique ambiante et mobile\Projet_2024-2025\Groupe_01\anec.fun\server\src\main\scala\main.scala. Using presentation compiler with project's scala-library version: 3.3.4
+2024.11.02 14:25:36 INFO  no build target found for D:\2024-2025\Master\Master2\Q1\Projet en informatique ambiante et mobile\Projet_2024-2025\Groupe_01\anec.fun\server\src\main\scala\main.scala. Using presentation compiler with project's scala-library version: 3.3.4
+2024.11.02 14:25:39 INFO  no build target found for D:\2024-2025\Master\Master2\Q1\Projet en informatique ambiante et mobile\Projet_2024-2025\Groupe_01\anec.fun\server\src\main\scala\main.scala. Using presentation compiler with project's scala-library version: 3.3.4
+2024.11.02 14:25:39 INFO  no build target found for D:\2024-2025\Master\Master2\Q1\Projet en informatique ambiante et mobile\Projet_2024-2025\Groupe_01\anec.fun\server\src\main\scala\main.scala. Using presentation compiler with project's scala-library version: 3.3.4
+2024.11.02 14:25:49 INFO  no build target found for D:\2024-2025\Master\Master2\Q1\Projet en informatique ambiante et mobile\Projet_2024-2025\Groupe_01\anec.fun\server\src\main\scala\main.scala. Using presentation compiler with project's scala-library version: 3.3.4
+2024.11.02 14:25:49 INFO  no build target found for D:\2024-2025\Master\Master2\Q1\Projet en informatique ambiante et mobile\Projet_2024-2025\Groupe_01\anec.fun\boite\main\src\main\scala\be\unamur\anecdotfun\main.scala. Using presentation compiler with project's scala-library version: 3.3.4
+2024.11.02 14:25:49 INFO  no build target found for D:\2024-2025\Master\Master2\Q1\Projet en informatique ambiante et mobile\Projet_2024-2025\Groupe_01\anec.fun\boite\main\src\main\scala\be\unamur\anecdotfun\main.scala. Using presentation compiler with project's scala-library version: 3.3.4
+2024.11.08 11:25:55 INFO  tracing is disabled for protocol LSP, to enable tracing of incoming and outgoing JSON messages create an empty file at d:\2024-2025\Master\Master2\Q1\Projet en informatique ambiante et mobile\Projet_2024-2025\Groupe_01\anec.fun\.metals\lsp.trace.json
+2024.11.08 11:26:04 ERROR Failed to get project directories
+java.util.concurrent.TimeoutException: Future timed out after [5 seconds]
+	at scala.concurrent.impl.Promise$DefaultPromise.tryAwait0(Promise.scala:248)
+	at scala.concurrent.impl.Promise$DefaultPromise.result(Promise.scala:261)
+	at scala.concurrent.Await$.$anonfun$result$1(package.scala:201)
+	at scala.concurrent.BlockContext$DefaultBlockContext$.blockOn(BlockContext.scala:62)
+	at scala.concurrent.Await$.result(package.scala:124)
+	at scala.meta.internal.metals.MetalsProjectDirectories$.$anonfun$wrap$1(MetalsProjectDirectories.scala:39)
+	at scala.util.Try$.apply(Try.scala:217)
+	at scala.meta.internal.metals.MetalsProjectDirectories$.wrap(MetalsProjectDirectories.scala:37)
+	at scala.meta.internal.metals.MetalsProjectDirectories$.fromPath(MetalsProjectDirectories.scala:30)
+	at scala.meta.internal.bsp.BspServers$.globalInstallDirectories(BspServers.scala:209)
+	at scala.meta.internal.metals.MetalsServerInputs$.productionConfiguration(MetalsServerInputs.scala:75)
+	at scala.meta.metals.MetalsLanguageServer$.$lessinit$greater$default$3(MetalsLanguageServer.scala:48)
+	at scala.meta.metals.Main$.main(Main.scala:45)
+	at scala.meta.metals.Main.main(Main.scala)
+
+2024.11.08 11:26:16 INFO  logging to files D:\2024-2025\Master\Master2\Q1\Projet en informatique ambiante et mobile\Projet_2024-2025\Groupe_01\anec.fun\.metals\metals.log
+2024.11.08 11:26:16 INFO  Started: Metals version 1.4.0 in folders 'D:\2024-2025\Master\Master2\Q1\Projet en informatique ambiante et mobile\Projet_2024-2025\Groupe_01\anec.fun' for client Visual Studio Code 1.95.0.
+2024.11.08 11:26:23 WARN  Flyway upgrade recommended: H2 2.3.232 is newer than this version of Flyway and support has not been tested. The latest supported version of H2 is 2.2.224.
+2024.11.08 11:43:35 INFO  Shutting down server
+2024.11.08 11:43:35 INFO  shutting down Metals
+2024.11.08 11:43:35 INFO  Exiting server
+2024.11.08 11:45:24 INFO  tracing is disabled for protocol LSP, to enable tracing of incoming and outgoing JSON messages create an empty file at d:\2024-2025\Master\Master2\Q1\Projet en informatique ambiante et mobile\Projet_2024-2025\Groupe_01\anec.fun\.metals\lsp.trace.json
+2024.11.08 11:45:30 ERROR Failed to get project directories
+java.util.concurrent.TimeoutException: Future timed out after [5 seconds]
+	at scala.concurrent.impl.Promise$DefaultPromise.tryAwait0(Promise.scala:248)
+	at scala.concurrent.impl.Promise$DefaultPromise.result(Promise.scala:261)
+	at scala.concurrent.Await$.$anonfun$result$1(package.scala:201)
+	at scala.concurrent.BlockContext$DefaultBlockContext$.blockOn(BlockContext.scala:62)
+	at scala.concurrent.Await$.result(package.scala:124)
+	at scala.meta.internal.metals.MetalsProjectDirectories$.$anonfun$wrap$1(MetalsProjectDirectories.scala:39)
+	at scala.util.Try$.apply(Try.scala:217)
+	at scala.meta.internal.metals.MetalsProjectDirectories$.wrap(MetalsProjectDirectories.scala:37)
+	at scala.meta.internal.metals.MetalsProjectDirectories$.fromPath(MetalsProjectDirectories.scala:30)
+	at scala.meta.internal.bsp.BspServers$.globalInstallDirectories(BspServers.scala:209)
+	at scala.meta.internal.metals.MetalsServerInputs$.productionConfiguration(MetalsServerInputs.scala:75)
+	at scala.meta.metals.MetalsLanguageServer$.$lessinit$greater$default$3(MetalsLanguageServer.scala:48)
+	at scala.meta.metals.Main$.main(Main.scala:45)
+	at scala.meta.metals.Main.main(Main.scala)
+
+2024.11.08 11:45:42 INFO  logging to files D:\2024-2025\Master\Master2\Q1\Projet en informatique ambiante et mobile\Projet_2024-2025\Groupe_01\anec.fun\.metals\metals.log
+2024.11.08 11:45:42 INFO  Started: Metals version 1.4.0 in folders 'D:\2024-2025\Master\Master2\Q1\Projet en informatique ambiante et mobile\Projet_2024-2025\Groupe_01\anec.fun' for client Visual Studio Code 1.95.2.
+2024.11.08 11:45:45 WARN  Flyway upgrade recommended: H2 2.3.232 is newer than this version of Flyway and support has not been tested. The latest supported version of H2 is 2.2.224.
+2024.11.08 12:54:59 INFO  no build target found for d:\2024-2025\Master\Master2\Q1\Projet en informatique ambiante et mobile\Projet_2024-2025\Groupe_01\anec.fun\boite\communication\BluetoothCommunication.scala. Using presentation compiler with project's scala-library version: 3.3.4
+2024.11.08 12:55:27 INFO  no build target found for d:\2024-2025\Master\Master2\Q1\Projet en informatique ambiante et mobile\Projet_2024-2025\Groupe_01\anec.fun\boite\communication\SerialCommunication.scala. Using presentation compiler with project's scala-library version: 3.3.4
+2024.11.08 12:57:56 INFO  no build target found for D:\2024-2025\Master\Master2\Q1\Projet en informatique ambiante et mobile\Projet_2024-2025\Groupe_01\anec.fun\boite\communication\NRF24Communication.scala. Using presentation compiler with project's scala-library version: 3.3.4
+2024.11.08 12:59:32 INFO  no build target found for D:\2024-2025\Master\Master2\Q1\Projet en informatique ambiante et mobile\Projet_2024-2025\Groupe_01\anec.fun\boite\communication\NRF24Communication.scala. Using presentation compiler with project's scala-library version: 3.3.4
+2024.11.08 12:59:32 INFO  no build target found for D:\2024-2025\Master\Master2\Q1\Projet en informatique ambiante et mobile\Projet_2024-2025\Groupe_01\anec.fun\boite\communication\NRF24Communication.scala. Using presentation compiler with project's scala-library version: 3.3.4
+2024.11.08 13:01:14 INFO  no build target found for D:\2024-2025\Master\Master2\Q1\Projet en informatique ambiante et mobile\Projet_2024-2025\Groupe_01\anec.fun\boite\communication\NRF24Communication.scala. Using presentation compiler with project's scala-library version: 3.3.4
+nov. 08, 2024 1:01:15 PM org.eclipse.lsp4j.jsonrpc.RemoteEndpoint handleCancellation
+WARNING: Unmatched cancel notification for request id 34
+2024.11.08 13:01:16 INFO  no build target found for D:\2024-2025\Master\Master2\Q1\Projet en informatique ambiante et mobile\Projet_2024-2025\Groupe_01\anec.fun\boite\communication\NRF24Communication.scala. Using presentation compiler with project's scala-library version: 3.3.4
+2024.11.08 13:01:27 INFO  no build target found for D:\2024-2025\Master\Master2\Q1\Projet en informatique ambiante et mobile\Projet_2024-2025\Groupe_01\anec.fun\boite\communication\NRF24Communication.scala. Using presentation compiler with project's scala-library version: 3.3.4
+2024.11.08 13:02:01 INFO  no build target found for D:\2024-2025\Master\Master2\Q1\Projet en informatique ambiante et mobile\Projet_2024-2025\Groupe_01\anec.fun\boite\communication\NRF24Communication.scala. Using presentation compiler with project's scala-library version: 3.3.4
+2024.11.08 13:02:01 INFO  no build target found for D:\2024-2025\Master\Master2\Q1\Projet en informatique ambiante et mobile\Projet_2024-2025\Groupe_01\anec.fun\boite\communication\NRF24Communication.scala. Using presentation compiler with project's scala-library version: 3.3.4
+2024.11.08 13:02:43 INFO  no build target found for D:\2024-2025\Master\Master2\Q1\Projet en informatique ambiante et mobile\Projet_2024-2025\Groupe_01\anec.fun\boite\communication\NRF24Communication.scala. Using presentation compiler with project's scala-library version: 3.3.4
+2024.11.08 13:02:43 INFO  no build target found for D:\2024-2025\Master\Master2\Q1\Projet en informatique ambiante et mobile\Projet_2024-2025\Groupe_01\anec.fun\boite\communication\NRF24Communication.scala. Using presentation compiler with project's scala-library version: 3.3.4
+2024.11.08 13:02:55 INFO  no build target found for D:\2024-2025\Master\Master2\Q1\Projet en informatique ambiante et mobile\Projet_2024-2025\Groupe_01\anec.fun\boite\communication\NRF24Communication.scala. Using presentation compiler with project's scala-library version: 3.3.4
+2024.11.08 13:02:55 INFO  no build target found for D:\2024-2025\Master\Master2\Q1\Projet en informatique ambiante et mobile\Projet_2024-2025\Groupe_01\anec.fun\boite\communication\NRF24Communication.scala. Using presentation compiler with project's scala-library version: 3.3.4
+2024.11.08 13:03:27 INFO  no build target found for D:\2024-2025\Master\Master2\Q1\Projet en informatique ambiante et mobile\Projet_2024-2025\Groupe_01\anec.fun\boite\communication\NRF24Communication.scala. Using presentation compiler with project's scala-library version: 3.3.4
+2024.11.08 13:03:27 WARN  no build target for: D:\2024-2025\Master\Master2\Q1\Projet en informatique ambiante et mobile\Projet_2024-2025\Groupe_01\anec.fun\boite\communication\NRF24Communication.scala
+2024.11.08 13:03:27 INFO  no build target found for D:\2024-2025\Master\Master2\Q1\Projet en informatique ambiante et mobile\Projet_2024-2025\Groupe_01\anec.fun\boite\communication\NRF24Communication.scala. Using presentation compiler with project's scala-library version: 3.3.4
+2024.11.08 13:06:58 INFO  no build target found for D:\2024-2025\Master\Master2\Q1\Projet en informatique ambiante et mobile\Projet_2024-2025\Groupe_01\anec.fun\boite\communication\NRF24Communication.scala. Using presentation compiler with project's scala-library version: 3.3.4
+2024.11.08 13:07:01 INFO  no build target found for D:\2024-2025\Master\Master2\Q1\Projet en informatique ambiante et mobile\Projet_2024-2025\Groupe_01\anec.fun\boite\communication\NRF24Communication.scala. Using presentation compiler with project's scala-library version: 3.3.4
+2024.11.08 13:07:04 INFO  no build target found for D:\2024-2025\Master\Master2\Q1\Projet en informatique ambiante et mobile\Projet_2024-2025\Groupe_01\anec.fun\boite\communication\NRF24Communication.scala. Using presentation compiler with project's scala-library version: 3.3.4
+2024.11.08 13:07:05 INFO  no build target found for D:\2024-2025\Master\Master2\Q1\Projet en informatique ambiante et mobile\Projet_2024-2025\Groupe_01\anec.fun\boite\communication\NRF24Communication.scala. Using presentation compiler with project's scala-library version: 3.3.4
+2024.11.08 13:07:08 INFO  no build target found for D:\2024-2025\Master\Master2\Q1\Projet en informatique ambiante et mobile\Projet_2024-2025\Groupe_01\anec.fun\boite\communication\NRF24Communication.scala. Using presentation compiler with project's scala-library version: 3.3.4
+2024.11.08 13:07:08 WARN  no build target for: D:\2024-2025\Master\Master2\Q1\Projet en informatique ambiante et mobile\Projet_2024-2025\Groupe_01\anec.fun\boite\communication\NRF24Communication.scala
+2024.11.08 13:07:08 INFO  no build target found for D:\2024-2025\Master\Master2\Q1\Projet en informatique ambiante et mobile\Projet_2024-2025\Groupe_01\anec.fun\boite\communication\NRF24Communication.scala. Using presentation compiler with project's scala-library version: 3.3.4
+2024.11.08 13:07:10 INFO  no build target found for D:\2024-2025\Master\Master2\Q1\Projet en informatique ambiante et mobile\Projet_2024-2025\Groupe_01\anec.fun\boite\communication\NRF24Communication.scala. Using presentation compiler with project's scala-library version: 3.3.4
+2024.11.08 13:07:13 INFO  no build target found for D:\2024-2025\Master\Master2\Q1\Projet en informatique ambiante et mobile\Projet_2024-2025\Groupe_01\anec.fun\boite\communication\NRF24Communication.scala. Using presentation compiler with project's scala-library version: 3.3.4
+2024.11.08 13:07:19 INFO  no build target found for D:\2024-2025\Master\Master2\Q1\Projet en informatique ambiante et mobile\Projet_2024-2025\Groupe_01\anec.fun\boite\communication\NRF24Communication.scala. Using presentation compiler with project's scala-library version: 3.3.4
+2024.11.08 13:07:19 INFO  no build target found for D:\2024-2025\Master\Master2\Q1\Projet en informatique ambiante et mobile\Projet_2024-2025\Groupe_01\anec.fun\boite\communication\NRF24Communication.scala. Using presentation compiler with project's scala-library version: 3.3.4
+2024.11.08 13:07:21 INFO  no build target found for D:\2024-2025\Master\Master2\Q1\Projet en informatique ambiante et mobile\Projet_2024-2025\Groupe_01\anec.fun\boite\communication\NRF24Communication.scala. Using presentation compiler with project's scala-library version: 3.3.4
