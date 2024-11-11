@@ -14,10 +14,10 @@ final case class RegisterWebSocketActor(
     ref: ActorRef[TextMessage]
 ) extends CommandRouterTrait
 
-/**
- * The `CommandRouter` actor is responsible for routing commands within the application.
- * It acts as a central point for handling various commands and directing them to the appropriate handlers.
- */
+/** The `CommandRouter` actor is responsible for routing commands within the
+  * application. It acts as a central point for handling various commands and
+  * directing them to the appropriate handlers.
+  */
 class CommandRouter {
 
   /** Creates a behavior for the CommandRouter actor. This method sets up the
@@ -31,23 +31,31 @@ class CommandRouter {
       val remoteManagers = mutable.Map[Int, ActorRef[Command]]()
       val webSocketClients = mutable.Map[Int, ActorRef[TextMessage]]()
 
-      /**
-       * Handles incoming messages for the CommandRouter actor.
-       *
-       * @return Behavior of the actor.
-       *
-       * Handles the following messages:
-       *
-       * - `RegisterWebSocketActor(box_id, ref)`: Registers a WebSocket client actor reference for the given `box_id`.
-       *   Logs the registration and updates the `webSocketClients` map with the new reference.
-       *
-       * - `NewCommand(command)`: Processes a new command. Retrieves or creates a `RemoteManager` actor for the given `command.box_id`.
-       *   If a `RemoteManager` does not exist for the `box_id`, it logs the creation and spawns a new `RemoteManager` actor.
-       *
-       * @param box_id The identifier for the box associated with the WebSocket client or command.
-       * @param ref The actor reference for the WebSocket client.
-       * @param command The command to be processed, which contains a `box_id`.
-       */
+      /** Handles incoming messages for the CommandRouter actor.
+        *
+        * @return
+        *   Behavior of the actor.
+        *
+        * Handles the following messages:
+        *
+        *   - `RegisterWebSocketActor(box_id, ref)`: Registers a WebSocket
+        *     client actor reference for the given `box_id`. Logs the
+        *     registration and updates the `webSocketClients` map with the new
+        *     reference.
+        *
+        *   - `NewCommand(command)`: Processes a new command. Retrieves or
+        *     creates a `RemoteManager` actor for the given `command.box_id`. If
+        *     a `RemoteManager` does not exist for the `box_id`, it logs the
+        *     creation and spawns a new `RemoteManager` actor.
+        *
+        * @param box_id
+        *   The identifier for the box associated with the WebSocket client or
+        *   command.
+        * @param ref
+        *   The actor reference for the WebSocket client.
+        * @param command
+        *   The command to be processed, which contains a `box_id`.
+        */
       Behaviors.receiveMessage {
         case RegisterWebSocketActor(box_id, ref) =>
           context.log.info(s"Registering WebSocket client for box_id: $box_id")
@@ -75,8 +83,8 @@ class CommandRouter {
             case StopGameCommand(box_id) =>
               manager ! StopGameCommand(box_id)
 
-            case VoteCommand(box_id, vote) =>
-              manager ! VoteCommand(box_id, vote)
+            case VoteCommand(box_id, remote_id, vote) =>
+              manager ! VoteCommand(box_id, remote_id, vote)
 
             case ConnectRemote(box_id, remote_id) =>
               manager ! ConnectRemote(box_id, remote_id)

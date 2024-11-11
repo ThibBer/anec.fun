@@ -9,9 +9,13 @@ sealed trait Command {
 
 case class StartGameCommand(box_id: Int) extends Command
 case class StopGameCommand(box_id: Int) extends Command
-case class VoteCommand(box_id: Int, vote: String) extends Command
+case class VoteCommand(box_id: Int, remote_id: Int,vote: String) extends Command
 case class ConnectRemote(box_id: Int, remote_id: Int) extends Command
 case class DisconnectRemote(box_id: Int, remote_id: Int) extends Command
+
+case class ConnectBox(box_id: Int) extends Command
+
+case class StartVoting(box_id: Int) extends Command
 
 trait JsonSupport extends SprayJsonSupport with DefaultJsonProtocol {
 
@@ -21,7 +25,7 @@ trait JsonSupport extends SprayJsonSupport with DefaultJsonProtocol {
   implicit val stopGameFormat: RootJsonFormat[StopGameCommand] = jsonFormat1(
     StopGameCommand.apply
   )
-  implicit val voteFormat: RootJsonFormat[VoteCommand] = jsonFormat2(
+  implicit val voteFormat: RootJsonFormat[VoteCommand] = jsonFormat3(
     VoteCommand.apply
   )
   implicit val connectRemoteFormat: RootJsonFormat[ConnectRemote] = jsonFormat2(
@@ -30,6 +34,14 @@ trait JsonSupport extends SprayJsonSupport with DefaultJsonProtocol {
   implicit val disconnectRemoteFormat: RootJsonFormat[DisconnectRemote] =
     jsonFormat2(DisconnectRemote.apply)
 
+  implicit val connectBoxFormat: RootJsonFormat[ConnectBox] = jsonFormat1(
+    ConnectBox.apply
+  )
+
+  implicit val startVotingFormat: RootJsonFormat[StartVoting] = jsonFormat1(
+    StartVoting.apply
+  )
+
   implicit object CommandJsonFormat extends RootJsonFormat[Command] {
     def write(command: Command): JsValue = command match {
       case cmd: StartGameCommand                        => cmd.toJson
@@ -37,6 +49,8 @@ trait JsonSupport extends SprayJsonSupport with DefaultJsonProtocol {
       case cmd: VoteCommand                             => cmd.toJson
       case cmd: ConnectRemote                           => cmd.toJson
       case cmd: DisconnectRemote                        => cmd.toJson
+      case cmd: ConnectBox                              => cmd.toJson
+      case cmd: StartVoting                             => cmd.toJson
       case com.anectdot.VoteSubmittedNotification(_)    => ???
       case com.anectdot.GameStateChangedNotification(_) => ???
     }
@@ -52,6 +66,8 @@ trait JsonSupport extends SprayJsonSupport with DefaultJsonProtocol {
         case Some(JsString("ConnectRemote")) => json.convertTo[ConnectRemote]
         case Some(JsString("DisconnectRemote")) =>
           json.convertTo[DisconnectRemote]
+        case Some(JsString("ConnectBox")) => json.convertTo[ConnectBox]
+        case Some(JsString("StartVoting")) => json.convertTo[StartVoting]
         case _ => throw new DeserializationException("Unknown command type")
       }
     }
