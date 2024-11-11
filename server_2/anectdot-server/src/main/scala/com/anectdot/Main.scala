@@ -67,7 +67,7 @@ object Main extends JsonSupport {
         completionMatcher,
         failureMatcher,
         bufferSize = 10,
-        OverflowStrategy.backpressure
+        OverflowStrategy.fail
       )
 
     val incoming = Sink.foreach[Message] {
