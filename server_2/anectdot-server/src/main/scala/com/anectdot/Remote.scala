@@ -1,7 +1,7 @@
 package com.anectdot
 
-import akka.actor.typed._
-import akka.actor.typed.scaladsl._
+import akka.actor.typed.*
+import akka.actor.typed.scaladsl.*
 
 object Remote {
 

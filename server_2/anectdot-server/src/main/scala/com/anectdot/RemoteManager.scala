@@ -1,18 +1,22 @@
 package com.anectdot
 
-import akka.actor.typed._
-import akka.actor.typed.scaladsl._
-import scala.collection.mutable
+import akka.actor.typed.*
+import akka.actor.typed.scaladsl.*
 import akka.http.scaladsl.model.ws.TextMessage
 
+import scala.collection.mutable
+
 final val MIN_PLAYERS = 2
+
 enum States:
   case STOPPED, STARTED, PAUSED, VOTING
 
 var game_state = States.STOPPED
 
+/**
+ * The `RemoteManager` actor is the main game manager for the Anectdot game.
+ */
 object RemoteManager {
-
   def apply(
       webSocketClients: mutable.Map[Int, ActorRef[TextMessage]]
   ): Behavior[Command] =
@@ -20,6 +24,22 @@ object RemoteManager {
 
       val remoteActors = mutable.Map[Int, ActorRef[Command]]()
 
+      /**
+       * Handles various commands related to the remote game management.
+       *
+       * Commands:
+       * - `StartGameCommand(box_id)`: Starts the game if the minimum number of players is met.
+       * - `StopGameCommand(box_id)`: Stops the game and clears the remote actors.
+       * - `ConnectRemote(box_id, remote_id)`: Connects a remote actor and notifies the clients.
+       * - `DisconnectRemote(box_id, remote_id)`: Disconnects a remote actor and notifies the clients.
+       * - `VoteCommand(box_id, vote)`: Registers a vote if the game is in the VOTING state.
+       *
+       * @param box_id The identifier for the game box.
+       * @param remote_id The identifier for the remote actor.
+       * @param vote The vote cast by a player.
+       *
+       * @return The same behavior to handle the next message.
+       */
       Behaviors.receiveMessage {
         case StartGameCommand(box_id) =>
           if (remoteActors.size < MIN_PLAYERS) {
@@ -91,6 +111,11 @@ object RemoteManager {
       }
     }
 
+  /**
+   * Broadcasts the current game state to all connected clients.
+   * This method is used to ensure that all clients have the latest
+   * game state information.
+   */
   private def broadcastGameState(
       webSocketClients: mutable.Map[Int, ActorRef[TextMessage]],
       newState: States
@@ -102,6 +127,13 @@ object RemoteManager {
     }
   }
 
+  /**
+   * Broadcasts the vote to all connected clients.
+   * This method sends the current vote status to all clients that are
+   * connected to the server, ensuring that they have the latest vote information.
+   *
+   * @param vote The vote information to be broadcasted.
+   */
   private def broadcastVote(
       webSocketClients: mutable.Map[Int, ActorRef[TextMessage]],
       vote: String

@@ -1,7 +1,7 @@
 package com.anectdot
 
-import spray.json._
 import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport
+import spray.json.*
 
 sealed trait Command {
   def box_id: Int
