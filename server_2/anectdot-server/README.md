@@ -62,13 +62,13 @@ Then you can send json messages to the server that respect the following schema:
 - `StartGameCommand`:
 
 ```json
-{"box_id": 2, "vote": "yes", "commandType": "VoteCommand"}
+{"box_id": 2, "commandType": "StartGameCommand"}
 ```
 
 - `VoteCommand`: `{ "commandType": "VoteCommand", "vote": "yes" }`
 
 ```json
-{"box_id": 2, "commandType": "StartGameCommand"}
+{"box_id": 2, "vote": "yes", "commandType": "VoteCommand"}
 ```
 
 The game expect at least two remotes to be connected before allowing to start a game.
