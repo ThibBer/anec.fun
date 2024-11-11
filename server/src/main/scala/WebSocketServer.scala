@@ -3,35 +3,45 @@ package be.unamur.anecdotfun
 import akka.actor.ActorSystem
 import akka.http.scaladsl.Http
 import akka.http.scaladsl.model.ws.{Message, TextMessage}
-import akka.http.scaladsl.server.Directives.{handleWebSocketMessages, pathEndOrSingleSlash}
+// import akka.http.scaladsl.server.Directives.{handleWebSocketMessages, pathEndOrSingleSlash}
+import akka.http.scaladsl.server.Directives._
 import akka.stream.Materializer
 import akka.stream.scaladsl.Flow
 
-import scala.concurrent.ExecutionContextExecutor
+// import scala.concurrent.ExecutionContextExecutor
+import scala.concurrent.{ExecutionContextExecutor, Future}
 import scala.io.StdIn
+import controllers.WebSocketController
 
-class WebSocketServer extends App {
-  implicit val system: ActorSystem = ActorSystem()
-  implicit val materializer: Materializer = Materializer(system)
-  implicit val executionContext: ExecutionContextExecutor = system.dispatcher
+class WebSocketServer(implicit
+    val system: ActorSystem,
+    val materializer: Materializer,
+    val executionContext: ExecutionContextExecutor
+) {
 
-  val websocketHandler: Flow[Message, Message, Any] = Flow[Message].collect {
-    case TextMessage.Strict(text) =>
-      println(s"Incoming message : $text")
-      TextMessage(s"Message received by server : $text")
-  }
+  // Handler WebSocket
+  val websocketHandler: Flow[Message, Message, Any] =
+    WebSocketController.websocketFlow
 
-  // Define the WebSocket route
+  // Define the route
   val route = pathEndOrSingleSlash {
     handleWebSocketMessages(websocketHandler)
   }
 
-  // Start the server on port 8080
-  val server = Http().newServerAt(address, port).bind(route)
+  private var bindingFuture: Future[Http.ServerBinding] = _
 
-  println(s"Server is running at ws://$address:$port/\nPress RETURN to stop...")
+  // Start server
+  def start(address: String, port: Int): Unit = {
+    bindingFuture = Http().newServerAt(address, port).bind(route)
+    bindingFuture.foreach { binding =>
+      println(s"WebSocket server started at ws://$address:$port/")
+    }
+  }
 
-  StdIn.readLine()
-  server.flatMap(_.unbind()).onComplete(_ => system.terminate())
-  println("Server is shut down")
+  // Stop server
+  def stop(): Unit = {
+    bindingFuture
+      .flatMap(_.unbind())
+      .onComplete(_ => println("WebSocket server stopped."))
+  }
 }
