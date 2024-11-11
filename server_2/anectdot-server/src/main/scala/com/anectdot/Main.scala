@@ -2,11 +2,8 @@ package com.anectdot
 
 import akka.actor.typed.ActorRef
 import akka.actor.typed.ActorSystem
-import akka.actor.typed.Behavior
-import akka.actor.typed.scaladsl.Behaviors
 import akka.actor.typed.scaladsl.adapter.*
 import akka.http.scaladsl.Http
-import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport
 import akka.http.scaladsl.model.ws.Message
 import akka.http.scaladsl.model.ws.TextMessage
 import akka.http.scaladsl.server.Directives.*
@@ -19,11 +16,7 @@ import akka.stream.scaladsl.Source
 import spray.json.*
 import spray.json.DefaultJsonProtocol.*
 
-import scala.collection.mutable
-import scala.concurrent.Future
 import scala.io.StdIn
-import scala.util.Failure
-import scala.util.Success
 
 object Main extends JsonSupport {
 
