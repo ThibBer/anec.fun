@@ -13,19 +13,17 @@ import akka.stream.OverflowStrategy
 import akka.stream.scaladsl.Flow
 import akka.stream.scaladsl.Sink
 import akka.stream.scaladsl.Source
-import spray.json.{JsValue, *}
-import spray.json.DefaultJsonProtocol.*
-import spray.json.JsonParser.ParsingException
+import spray.json.*
 
+import scala.concurrent.ExecutionContextExecutor
 import scala.io.StdIn
 
 object Main extends JsonSupport {
 
   def main(args: Array[String]): Unit = {
     val commandRouter = new CommandRouter()
-    implicit val system: ActorSystem[CommandRouterTrait] =
-      ActorSystem(commandRouter.commandRouter(), "main-system")
-    implicit val executionContext = system.executionContext
+    implicit val system: ActorSystem[CommandRouterTrait] = ActorSystem(commandRouter.commandRouter(), "main-system")
+    implicit val executionContext: ExecutionContextExecutor = system.executionContext
 
     val route: Route =
       path("ws" / IntNumber) { box_id =>
