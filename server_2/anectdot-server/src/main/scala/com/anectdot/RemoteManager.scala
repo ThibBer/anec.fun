@@ -7,7 +7,7 @@ import spray.json._
 import scala.collection.mutable
 import com.anectdot.Main.CommandJsonFormat
 
-final val MIN_PLAYERS = 2
+val MIN_PLAYERS = 2
 
 enum States:
   case STOPPED, STARTED, PAUSED, VOTING
