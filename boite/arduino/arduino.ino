@@ -2,25 +2,34 @@
 #define PIN_BUTTON_MODE_ANECDOTE 9
 #define EMOTION_MODE_LED 11
 #define ANECDOTE_MODE_LED 10
+#define GAME_STARTED_LED 7
 
 #define PIN_BUTTON_START_GAME 12
 
-enum Theme {EMOTION, ANECDOTE, THEME};
-enum GameState {STARTED, STOPPED};
+enum Theme {EMOTION, ANECDOTE};
+enum GameState {START, STOP, STARTED, STOPPED};
+
+const String gameStateLabels[] = {"START", "STOP", "STARTED", "STOPPED"};
+const String themeLabels[] = {"EMOTION", "ANECDOTE"};
 
 Theme currentTheme = EMOTION;
-
-bool isGameStarted = false;
+GameState gameState = STOPPED;
 
 unsigned long currentTime = 0;
 unsigned long previousTime = 0;
 
 String themeToString(Theme theme);
-String gameStateToString(GameState gameMode);
+String gameStateToString(GameState gameState);
+Theme stringToTheme(String input);
+GameState stringToGameState(String input);
 void onButtonThemeClick(Theme theme);
 void processSerialInput();
-void startGame();
-void stopGame();
+void requestGameStart();
+void requestGameStop();
+void setGameState(GameState newGameState);
+void onGameStateChanged(GameState state);
+void onReceiveSerialData(String key, String value);
+void blinkStartLED(int count);
 
 void setup() {
   Serial.begin(115200);
@@ -32,7 +41,9 @@ void setup() {
 
   pinMode(EMOTION_MODE_LED, OUTPUT);
   pinMode(ANECDOTE_MODE_LED, OUTPUT);
+  pinMode(GAME_STARTED_LED, OUTPUT);
 
+  blinkStartLED(3);
   digitalWrite(EMOTION_MODE_LED, HIGH);
 }
 
@@ -50,22 +61,42 @@ void loop() {
     onButtonThemeClick(ANECDOTE);
   }
 
-  if(currentTime - previousTime >= 200){
-    int startGameButton = digitalRead(PIN_BUTTON_START_GAME);
+  if(currentTime - previousTime >= 500){
+    int requestGameStartButton = digitalRead(PIN_BUTTON_START_GAME);
 
-    if(startGameButton == HIGH){
-      startGame();
+    if(requestGameStartButton == HIGH){
+      requestGameStart();
     }
 
     previousTime = currentTime;
   }
 }
 
+void blinkStartLED(int count){
+  for (int i = 0; i < count; i++) {
+    digitalWrite(GAME_STARTED_LED, HIGH);
+    delay(500);
+    digitalWrite(GAME_STARTED_LED, LOW);
+    delay(500);
+  }
+}
+
 void processSerialInput(){
   if (Serial.available() > 0) {
-    String str = Serial.readString();
-    str.trim();
-    Serial.println(str);
+    String serialData = Serial.readString();
+    serialData.trim();
+
+    int equalIndex = serialData.indexOf('=');
+    String key = serialData.substring(0, equalIndex);
+    String value = serialData.substring(equalIndex + 1);
+
+    onReceiveSerialData(key, value);
+  }
+}
+
+void onReceiveSerialData(String key, String value){
+  if(key == "GameStateChanged"){
+    onGameStateChanged(stringToGameState(value));
   }
 }
 
@@ -88,39 +119,64 @@ void onButtonThemeClick(Theme theme){
 }
 
 String themeToString(Theme theme) {
-  switch (theme) {
-    case EMOTION:
-      return "EMOTION";
-    case ANECDOTE:
-      return "ANECDOTE";
-    case THEME:
-      return "THEME";
-    default:
-      return "UNKNOWN";
-  }
+  return themeLabels[theme];
 }
 
 String gameStateToString(GameState gameMode) {
-  switch (gameMode) {
-    case EMOTION:
-      return "EMOTION";
-    case ANECDOTE:
-      return "ANECDOTE";
-    case THEME:
-      return "THEME";
-    default:
-      return "UNKNOWN";
+  return gameStateLabels[gameMode];
+}
+
+Theme stringToTheme(String input){
+  if(input == "EMOTION"){
+    return EMOTION;
+  }
+
+  if(input == "ANECDOTE"){
+    return ANECDOTE;
   }
 }
 
-void startGame(){
-  if(isGameStarted){
-    stopGame();
+GameState stringToGameState(String input){
+  if(input == "START"){
+    return START;
   }
 
-  Serial.println("GameState=STARTED");
+  if(input == "STOP"){
+    return STOP;
+  }
+
+  if(input == "STARTED"){
+    return STARTED;
+  }
+
+  if(input == "STOPPED"){
+    return STOPPED;
+  }
 }
 
-void stopGame(){
-  Serial.println("GameState=STOPPED");
+void requestGameStart(){
+  setGameState(START);
+}
+
+void requestGameStop(){
+  setGameState(STOP);
+}
+
+// Set game state and write "SetGameState={newGameState}" to serial
+void setGameState(GameState newGameState){
+  gameState = newGameState;
+  
+  Serial.print("SetGameState=");
+  Serial.println(gameStateToString(gameState));
+}
+
+// Handle new game state sent by the server
+void onGameStateChanged(GameState newGameState){
+  if(newGameState == STARTED){
+    digitalWrite(GAME_STARTED_LED, HIGH);
+  }else{
+    digitalWrite(GAME_STARTED_LED, LOW);
+  }
+
+  gameState = newGameState;
 }
