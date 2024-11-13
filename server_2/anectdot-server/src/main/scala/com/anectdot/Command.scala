@@ -2,43 +2,46 @@ package com.anectdot
 
 import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport
 import spray.json.*
+import akka.actor.typed.ActorRef
+import akka.http.scaladsl.model.ws.TextMessage
 
 sealed trait Command {
-  def box_id: Int
+  def box_id: Int;
+  def uniqueId : String;
 }
 
-case class StartGameCommand(box_id: Int) extends Command
-case class StopGameCommand(box_id: Int) extends Command
-case class VoteCommand(box_id: Int, remote_id: Int,vote: String) extends Command
-case class ConnectRemote(box_id: Int, remote_id: Int) extends Command
-case class DisconnectRemote(box_id: Int, remote_id: Int) extends Command
+case class StartGameCommand(box_id: Int, uniqueId: String) extends Command
+case class StopGameCommand(box_id: Int, uniqueId: String) extends Command
+case class VoteCommand(box_id: Int, remote_id: Int,vote: String, uniqueId: String) extends Command
+case class ConnectRemote(box_id: Int, remote_id: Int, uniqueId: String) extends Command
+case class DisconnectRemote(box_id: Int, remote_id: Int, uniqueId: String) extends Command
 
-case class ConnectBox(box_id: Int) extends Command
+case class ConnectBox(box_id: Int, uniqueId: String) extends Command
 
-case class StartVoting(box_id: Int) extends Command
+case class StartVoting(box_id: Int, uniqueId: String) extends Command
 
 trait JsonSupport extends SprayJsonSupport with DefaultJsonProtocol {
 
-  implicit val startGameFormat: RootJsonFormat[StartGameCommand] = jsonFormat1(
+  implicit val startGameFormat: RootJsonFormat[StartGameCommand] = jsonFormat2(
     StartGameCommand.apply
   )
-  implicit val stopGameFormat: RootJsonFormat[StopGameCommand] = jsonFormat1(
+  implicit val stopGameFormat: RootJsonFormat[StopGameCommand] = jsonFormat2(
     StopGameCommand.apply
   )
-  implicit val voteFormat: RootJsonFormat[VoteCommand] = jsonFormat3(
+  implicit val voteFormat: RootJsonFormat[VoteCommand] = jsonFormat4(
     VoteCommand.apply
   )
-  implicit val connectRemoteFormat: RootJsonFormat[ConnectRemote] = jsonFormat2(
+  implicit val connectRemoteFormat: RootJsonFormat[ConnectRemote] = jsonFormat3(
     ConnectRemote.apply
   )
   implicit val disconnectRemoteFormat: RootJsonFormat[DisconnectRemote] =
-    jsonFormat2(DisconnectRemote.apply)
+    jsonFormat3(DisconnectRemote.apply)
 
-  implicit val connectBoxFormat: RootJsonFormat[ConnectBox] = jsonFormat1(
+  implicit val connectBoxFormat: RootJsonFormat[ConnectBox] = jsonFormat2(
     ConnectBox.apply
   )
 
-  implicit val startVotingFormat: RootJsonFormat[StartVoting] = jsonFormat1(
+  implicit val startVotingFormat: RootJsonFormat[StartVoting] = jsonFormat2(
     StartVoting.apply
   )
 
@@ -51,8 +54,8 @@ trait JsonSupport extends SprayJsonSupport with DefaultJsonProtocol {
       case cmd: DisconnectRemote                        => cmd.toJson
       case cmd: ConnectBox                              => cmd.toJson
       case cmd: StartVoting                             => cmd.toJson
-      case com.anectdot.VoteSubmittedNotification(_)    => ???
-      case com.anectdot.GameStateChangedNotification(_) => ???
+      case com.anectdot.VoteSubmittedNotification(_,_)    => ???
+      case com.anectdot.GameStateChangedNotification(_,_) => ???
     }
 
     def read(json: JsValue): Command = {
@@ -73,10 +76,10 @@ trait JsonSupport extends SprayJsonSupport with DefaultJsonProtocol {
     }
   }
 }
-case class VoteSubmittedNotification(vote: String) extends Command {
+case class VoteSubmittedNotification(vote: String, uniqueId: String) extends Command {
   def box_id: Int = -1
 }
 
-case class GameStateChangedNotification(newState: States) extends Command {
+case class GameStateChangedNotification(newState: States, uniqueId: String) extends Command {
   def box_id: Int = -1
 }

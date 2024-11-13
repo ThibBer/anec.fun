@@ -15,11 +15,11 @@ object Remote {
     var received = 0
     override def onMessage(message: Command): Behavior[Command] = {
       message match {
-        case VoteSubmittedNotification(vote) =>
+        case VoteSubmittedNotification(vote, uniqueId) =>
           context.log.info(s"Received vote notification: $vote")
           Behaviors.same
 
-        case GameStateChangedNotification(newState) =>
+        case GameStateChangedNotification(newState, uniqueId) =>
           context.log.info(
             s"Received game state change notification: $newState"
           )

@@ -17,6 +17,7 @@ import spray.json.*
 import spray.json.DefaultJsonProtocol.*
 
 import scala.io.StdIn
+import java.util.UUID
 
 object Main extends JsonSupport {
 
@@ -40,20 +41,20 @@ object Main extends JsonSupport {
     bindingFuture.flatMap(_.unbind()).onComplete(_ => system.terminate())
   }
 
-  /**
-   * Creates a WebSocket flow.
-   *
-   * This method sets up the WebSocket flow for handling WebSocket connections.
-   * It defines how messages are processed and what actions are taken when a
-   * WebSocket connection is established, receives messages, or is closed.
-   *
-   * @return The WebSocket flow.
-   */
+  /** Creates a WebSocket flow.
+    *
+    * This method sets up the WebSocket flow for handling WebSocket connections.
+    * It defines how messages are processed and what actions are taken when a
+    * WebSocket connection is established, receives messages, or is closed.
+    *
+    * @return
+    *   The WebSocket flow.
+    */
   def webSocketFlow(
       commandRouter: ActorRef[CommandRouterTrait],
       box_id: Int
   ): Flow[Message, Message, Any] = {
-
+    val uniqueId = UUID.randomUUID().toString
     val completionMatcher: PartialFunction[Any, CompletionStrategy] = {
       case "complete" => CompletionStrategy.draining
     }
@@ -73,12 +74,13 @@ object Main extends JsonSupport {
     val incoming = Sink.foreach[Message] {
       case TextMessage.Strict(text) =>
         val command = text.parseJson.convertTo[Command]
-        commandRouter ! NewCommand(command)
+        commandRouter ! NewCommand(command, uniqueId)
       case _ =>
     }
 
     Flow.fromSinkAndSourceMat(incoming, outgoing) { (_, actorRef) =>
-      commandRouter ! RegisterWebSocketActor(box_id, actorRef.toTyped)
+      commandRouter ! RegisterWebSocketActor(uniqueId, actorRef.toTyped)
+      (incoming, actorRef)
     }
   }
 }

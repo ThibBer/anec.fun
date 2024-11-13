@@ -8,9 +8,9 @@ import akka.http.scaladsl.model.ws.TextMessage
 import scala.collection.mutable
 
 sealed trait CommandRouterTrait
-final case class NewCommand(command: Command) extends CommandRouterTrait
+final case class NewCommand(command: Command, uniqueId: String) extends CommandRouterTrait
 final case class RegisterWebSocketActor(
-    box_id: Int,
+    box_id: String,
     ref: ActorRef[TextMessage]
 ) extends CommandRouterTrait
 
@@ -29,8 +29,7 @@ class CommandRouter {
   def commandRouter(): Behavior[CommandRouterTrait] = Behaviors.setup {
     context =>
       val remoteManagers = mutable.Map[Int, ActorRef[Command]]()
-      val webSocketClients = mutable.Map[Int, ActorRef[TextMessage]]()
-
+      val webSocketClients = mutable.Map[String, ActorRef[TextMessage]]()
       /** Handles incoming messages for the CommandRouter actor.
         *
         * @return
@@ -57,12 +56,12 @@ class CommandRouter {
         *   The command to be processed, which contains a `box_id`.
         */
       Behaviors.receiveMessage {
-        case RegisterWebSocketActor(box_id, ref) =>
-          context.log.info(s"Registering WebSocket client for box_id: $box_id")
-          webSocketClients(box_id) = ref
+        case RegisterWebSocketActor(uniqueId, ref) =>
+          context.log.info(s"Registering WebSocket client with id: $uniqueId.")
+          webSocketClients(uniqueId) = ref
           Behaviors.same
 
-        case NewCommand(command) =>
+        case NewCommand(command, wsUniqueId) =>
           val manager = remoteManagers.getOrElseUpdate(
             command.box_id, {
               context.log.info(
@@ -77,20 +76,24 @@ class CommandRouter {
 
           // Routes incoming commands to the appropriate handler in the manager actor.
           command match {
-            case StartGameCommand(box_id) =>
-              manager ! StartGameCommand(box_id)
+            case ConnectBox(box_id, uniqueId) =>
+              context.log.info(s"connectbox command: $command")
+              manager ! ConnectBox(box_id, wsUniqueId)
 
-            case StopGameCommand(box_id) =>
-              manager ! StopGameCommand(box_id)
+            case StartGameCommand(box_id, uniqueId) =>
+              manager ! StartGameCommand(box_id,  wsUniqueId)
 
-            case VoteCommand(box_id, remote_id, vote) =>
-              manager ! VoteCommand(box_id, remote_id, vote)
+            case StopGameCommand(box_id, uniqueId) =>
+              manager ! StopGameCommand(box_id, wsUniqueId)
 
-            case ConnectRemote(box_id, remote_id) =>
-              manager ! ConnectRemote(box_id, remote_id)
+            case VoteCommand(box_id, remote_id, vote, uniqueId) =>
+              manager ! VoteCommand(box_id, remote_id, vote, wsUniqueId)
 
-            case DisconnectRemote(box_id, remote_id) =>
-              manager ! DisconnectRemote(box_id, remote_id)
+            case ConnectRemote(box_id, remote_id, uniqueId) =>
+              manager ! ConnectRemote(box_id, remote_id, wsUniqueId)
+
+            case DisconnectRemote(box_id, remote_id, uniqueId) =>
+              manager ! DisconnectRemote(box_id, remote_id, wsUniqueId)
 
             case _ =>
               context.log.info(s"Unknown command: $command")
