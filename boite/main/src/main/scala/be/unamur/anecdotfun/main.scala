@@ -1,102 +1,94 @@
 package be.unamur.anecdotfun
 
-import akka.Done
 import akka.actor.ActorSystem
-import akka.http.scaladsl.Http
-import akka.http.scaladsl.model.*
-import akka.http.scaladsl.model.ws.*
-import akka.stream.scaladsl.*
-import com.fazecast.jSerialComm.SerialPort
+import be.unamur.anecdotfun.GameState.{START, STOP}
+import com.typesafe.config.ConfigFactory
+import spray.json.{JsNumber, JsObject, JsString}
 
-import java.io.PipedInputStream
-import scala.concurrent.Future
+val config = ConfigFactory.load()
+implicit val system: ActorSystem = ActorSystem("box-anecdotfun", config)
 
-
-implicit val system: ActorSystem = ActorSystem()
-import system.dispatcher
-
+val boxId = 1
 val port = "COM5"
-val webSocketAddress = "ws://localhost:8080/ws-echo"
+var webSocketClient = WebSocketClient("ws://localhost:8080/ws/" + boxId)
+val serial = SerialThread(port)
 
-val incoming: Sink[Message, Future[Done]] =
-  Sink.foreach[Message] {
-    case message: TextMessage.Strict =>
-      println(s"Response from WebSocket server : ${message.text}")
-    case _ =>
-    // ignore other message types
-  }
+val messageAction: Map[String, String => Unit] = Map(
+  MessageKey.SetGameState -> onRequestChangeGameState,
+  MessageKey.Mode -> onRequestChangeMode
+)
 
 @main
 def main(): Unit = {
-  val ports = SerialPort.getCommPorts
-  val comPort = SerialPort.getCommPort(port)
-
-  comPort.openPort(1000)
-  comPort.setBaudRate(115200)
-
-  println(s"Port opened, reading serial on $port")
-
-  val messageBuffer = new StringBuilder()
-  val pipedInputStream = new PipedInputStream()
-
-  // Thread to read from serial port and print it
-  val readerThread = new Thread(() => {
-    comPort.setComPortTimeouts(SerialPort.TIMEOUT_READ_SEMI_BLOCKING, 0, 0)
-
-    val stream = comPort.getInputStream
-
-    val buffer = new Array[Byte](1024)
-    var bytesRead = 0
-
-    try {
-      while ({
-        bytesRead = stream.read(buffer); bytesRead
-      } != -1) {
-        val receivedText = new String(buffer, 0, bytesRead)
-        messageBuffer.append(receivedText)
-
-        if (receivedText.contains("\n")) {
-          processSerialInput(messageBuffer.toString().trim())
-          messageBuffer.clear()
-        }
-      }
-    } catch {
-      case e: Exception => e.printStackTrace()
-    } finally {
-      stream.close()
-    }
-  })
-
-  readerThread.start()
+  serial.onReceiveSerialData = onReceiveSerialData
+  serial.start()
+  webSocketClient.onReceiveMessage = onReceiveWebSocketMessage
+  connectBoxToServer()
 }
 
-def processSerialInput(serialInput: String): Unit = {
+def onReceiveSerialData(serialInput: String): Unit = {
+  println("Received from serial : " + serialInput)
+
+  if(serialInput.toLowerCase().contains("debug")){ // ignore debug message sent from serial
+    return
+  }
+
   val parts = serialInput.split('=')
 
   parts match {
     case Array(name, value) =>
       println(s"Key: $name - $value")
 
-      val outgoing = Source.single(TextMessage(serialInput))
-
-      val webSocketFlow = Http().webSocketClientFlow(WebSocketRequest(webSocketAddress))
-      val (upgradeResponse, closed) = outgoing
-        .viaMat(webSocketFlow)(Keep.right) // keep the materialized Future[WebSocketUpgradeResponse]
-        .toMat(incoming)(Keep.both) // also keep the Future[Done]
-        .run()
-
-      // just like a regular http request we can access response status which is available via upgrade.response.status
-      // status code 101 (Switching Protocols) indicates that server support WebSockets
-      val connected = upgradeResponse.flatMap { upgrade =>
-        if (upgrade.response.status == StatusCodes.SwitchingProtocols) {
-          Future.successful(Done)
-        } else {
-          throw new RuntimeException(s"Connection failed: ${upgrade.response.status}")
-        }
+      messageAction.get(name) match {
+        case Some(callback) => callback(value)
+        case None => println(s"Undefined message key ($name)")
       }
-
-      closed.foreach(_ => println("closed"))
     case _ =>
-      println("Invalid input")
+      println("Invalid input format received from serial")
   }
+}
+
+def connectBoxToServer(): Unit = {
+  webSocketClient.send(JsObject(
+    "box_id" -> JsNumber(boxId),
+    "uniqueId" -> JsString(""),
+    "commandType" -> JsString(CommandType.ConnectBox)
+  ))
+}
+
+def onReceiveWebSocketMessage(message: String): Unit = {
+  println("Receive websocket message : " + message)
+  if(message.contains("STARTED")){
+    onGameStateChanged("STARTED")
+  }else if(message.contains("STOPPED")){
+    onGameStateChanged("STOPPED")
+  }
+}
+
+def onGameStateChanged(state: String): Unit = {
+  serial.send(MessageKey.GameStateChanged + '=' + state)
+}
+
+def onRequestChangeGameState(value: String): Unit = {
+  val state = GameState.valueOf(value)
+
+  var command = ""
+
+  state match {
+    case START => command = CommandType.StartGame
+    case STOP => command = CommandType.StopGame
+    case _ =>
+  }
+
+  val obj = JsObject(
+    "box_id" -> JsNumber(boxId),
+    "uniqueId" -> JsString(""),
+    "commandType" -> JsString(command)
+  )
+
+  webSocketClient.send(obj)
+}
+
+def onRequestChangeMode(value: String): Unit = {
+  println("The box does not currently support mode switching")
 }
