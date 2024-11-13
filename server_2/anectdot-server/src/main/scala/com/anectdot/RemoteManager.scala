@@ -6,7 +6,7 @@ import akka.http.scaladsl.model.ws.TextMessage
 
 import scala.collection.mutable
 
-final val MIN_PLAYERS = 2
+val MIN_PLAYERS = 2
 
 enum States:
   case STOPPED, STARTED, PAUSED, VOTING
