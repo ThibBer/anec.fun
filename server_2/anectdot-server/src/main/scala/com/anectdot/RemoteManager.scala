@@ -53,11 +53,11 @@ object RemoteManager {
         */
       Behaviors.receiveMessage {
         case StartGameCommand(box_id, uniqueId) =>
-          if (boxActor == null && false) {
+          if (boxActor == null) {
             webSocketClients(uniqueId) ! TextMessage(
               s"Cannot start game for box_id: $box_id, box is not connected"
             )
-          } else if (remoteActors.size < MIN_PLAYERS && false) {
+          } else if (remoteActors.size < MIN_PLAYERS) {
             context.log.info(
               s"Cannot start game for box_id: $box_id, not enough players"
             )
