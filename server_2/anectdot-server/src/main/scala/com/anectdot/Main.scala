@@ -13,8 +13,9 @@ import akka.stream.OverflowStrategy
 import akka.stream.scaladsl.Flow
 import akka.stream.scaladsl.Sink
 import akka.stream.scaladsl.Source
-import spray.json.*
+import spray.json.{JsValue, *}
 import spray.json.DefaultJsonProtocol.*
+import spray.json.JsonParser.ParsingException
 
 import scala.io.StdIn
 
@@ -72,8 +73,12 @@ object Main extends JsonSupport {
 
     val incoming = Sink.foreach[Message] {
       case TextMessage.Strict(text) =>
-        val command = text.parseJson.convertTo[Command]
-        commandRouter ! NewCommand(command)
+          if(!text.startsWith("{") || !text.endsWith("}")){
+            println(s"WARN : invalid json input data ($text)")
+          }else{
+            val command = text.parseJson.convertTo[Command]
+            commandRouter ! NewCommand(command)
+          }
       case _ =>
     }
 
