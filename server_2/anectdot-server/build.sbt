@@ -15,7 +15,7 @@ libraryDependencies ++= Seq(
   "com.typesafe.akka" %% "akka-stream" % AkkaVersion,
   "com.typesafe.akka" %% "akka-http" % AkkaHttpVersion,
   "com.typesafe.akka" %% "akka-http-spray-json" % AkkaHttpVersion,
-  "org.slf4j" % "slf4j-simple" % "1.7.36"
+  "org.slf4j" % "slf4j-simple" % "2.0.13"
 )
 scalacOptions ++= Seq("-deprecation")
 
