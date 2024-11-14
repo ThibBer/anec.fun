@@ -18,3 +18,13 @@ libraryDependencies ++= Seq(
   "org.slf4j" % "slf4j-simple" % "1.7.36"
 )
 scalacOptions ++= Seq("-deprecation")
+
+inThisBuild(
+  List(
+    scalaVersion := "3.5.2",
+    scalafixOnCompile := true,
+    semanticdbEnabled := true,
+    semanticdbVersion := scalafixSemanticdb.revision,
+    scalacOptions += "-Wunused:imports"
+  )
+)

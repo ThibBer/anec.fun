@@ -1,7 +1,7 @@
 package com.anectdot
 
-import akka.actor.typed.*
-import akka.actor.typed.scaladsl.*
+import akka.actor.typed._
+import akka.actor.typed.scaladsl._
 
 object Remote {
 
@@ -12,7 +12,6 @@ object Remote {
   class CommandBehavior(context: ActorContext[Command])
       extends AbstractBehavior[Command](context) {
 
-    var received = 0
     override def onMessage(message: Command): Behavior[Command] = {
       message match {
         case VoteSubmittedNotification(vote, uniqueId) =>

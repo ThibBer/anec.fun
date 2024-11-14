@@ -1,9 +1,7 @@
 package com.anectdot
 
 import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport
-import spray.json.*
-import akka.actor.typed.ActorRef
-import akka.http.scaladsl.model.ws.TextMessage
+import spray.json._
 
 sealed trait Command {
   def box_id: Int;
@@ -19,6 +17,8 @@ case class DisconnectRemote(box_id: Int, remote_id: Int, uniqueId: String) exten
 case class ConnectBox(box_id: Int, uniqueId: String) extends Command
 
 case class StartVoting(box_id: Int, uniqueId: String) extends Command
+
+case class CommandResponse(uniqueId: String, commandType: String, status: String, message: Option[String] = None)
 
 trait JsonSupport extends SprayJsonSupport with DefaultJsonProtocol {
 
@@ -44,6 +44,8 @@ trait JsonSupport extends SprayJsonSupport with DefaultJsonProtocol {
   implicit val startVotingFormat: RootJsonFormat[StartVoting] = jsonFormat2(
     StartVoting.apply
   )
+
+  implicit val commandResponseFormat: RootJsonFormat[CommandResponse] = jsonFormat4(CommandResponse.apply)
 
   implicit object CommandJsonFormat extends RootJsonFormat[Command] {
     def write(command: Command): JsValue = command match {

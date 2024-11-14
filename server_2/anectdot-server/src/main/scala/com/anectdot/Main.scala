@@ -2,22 +2,22 @@ package com.anectdot
 
 import akka.actor.typed.ActorRef
 import akka.actor.typed.ActorSystem
-import akka.actor.typed.scaladsl.adapter.*
+import akka.actor.typed.scaladsl.adapter._
 import akka.http.scaladsl.Http
 import akka.http.scaladsl.model.ws.Message
 import akka.http.scaladsl.model.ws.TextMessage
-import akka.http.scaladsl.server.Directives.*
+import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server.Route
 import akka.stream.CompletionStrategy
 import akka.stream.OverflowStrategy
 import akka.stream.scaladsl.Flow
 import akka.stream.scaladsl.Sink
 import akka.stream.scaladsl.Source
-import spray.json.*
+import spray.json._
 
+import java.util.UUID
 import scala.concurrent.ExecutionContextExecutor
 import scala.io.StdIn
-import java.util.UUID
 
 object Main extends JsonSupport {
 
@@ -82,8 +82,8 @@ object Main extends JsonSupport {
     }
 
     Flow.fromSinkAndSourceMat(incoming, outgoing) { (_, actorRef) =>
-      commandRouter ! RegisterWebSocketActor(uniqueId, actorRef.toTyped)
-      (incoming, actorRef)
+      commandRouter ! RegisterWebSocketActor(uniqueId, box_id, actorRef.toTyped)
+      actorRef ! TextMessage(s"{\"uniqueId\":$uniqueId")
     }
   }
 }

@@ -1,13 +1,12 @@
 package com.anectdot
 
-import akka.actor.typed.*
-import akka.actor.typed.scaladsl.*
+import akka.actor.typed._
+import akka.actor.typed.scaladsl._
 import akka.http.scaladsl.model.ws.TextMessage
+import com.anectdot.Main.commandResponseFormat
 import spray.json._
-import scala.collection.mutable
-import com.anectdot.Main.CommandJsonFormat
 
-val MIN_PLAYERS = 2
+import scala.collection.mutable
 
 enum States:
   case STOPPED, STARTED, PAUSED, VOTING
@@ -18,12 +17,14 @@ var game_state = States.STOPPED
   */
 object RemoteManager {
   def apply(
-      webSocketClients: mutable.Map[String, ActorRef[TextMessage]]
+      webSocketClients: mutable.Map[Int, mutable.Map[String, ActorRef[
+        TextMessage
+      ]]]
   ): Behavior[Command] =
     Behaviors.setup { context =>
-
+      val MIN_PLAYERS: Int = 2
       val remoteActors = mutable.Map[Int, ActorRef[Command]]()
-      var boxActor: ActorRef[Command] = null
+      var boxActor: Option[ActorRef[Command]] = None
       var voteNumber: Int = 0
       var scores = mutable.Map[Int, Int]()
 
@@ -52,25 +53,78 @@ object RemoteManager {
         *   The same behavior to handle the next message.
         */
       Behaviors.receiveMessage {
+        case ConnectBox(box_id, uniqueId) =>
+          boxActor match {
+            case None => {
+              val response = CommandResponse(
+                uniqueId,
+                "StartGameCommand",
+                "failed",
+                Some("box is not connected")
+              )
+              webSocketClients(box_id)(uniqueId) ! TextMessage(
+                response.toJson.compactPrint
+              )
+            }
+            case Some(_) => {
+              boxActor = Some(context.self)
+              val response =
+                CommandResponse(uniqueId, "StartGameCommand", "success")
+              webSocketClients(box_id)(uniqueId) ! TextMessage(
+                response.toJson.compactPrint
+              )
+            }
+          }
+          Behaviors.same
+
         case StartGameCommand(box_id, uniqueId) =>
-          if (boxActor == null) {
-            webSocketClients(uniqueId) ! TextMessage(
-              s"Cannot start game for box_id: $box_id, box is not connected"
+          if (boxActor == None) {
+            val response = CommandResponse(
+              uniqueId,
+              "StartGameCommand",
+              "failed",
+              Some("box is not connected")
+            )
+            webSocketClients(box_id)(uniqueId) ! TextMessage(
+              response.toJson.compactPrint
             )
           } else if (remoteActors.size < MIN_PLAYERS) {
-            context.log.info(
-              s"Cannot start game for box_id: $box_id, not enough players"
+            val response = CommandResponse(
+              uniqueId,
+              "StartGameCommand",
+              "failed",
+              Some("not enough players")
             )
-            webSocketClients(uniqueId) ! TextMessage(
-              s"Cannot start game for box_id: $box_id, not enough players"
+            webSocketClients(box_id)(uniqueId) ! TextMessage(
+              response.toJson.compactPrint
             )
           } else {
-            val command: Command = StartGameCommand(box_id, uniqueId)
-            val commandJson = command.toJson.prettyPrint
-            webSocketClients(uniqueId) ! TextMessage(commandJson)
             context.log.info(s"Starting the game for box_id: $box_id")
+            val response =
+              CommandResponse(uniqueId, "StartGameCommand", "success")
+            webSocketClients(box_id)(uniqueId) ! TextMessage(
+              response.toJson.compactPrint
+            )
             game_state = States.STARTED
-            broadcastGameState(webSocketClients, States.STARTED)
+            // start game bomb timer
+            broadcastGameState(webSocketClients, States.STARTED, box_id)
+          }
+          Behaviors.same
+
+        case StartVoting(box_id, uniqueId) =>
+          if (game_state == States.STARTED) {
+            game_state = States.VOTING
+            broadcastGameState(webSocketClients, States.VOTING, box_id)
+          } else {
+            val response = CommandResponse(
+              uniqueId,
+              "StartVoting",
+              "failed",
+              Some("game is not in STARTED state")
+            )
+            webSocketClients(box_id)(uniqueId) ! TextMessage(
+              response.toJson.compactPrint
+            )
           }
           Behaviors.same
 
@@ -80,111 +134,99 @@ object RemoteManager {
             remoteActors.clear()
             scores.clear()
             game_state = States.STOPPED
-            broadcastGameState(webSocketClients, States.STOPPED)
+            broadcastGameState(webSocketClients, States.STOPPED, box_id)
             // TODO also broadcast winner to all clients
           } else {
-            context.log.info(
-              s"Cannot stop game for box_id: $box_id, game is not in STARTED or PAUSED state"
+            val response = CommandResponse(
+              uniqueId,
+              "StopGameCommand",
+              "failed",
+              Some("game is not in STARTED or PAUSED state")
             )
-            webSocketClients(uniqueId) ! TextMessage(
-              s"Cannot stop game for box_id: $box_id, game is not in STARTED or PAUSED state"
-            )
-          }
-
-          Behaviors.same
-
-        case ConnectBox(box_id, uniqueId) =>
-          if (boxActor != null) {
-            webSocketClients(uniqueId) ! TextMessage(
-              s"A box with id $box_id is already in use"
-            )
-          } else {
-            boxActor = context.self
-            webSocketClients(uniqueId) ! TextMessage(
-              s"Box with id $box_id connected"
+            webSocketClients(box_id)(uniqueId) ! TextMessage(
+              response.toJson.compactPrint
             )
           }
-
           Behaviors.same
 
         case ConnectRemote(box_id, remote_id, uniqueId) =>
-          if (boxActor != null) {
-            webSocketClients(uniqueId) ! TextMessage(
-              s"Cannot connect remote for box_id: $box_id, box is not connected"
-            )
-          } else if (game_state != States.STARTED) {
-            webSocketClients(uniqueId) ! TextMessage(
-              s"Cannot connect remote for box_id: $box_id, game is not in STARTED state"
-            )
-          } else if (remoteActors.contains(remote_id)) {
-            webSocketClients(uniqueId) ! TextMessage(
-              s"Remote $remote_id is already connected"
-            )
-          } else {
-            val remoteActor = remoteActors.getOrElseUpdate(
-              remote_id, {
-                context.log.info(s"Remote $remote_id connected")
-                webSocketClients(uniqueId) ! TextMessage(
-                  s"Remote $remote_id connected"
-                )
-
-                context.spawn(Remote(), s"remote-$remote_id")
-              }
-            )
-          }
-
-          Behaviors.same
-
-        case DisconnectRemote(box_id, remote_id, uniqueId) =>
-          if (!remoteActors.contains(remote_id)) {
-            webSocketClients(uniqueId) ! TextMessage(
-              s"Remote $remote_id is not connected"
-            )
-          } else {
-            remoteActors.remove(remote_id)
-            context.log.info(s"Remote $remote_id disconnected")
-            game_state = States.STARTED
-            webSocketClients(uniqueId) ! TextMessage(
-              s"Remote $remote_id disconnected"
-            )
-          }
-
-          Behaviors.same
-
-        case StartVoting(box_id, uniqueId) =>
-          if (game_state == States.STARTED) {
-            context.log.info(s"Starting voting for box_id: $box_id")
-            game_state = States.VOTING
-            broadcastGameState(webSocketClients, States.VOTING)
-          } else {
-            context.log.info(
-              s"Cannot start voting for box_id: $box_id, game is not in STARTED state"
-            )
-            webSocketClients(uniqueId) ! TextMessage(
-              s"Cannot start voting for box_id: $box_id, game is not in STARTED state"
-            )
+          boxActor match {
+            case Some(_) =>
+              val response = CommandResponse(
+                uniqueId,
+                "ConnectRemote",
+                "failed",
+                Some("box is not connected")
+              )
+              webSocketClients(box_id)(uniqueId) ! TextMessage(
+                response.toJson.compactPrint
+              )
+            case None if game_state != States.STARTED =>
+              val response = CommandResponse(
+                uniqueId,
+                "ConnectRemote",
+                "failed",
+                Some("game is not in STARTED state")
+              )
+              webSocketClients(box_id)(uniqueId) ! TextMessage(
+                response.toJson.compactPrint
+              )
+            case None if remoteActors.contains(remote_id) =>
+              val response = CommandResponse(
+                uniqueId,
+                "ConnectRemote",
+                "failed",
+                Some("remote is already connected")
+              )
+              webSocketClients(box_id)(uniqueId) ! TextMessage(
+                response.toJson.compactPrint
+              )
+            case None =>
+              val response = CommandResponse(
+                uniqueId,
+                "ConnectRemote",
+                "failed",
+                Some("unexpected error")
+              )
+              webSocketClients(box_id)(uniqueId) ! TextMessage(
+                response.toJson.compactPrint
+              )
           }
           Behaviors.same
 
         case VoteCommand(box_id, remote_id, vote, uniqueId) =>
           if (game_state == States.VOTING) {
             context.log.info(s"Received vote: $vote")
-            broadcastVote(webSocketClients, vote)
+            broadcastVote(webSocketClients, vote, box_id)
             voteNumber += 1
             if (voteNumber == remoteActors.size) {
               game_state = States.STARTED
-              broadcastGameState(webSocketClients, States.STARTED)
+              broadcastGameState(webSocketClients, States.STARTED, box_id)
               // update the score of each remote
               scores(remote_id) = scores.getOrElse(remote_id, 0) + 1
               // TODO send broadcast command to all clients to tell the vote result
             }
           } else {
-            context.log.info(s"Cannot vote, game is not in VOTING state")
-            webSocketClients(uniqueId) ! TextMessage(
-              s"Cannot vote, game is not in VOTING state"
+            context.log.info("Cannot vote, game is not in VOTING state")
+            webSocketClients(box_id)(uniqueId) ! TextMessage(
+              "Cannot vote, game is not in VOTING state"
             )
           }
+          Behaviors.same
 
+        case DisconnectRemote(box_id, remote_id, uniqueId) =>
+          if (!remoteActors.contains(remote_id)) {
+            webSocketClients(box_id)(uniqueId) ! TextMessage(
+              s"Remote $remote_id is not connected"
+            )
+          } else {
+            remoteActors.remove(remote_id)
+            context.log.info(s"Remote $remote_id disconnected")
+            game_state = States.STARTED
+            webSocketClients(box_id)(uniqueId) ! TextMessage(
+              s"Remote $remote_id disconnected"
+            )
+          }
           Behaviors.same
 
         case _ =>
@@ -196,13 +238,17 @@ object RemoteManager {
     * used to ensure that all clients have the latest game state information.
     */
   private def broadcastGameState(
-      webSocketClients: mutable.Map[String, ActorRef[TextMessage]],
-      newState: States
+      webSocketClients: mutable.Map[Int, mutable.Map[String, ActorRef[
+        TextMessage
+      ]]],
+      newState: States,
+      box_id: Int
   ): Unit = {
-    webSocketClients.values.foreach { remote =>
-      remote ! TextMessage(
-        s"Game state changed to: $newState"
-      )
+    webSocketClients(box_id).foreach {
+      case (uniqueId, remote) => {
+        val response = CommandResponse(uniqueId, "StartVoting", "success")
+        remote ! TextMessage(response.toJson.compactPrint)
+      }
     }
   }
 
@@ -214,13 +260,17 @@ object RemoteManager {
     *   The vote information to be broadcasted.
     */
   private def broadcastVote(
-      webSocketClients: mutable.Map[String, ActorRef[TextMessage]],
-      vote: String
+      webSocketClients: mutable.Map[Int, mutable.Map[String, ActorRef[
+        TextMessage
+      ]]],
+      vote: String,
+      box_id: Int
   ): Unit = {
-    webSocketClients.values.foreach { remote =>
-      remote ! TextMessage(
-        s"Vote received: $vote"
-      )
+    webSocketClients(box_id).foreach {
+      case (uniqueId, remote) => {
+        val response = CommandResponse(uniqueId, "VoteCommand", "success")
+        remote ! TextMessage(response.toJson.compactPrint)
+      }
     }
   }
 }

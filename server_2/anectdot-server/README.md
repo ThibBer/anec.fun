@@ -9,6 +9,9 @@ Welcome to the Anectdot Server project! This README will guide you through the s
   - [Introduction](#introduction)
   - [Installation](#installation)
   - [Usage](#usage)
+  - [Available json commands with answers](#available-json-commands-with-answers)
+    - [Box](#box)
+    - [Remote](#remote)
   - [Testing](#testing)
   - [Game logic](#game-logic)
     - [Game States](#game-states)
@@ -95,6 +98,57 @@ Then you can send json messages to the server that respect the following schema:
 
 The game expect at least two remotes to be connected before allowing to start a game.
 The game must be in voting state to allow voting commands from the remotes.
+
+## Available json commands with answers
+
+### Box
+
+- Connection:
+  - command:`{ "box_id": 1, "uniqueId": "","commandType": "ConnectBox"}`
+  - possible answers:
+    - `{ "uniqueId": "1", "commandType": "ConnectBox", "status": "success"}`
+    - `{ "uniqueId": "1", "commandType": "ConnectBox", "status": "error", "message": "Box already connected" }`
+- Starting a game *broadcasted to all remotes*:
+  - command:`{ "box_id": 1, "uniqueId": "1", "commandType": "StartGameCommand" }`
+  - possible answers:
+    - `{ "uniqueId": "1", "commandType": "StartGameCommand", "status": "success" }`
+    - `{ "uniqueId": "1", "commandType": "StartGameCommand", "status": "error", "message": "Not enough players" }`
+    - `{ "uniqueId": "1", "commandType": "StartGameCommand", "status": "error", "message": "Box not connected" }`
+    - `{ "uniqueId": "1", "commandType": "StartGameCommand", "status": "error", "message": "Game already started" }`
+- Start voting *broadcasted to all remotes*:
+  - command:`{ "box_id": 1, "uniqueId": "1", "commandType": "StartVoting" }`
+  - possible answers:
+    - `{ "uniqueId": "1", "commandType": "StartVoting", "status": "success" }`
+    - `{ "uniqueId": "1", "commandType": "StartVoting", "status": "error", "message": "Game not started" }`
+    - `{ "uniqueId": "1", "commandType": "StartVoting", "status": "error", "message": "Game already in voting state" }`
+- Stopping a game *broadcasted to all remotes*:
+  - command:`{ "box_id": 1,"uniqueId": "1", "commandType": "StopGameCommand" }`
+  - possible answers:
+    - `{ "uniqueId": "1", "commandType": "StopGameCommand", "status": "success" }`
+    - `{ "uniqueId": "1", "commandType": "StopGameCommand", "status": "error", "message": "Game not started" }`
+    - `{ "uniqueId": "1", "commandType": "StopGameCommand", "status": "error", "message": "Game already stopped" }`
+
+### Remote
+
+- Connection *broadcasted to all remotes*:
+  - command: `{ box_id: "1", "uniqueId": "", "commandType": "ConnectRemote" }`
+  - possible answers:
+    - `{ "uniqueId": "2", "commandType": "ConnectRemote", "status": "success" }`
+    - `{ "uniqueId": "2", "commandType": "ConnectRemote", "status": "error", "message": "Box not connected" }`
+    - `{ "uniqueId": "2", "commandType": "ConnectRemote", "status": "error", "message": "Remote already connected" }`
+- Vote *broadcasted to all remotes*:
+  - command: `{ box_id: "1", "uniqueId": "2","commandType": "VoteCommand", "vote": "yes" }`
+  - possible answers:
+    - `{ "uniqueId": "2","commandType": "VoteCommand", "status": "success" }`
+    - `{ "uniqueId": "2","commandType": "VoteCommand", "status": "error", "message": "Game not in voting state" }`
+    - `{ "uniqueId": "2","commandType": "VoteCommand", "status": "error", "message": "Remote not connected" }`
+    - `{ "uniqueId": "2","commandType": "VoteCommand", "status": "error", "message": "Invalid vote" }`
+    - `{ "uniqueId": "2","commandType": "VoteCommand", "status": "error", "message": "Vote already cast" }`
+- Disconnection:
+  - command: `{ box_id: "1", "uniqueId": "2", "commandType": "DisconnectRemote" }`
+  - possible answers:
+    - `{ "uniqueId": "2", "commandType": "DisconnectRemote", "status": "success" }`
+    - `{ "uniqueId": "2", "commandType": "DisconnectRemote", "status": "error", "message": "Remote not connected" }`
 
 ## Testing
 

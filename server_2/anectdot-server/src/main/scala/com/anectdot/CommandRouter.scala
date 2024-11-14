@@ -8,9 +8,11 @@ import akka.http.scaladsl.model.ws.TextMessage
 import scala.collection.mutable
 
 sealed trait CommandRouterTrait
-final case class NewCommand(command: Command, uniqueId: String) extends CommandRouterTrait
+final case class NewCommand(command: Command, uniqueId: String)
+    extends CommandRouterTrait
 final case class RegisterWebSocketActor(
-    box_id: String,
+    uniqueId: String,
+    box_id: Int,
     ref: ActorRef[TextMessage]
 ) extends CommandRouterTrait
 
@@ -29,7 +31,11 @@ class CommandRouter {
   def commandRouter(): Behavior[CommandRouterTrait] = Behaviors.setup {
     context =>
       val remoteManagers = mutable.Map[Int, ActorRef[Command]]()
-      val webSocketClients = mutable.Map[String, ActorRef[TextMessage]]()
+      // Map of WebSocket clients and their unique ids for each box_id.
+      // The key is the box_id, and the value is a map of unique ids to actor references.
+      val webSocketClients =
+        mutable.Map[Int, mutable.Map[String, ActorRef[TextMessage]]]()
+
       /** Handles incoming messages for the CommandRouter actor.
         *
         * @return
@@ -56,9 +62,16 @@ class CommandRouter {
         *   The command to be processed, which contains a `box_id`.
         */
       Behaviors.receiveMessage {
-        case RegisterWebSocketActor(uniqueId, ref) =>
+        case RegisterWebSocketActor(uniqueId, box_id, ref) =>
           context.log.info(s"Registering WebSocket client with id: $uniqueId.")
-          webSocketClients(uniqueId) = ref
+          webSocketClients.get(box_id) match {
+            case Some(innerMap) =>
+              // Outer key exists, add to the inner map
+              innerMap(uniqueId) = ref
+            case None =>
+              // Outer key does not exist, create a new inner map and add it
+              webSocketClients(box_id) = mutable.Map(uniqueId -> ref)
+          }
           Behaviors.same
 
         case NewCommand(command, wsUniqueId) =>
@@ -81,7 +94,7 @@ class CommandRouter {
               manager ! ConnectBox(box_id, wsUniqueId)
 
             case StartGameCommand(box_id, uniqueId) =>
-              manager ! StartGameCommand(box_id,  wsUniqueId)
+              manager ! StartGameCommand(box_id, wsUniqueId)
 
             case StopGameCommand(box_id, uniqueId) =>
               manager ! StopGameCommand(box_id, wsUniqueId)
