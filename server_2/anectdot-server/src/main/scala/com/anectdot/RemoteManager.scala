@@ -56,20 +56,20 @@ object RemoteManager {
         case ConnectBox(box_id, uniqueId) =>
           boxActor match {
             case None => {
-              val response = CommandResponse(
-                uniqueId,
-                "StartGameCommand",
-                "failed",
-                Some("box is not connected")
-              )
+              boxActor = Some(context.self)
+              val response =
+                CommandResponse(uniqueId, "ConnectBox", "success")
               webSocketClients(box_id)(uniqueId) ! TextMessage(
                 response.toJson.compactPrint
               )
             }
             case Some(_) => {
-              boxActor = Some(context.self)
-              val response =
-                CommandResponse(uniqueId, "StartGameCommand", "success")
+              val response = CommandResponse(
+                uniqueId,
+                "ConnectBox",
+                "failed",
+                Some(s"box $box_id is already in used")
+              )
               webSocketClients(box_id)(uniqueId) ! TextMessage(
                 response.toJson.compactPrint
               )
