@@ -2,7 +2,9 @@
 #define PIN_BUTTON_MODE_ANECDOTE 9
 #define EMOTION_MODE_LED 11
 #define ANECDOTE_MODE_LED 10
-#define GAME_STARTED_LED 7
+#define GAME_STATE_LED_RED 5
+#define GAME_STATE_LED_GREEN 6
+#define GAME_STATE_LED_BLUE 7
 
 #define PIN_BUTTON_START_GAME 12
 
@@ -16,7 +18,7 @@ Theme currentTheme = EMOTION;
 GameState gameState = STOPPED;
 
 unsigned long currentTime = 0;
-unsigned long previousTime = 0;
+unsigned long previousTimeButton = 0;
 
 String themeToString(Theme theme);
 String gameStateToString(GameState gameState);
@@ -30,6 +32,8 @@ void setGameState(GameState newGameState);
 void onGameStateChanged(GameState state);
 void onReceiveSerialData(String key, String value);
 void blinkStartLED(int count);
+void setGameStateLedColor(int state);
+void setGameStateLedColor(int r, int g, int b);
 
 void setup() {
   Serial.begin(115200);
@@ -41,7 +45,10 @@ void setup() {
 
   pinMode(EMOTION_MODE_LED, OUTPUT);
   pinMode(ANECDOTE_MODE_LED, OUTPUT);
-  pinMode(GAME_STARTED_LED, OUTPUT);
+
+  pinMode(GAME_STATE_LED_RED, OUTPUT);
+  pinMode(GAME_STATE_LED_GREEN, OUTPUT);
+  pinMode(GAME_STATE_LED_BLUE, OUTPUT);
 
   blinkStartLED(3);
   digitalWrite(EMOTION_MODE_LED, HIGH);
@@ -61,23 +68,27 @@ void loop() {
     onButtonThemeClick(ANECDOTE);
   }
 
-  if(currentTime - previousTime >= 500){
+  if(currentTime - previousTimeButton >= 500){
     int requestGameStartButton = digitalRead(PIN_BUTTON_START_GAME);
 
     if(requestGameStartButton == HIGH){
-      requestGameStart();
+      if(gameState == STOPPED){
+        requestGameStart();
+      }else if(gameState == STARTED){
+        requestGameStop();
+      }
     }
 
-    previousTime = currentTime;
+    previousTimeButton = currentTime;
   }
 }
 
 void blinkStartLED(int count){
   for (int i = 0; i < count; i++) {
-    digitalWrite(GAME_STARTED_LED, HIGH);
-    delay(500);
-    digitalWrite(GAME_STARTED_LED, LOW);
-    delay(500);
+    setGameStateLedColor(HIGH);
+    delay(200);
+    setGameStateLedColor(LOW);
+    delay(200);
   }
 }
 
@@ -98,6 +109,16 @@ void onReceiveSerialData(String key, String value){
   if(key == "GameStateChanged"){
     onGameStateChanged(stringToGameState(value));
   }
+}
+
+void setGameStateLedColor(int state){
+  setGameStateLedColor(state, state, state);
+}
+
+void setGameStateLedColor(int r, int g, int b){
+  digitalWrite(GAME_STATE_LED_RED, r);
+  digitalWrite(GAME_STATE_LED_GREEN, g);
+  digitalWrite(GAME_STATE_LED_BLUE, b);
 }
 
 void onButtonThemeClick(Theme theme){
@@ -173,9 +194,9 @@ void setGameState(GameState newGameState){
 // Handle new game state sent by the server
 void onGameStateChanged(GameState newGameState){
   if(newGameState == STARTED){
-    digitalWrite(GAME_STARTED_LED, HIGH);
+    setGameStateLedColor(HIGH);
   }else{
-    digitalWrite(GAME_STARTED_LED, LOW);
+    setGameStateLedColor(LOW);
   }
 
   gameState = newGameState;
