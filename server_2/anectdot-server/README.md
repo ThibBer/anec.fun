@@ -101,10 +101,13 @@ The game must be in voting state to allow voting commands from the remotes.
 
 ## Available json commands with answers
 
+- **Initial connection**
+  - answer: `{"commandType":"Connection","status":"success","uniqueId":"1"}`
+
 ### Box
 
 - Connection:
-  - command:`{ "box_id": 1, "uniqueId": "","commandType": "ConnectBox"}`
+  - command:`{ "box_id": 1, "uniqueId": "1","commandType": "ConnectBox"}`
   - possible answers:
     - `{ "uniqueId": "1", "commandType": "ConnectBox", "status": "success"}`
     - `{ "uniqueId": "1", "commandType": "ConnectBox", "status": "error", "message": "Box already connected" }`
@@ -131,7 +134,7 @@ The game must be in voting state to allow voting commands from the remotes.
 ### Remote
 
 - Connection *broadcasted to all remotes*:
-  - command: `{ box_id: "1", "uniqueId": "", "commandType": "ConnectRemote" }`
+  - command: `{ box_id: "1", "uniqueId": "2", "commandType": "ConnectRemote" }`
   - possible answers:
     - `{ "uniqueId": "2", "commandType": "ConnectRemote", "status": "success" }`
     - `{ "uniqueId": "2", "commandType": "ConnectRemote", "status": "error", "message": "Box not connected" }`
