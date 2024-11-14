@@ -23,8 +23,10 @@ object Main extends JsonSupport {
 
   def main(args: Array[String]): Unit = {
     val commandRouter = new CommandRouter()
-    implicit val system: ActorSystem[CommandRouterTrait] = ActorSystem(commandRouter.commandRouter(), "main-system")
-    implicit val executionContext: ExecutionContextExecutor = system.executionContext
+    implicit val system: ActorSystem[CommandRouterTrait] =
+      ActorSystem(commandRouter.commandRouter(), "main-system")
+    implicit val executionContext: ExecutionContextExecutor =
+      system.executionContext
 
     val route: Route =
       path("ws" / IntNumber) { box_id =>
@@ -83,7 +85,11 @@ object Main extends JsonSupport {
 
     Flow.fromSinkAndSourceMat(incoming, outgoing) { (_, actorRef) =>
       commandRouter ! RegisterWebSocketActor(uniqueId, box_id, actorRef.toTyped)
-      actorRef ! TextMessage(s"{\"uniqueId\":$uniqueId")
+      val response =
+        CommandResponse(uniqueId, "Connection", "success")
+      actorRef ! TextMessage(
+        response.toJson.compactPrint
+      )
     }
   }
 }
