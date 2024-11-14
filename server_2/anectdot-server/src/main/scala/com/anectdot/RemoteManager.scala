@@ -23,10 +23,10 @@ object RemoteManager {
   ): Behavior[Command] =
     Behaviors.setup { context =>
       val MIN_PLAYERS: Int = 2
-      val remoteActors = mutable.Map[Int, ActorRef[Command]]()
+      val remoteActors = mutable.Map[String, ActorRef[Command]]()
       var boxActor: Option[ActorRef[Command]] = None
       var voteNumber: Int = 0
-      var scores = mutable.Map[Int, Int]()
+      var scores = mutable.Map[String, Int]()
 
       /** Handles various commands related to the remote game management.
         *
@@ -149,9 +149,9 @@ object RemoteManager {
           }
           Behaviors.same
 
-        case ConnectRemote(box_id, remote_id, uniqueId) =>
+        case ConnectRemote(box_id, uniqueId) =>
           boxActor match {
-            case Some(_) =>
+            case None =>
               val response = CommandResponse(
                 uniqueId,
                 "ConnectRemote",
@@ -161,17 +161,8 @@ object RemoteManager {
               webSocketClients(box_id)(uniqueId) ! TextMessage(
                 response.toJson.compactPrint
               )
-            case None if game_state != States.STARTED =>
-              val response = CommandResponse(
-                uniqueId,
-                "ConnectRemote",
-                "failed",
-                Some("game is not in STARTED state")
-              )
-              webSocketClients(box_id)(uniqueId) ! TextMessage(
-                response.toJson.compactPrint
-              )
-            case None if remoteActors.contains(remote_id) =>
+              println("boxActor is None")
+            case Some(_) if remoteActors.contains(uniqueId) =>
               val response = CommandResponse(
                 uniqueId,
                 "ConnectRemote",
@@ -181,20 +172,24 @@ object RemoteManager {
               webSocketClients(box_id)(uniqueId) ! TextMessage(
                 response.toJson.compactPrint
               )
-            case None =>
+              println("remoteActors contains remote_id")
+            case Some(_) =>
               val response = CommandResponse(
                 uniqueId,
                 "ConnectRemote",
-                "failed",
-                Some("unexpected error")
+                "success"
               )
               webSocketClients(box_id)(uniqueId) ! TextMessage(
                 response.toJson.compactPrint
               )
+              remoteActors(uniqueId) = context.spawn(
+                Remote(),
+                s"remote-$uniqueId"
+              )
           }
           Behaviors.same
 
-        case VoteCommand(box_id, remote_id, vote, uniqueId) =>
+        case VoteCommand(box_id, vote, uniqueId) =>
           if (game_state == States.VOTING) {
             context.log.info(s"Received vote: $vote")
             broadcastVote(webSocketClients, vote, box_id)
@@ -203,7 +198,7 @@ object RemoteManager {
               game_state = States.STARTED
               broadcastGameState(webSocketClients, States.STARTED, box_id)
               // update the score of each remote
-              scores(remote_id) = scores.getOrElse(remote_id, 0) + 1
+              scores(uniqueId) = scores.getOrElse(uniqueId, 0) + 1
               // TODO send broadcast command to all clients to tell the vote result
             }
           } else {
@@ -214,17 +209,17 @@ object RemoteManager {
           }
           Behaviors.same
 
-        case DisconnectRemote(box_id, remote_id, uniqueId) =>
-          if (!remoteActors.contains(remote_id)) {
+        case DisconnectRemote(box_id, uniqueId) =>
+          if (!remoteActors.contains(uniqueId)) {
             webSocketClients(box_id)(uniqueId) ! TextMessage(
-              s"Remote $remote_id is not connected"
+              s"Remote $uniqueId is not connected"
             )
           } else {
-            remoteActors.remove(remote_id)
-            context.log.info(s"Remote $remote_id disconnected")
+            remoteActors.remove(uniqueId)
+            context.log.info(s"Remote $uniqueId disconnected")
             game_state = States.STARTED
             webSocketClients(box_id)(uniqueId) ! TextMessage(
-              s"Remote $remote_id disconnected"
+              s"Remote $uniqueId disconnected"
             )
           }
           Behaviors.same

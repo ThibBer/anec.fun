@@ -10,9 +10,9 @@ sealed trait Command {
 
 case class StartGameCommand(box_id: Int, uniqueId: String) extends Command
 case class StopGameCommand(box_id: Int, uniqueId: String) extends Command
-case class VoteCommand(box_id: Int, remote_id: Int,vote: String, uniqueId: String) extends Command
-case class ConnectRemote(box_id: Int, remote_id: Int, uniqueId: String) extends Command
-case class DisconnectRemote(box_id: Int, remote_id: Int, uniqueId: String) extends Command
+case class VoteCommand(box_id: Int,vote: String, uniqueId: String) extends Command
+case class ConnectRemote(box_id: Int, uniqueId: String) extends Command
+case class DisconnectRemote(box_id: Int, uniqueId: String) extends Command
 
 case class ConnectBox(box_id: Int, uniqueId: String) extends Command
 
@@ -28,14 +28,14 @@ trait JsonSupport extends SprayJsonSupport with DefaultJsonProtocol {
   implicit val stopGameFormat: RootJsonFormat[StopGameCommand] = jsonFormat2(
     StopGameCommand.apply
   )
-  implicit val voteFormat: RootJsonFormat[VoteCommand] = jsonFormat4(
+  implicit val voteFormat: RootJsonFormat[VoteCommand] = jsonFormat3(
     VoteCommand.apply
   )
-  implicit val connectRemoteFormat: RootJsonFormat[ConnectRemote] = jsonFormat3(
+  implicit val connectRemoteFormat: RootJsonFormat[ConnectRemote] = jsonFormat2(
     ConnectRemote.apply
   )
   implicit val disconnectRemoteFormat: RootJsonFormat[DisconnectRemote] =
-    jsonFormat3(DisconnectRemote.apply)
+    jsonFormat2(DisconnectRemote.apply)
 
   implicit val connectBoxFormat: RootJsonFormat[ConnectBox] = jsonFormat2(
     ConnectBox.apply

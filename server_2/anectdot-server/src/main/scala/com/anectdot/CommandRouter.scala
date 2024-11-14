@@ -99,14 +99,14 @@ class CommandRouter {
             case StopGameCommand(box_id, uniqueId) =>
               manager ! StopGameCommand(box_id, wsUniqueId)
 
-            case VoteCommand(box_id, remote_id, vote, uniqueId) =>
-              manager ! VoteCommand(box_id, remote_id, vote, wsUniqueId)
+            case VoteCommand(box_id, vote, uniqueId) =>
+              manager ! VoteCommand(box_id, vote, wsUniqueId)
 
-            case ConnectRemote(box_id, remote_id, uniqueId) =>
-              manager ! ConnectRemote(box_id, remote_id, wsUniqueId)
+            case ConnectRemote(box_id, uniqueId) =>
+              manager ! ConnectRemote(box_id, wsUniqueId)
 
-            case DisconnectRemote(box_id, remote_id, uniqueId) =>
-              manager ! DisconnectRemote(box_id, remote_id, wsUniqueId)
+            case DisconnectRemote(box_id, uniqueId) =>
+              manager ! DisconnectRemote(box_id, wsUniqueId)
 
             case _ =>
               context.log.info(s"Unknown command: $command")

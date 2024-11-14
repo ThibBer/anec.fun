@@ -8,15 +8,34 @@ async def start_box_interaction(commands: list[dict[str, str]]):
     uri = f"ws://localhost:8080/ws/{box_id}"
 
     async with websockets.connect(uri) as websocket:
+        response = await websocket.recv()
+        response = json.loads(response)
+        print(f"Received: {response}")
+        uniqueId = response.get("uniqueId")
+        # replace uniqueId in commands
         for command in commands:
-            message = json.dumps(command)
-            await websocket.send(message)
-            print(f"Sent: {message}")
-
-            response = await websocket.recv()
-            print(f"Received: {response}")
+            command["uniqueId"] = uniqueId
+        for command in commands:
+            await send_command(command, websocket)
 
         await websocket.close()
+
+
+async def send_command(
+    command: dict[str, str], websocket: websockets.WebSocketClientProtocol
+):
+    message = json.dumps(command)
+    await websocket.send(message)
+    print(f"Sent: {message}")
+
+    response = await websocket.recv()
+    response = json.loads(response)
+    if response.get("status") == "failed":
+        print(f"Received: {response}")
+        # sleep and retry
+        await asyncio.sleep(1)
+        await send_command(command, websocket)
+    print(f"Received: {response}")
 
 
 async def main():
