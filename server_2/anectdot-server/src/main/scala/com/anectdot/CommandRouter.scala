@@ -108,6 +108,8 @@ class CommandRouter {
             case DisconnectRemote(box_id, uniqueId) =>
               manager ! DisconnectRemote(box_id, wsUniqueId)
 
+            case VoiceFlow(box_id, uniqueId, payload) =>
+              manager ! VoiceFlow(box_id, uniqueId, payload)
             case _ =>
               context.log.info(s"Unknown command: $command")
           }

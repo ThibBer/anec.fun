@@ -1,7 +1,7 @@
 package com.anectdot
 
 import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport
-import spray.json._
+import spray.json.*
 
 sealed trait Command {
   def box_id: Int;
@@ -19,6 +19,8 @@ case class ConnectBox(box_id: Int, uniqueId: String) extends Command
 case class StartVoting(box_id: Int, uniqueId: String) extends Command
 
 case class CommandResponse(uniqueId: String, commandType: String, status: String, message: Option[String] = None)
+
+case class VoiceFlow(box_id: Int, uniqueId: String, payload: Option[String] ) extends Command
 
 trait JsonSupport extends SprayJsonSupport with DefaultJsonProtocol {
 
@@ -47,6 +49,8 @@ trait JsonSupport extends SprayJsonSupport with DefaultJsonProtocol {
 
   implicit val commandResponseFormat: RootJsonFormat[CommandResponse] = jsonFormat4(CommandResponse.apply)
 
+  implicit  val voiceFlowFormat: RootJsonFormat[VoiceFlow] = jsonFormat3(VoiceFlow.apply)
+
   implicit object CommandJsonFormat extends RootJsonFormat[Command] {
     def write(command: Command): JsValue = command match {
       case cmd: StartGameCommand                        => cmd.toJson
@@ -56,6 +60,7 @@ trait JsonSupport extends SprayJsonSupport with DefaultJsonProtocol {
       case cmd: DisconnectRemote                        => cmd.toJson
       case cmd: ConnectBox                              => cmd.toJson
       case cmd: StartVoting                             => cmd.toJson
+      case cmd: VoiceFlow                               => cmd.toJson
       case com.anectdot.VoteSubmittedNotification(_,_)    => ???
       case com.anectdot.GameStateChangedNotification(_,_) => ???
     }
@@ -73,6 +78,7 @@ trait JsonSupport extends SprayJsonSupport with DefaultJsonProtocol {
           json.convertTo[DisconnectRemote]
         case Some(JsString("ConnectBox")) => json.convertTo[ConnectBox]
         case Some(JsString("StartVoting")) => json.convertTo[StartVoting]
+        case Some(JsString("VoiceFlow")) => json.convertTo[VoiceFlow]
         case _ => throw new DeserializationException("Unknown command type")
       }
     }

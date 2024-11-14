@@ -5,4 +5,5 @@ object CommandType {
   val CONNECT_BOX = "ConnectBox"
   val START_GAME = "StartGameCommand"
   val STOP_GAME = "StopGameCommand"
+  val VOICE_FLOW = "VoiceFlow"
 }
