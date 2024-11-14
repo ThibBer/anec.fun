@@ -2,7 +2,7 @@ package be.unamur.anecdotfun
 
 import akka.Done
 import akka.http.scaladsl.Http
-import akka.http.scaladsl.model.DateTime
+import akka.http.scaladsl.model.{DateTime, StatusCode}
 import akka.http.scaladsl.model.ws.{Message, TextMessage, WebSocketRequest, WebSocketUpgradeResponse}
 import akka.stream.OverflowStrategy
 import akka.stream.scaladsl.{Flow, Keep, Sink, Source, SourceQueueWithComplete}
@@ -33,20 +33,14 @@ class WebSocketClient(address: String) {
 
   upgradeResponse.map { upgrade =>
     if (upgrade.response.status.isSuccess()) {
-      println(s"WebSocket connection established ${dateTimeString()}")
+      onConnectionEstablished(upgrade.response.status)
     } else {
-      println(s"WebSocket connection failed: ${upgrade.response.status}")
+      onConnectionFailed(upgrade.response.status)
     }
   }
 
   closed.onComplete { _ =>
-    println(s"WebSocket connection closed ${dateTimeString()}")
-  }
-
-  def dateTimeString() : String = {
-    val dateTime = DateTime.now
-
-    s"${dateTime.day}/${dateTime.month}/${dateTime.year} ${dateTime.hour}:${dateTime.minute}:${dateTime.second}"
+    onConnectionClosed()
   }
 
   def send(obj: JsObject): Unit = {
@@ -66,4 +60,7 @@ class WebSocketClient(address: String) {
   }
 
   var onReceiveMessage: String => Unit = _ => {}
+  var onConnectionEstablished: StatusCode => Unit = _ => {}
+  var onConnectionFailed: StatusCode => Unit = _ => {}
+  var onConnectionClosed: () => Unit = () => {}
 }

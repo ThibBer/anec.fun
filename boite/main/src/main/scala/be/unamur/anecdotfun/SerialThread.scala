@@ -4,15 +4,20 @@ import com.fazecast.jSerialComm.SerialPort
 
 import java.io.PipedInputStream
 
-class SerialThread(port: String) extends Thread {
+class SerialThread(portDescriptor: String) extends Thread {
   private val messageBuffer = new StringBuilder()
   private val pipedInputStream = new PipedInputStream()
-  private val comPort = SerialPort.getCommPort(port)
-  comPort.openPort(1000)
-  comPort.setBaudRate(115200)
-  println(s"Port opened, reading serial on $port")
+  private val comPort = SerialPort.getCommPort(portDescriptor)
 
   var onReceiveSerialData: String => Unit = _ => {}
+
+  override def start(): Unit = {
+    super.start()
+
+    comPort.openPort(1000)
+    comPort.setBaudRate(115200)
+    println(s"Port opened, reading serial on $portDescriptor")
+  }
 
   override def run(): Unit = {
     super.run()
