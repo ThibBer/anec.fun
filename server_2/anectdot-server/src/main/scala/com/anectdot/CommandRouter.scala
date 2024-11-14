@@ -12,7 +12,7 @@ final case class NewCommand(command: Command, uniqueId: String)
     extends CommandRouterTrait
 final case class RegisterWebSocketActor(
     uniqueId: String,
-    box_id: Int,
+    boxId: Int,
     ref: ActorRef[TextMessage]
 ) extends CommandRouterTrait
 
@@ -31,8 +31,8 @@ class CommandRouter {
   def commandRouter(): Behavior[CommandRouterTrait] = Behaviors.setup {
     context =>
       val remoteManagers = mutable.Map[Int, ActorRef[Command]]()
-      // Map of WebSocket clients and their unique ids for each box_id.
-      // The key is the box_id, and the value is a map of unique ids to actor references.
+      // Map of WebSocket clients and their unique ids for each boxId.
+      // The key is the boxId, and the value is a map of unique ids to actor references.
       val webSocketClients =
         mutable.Map[Int, mutable.Map[String, ActorRef[TextMessage]]]()
 
@@ -43,70 +43,70 @@ class CommandRouter {
         *
         * Handles the following messages:
         *
-        *   - `RegisterWebSocketActor(box_id, ref)`: Registers a WebSocket
-        *     client actor reference for the given `box_id`. Logs the
+        *   - `RegisterWebSocketActor(boxId, ref)`: Registers a WebSocket
+        *     client actor reference for the given `boxId`. Logs the
         *     registration and updates the `webSocketClients` map with the new
         *     reference.
         *
         *   - `NewCommand(command)`: Processes a new command. Retrieves or
-        *     creates a `RemoteManager` actor for the given `command.box_id`. If
-        *     a `RemoteManager` does not exist for the `box_id`, it logs the
+        *     creates a `RemoteManager` actor for the given `command.boxId`. If
+        *     a `RemoteManager` does not exist for the `boxId`, it logs the
         *     creation and spawns a new `RemoteManager` actor.
         *
-        * @param box_id
+        * @param boxId
         *   The identifier for the box associated with the WebSocket client or
         *   command.
         * @param ref
         *   The actor reference for the WebSocket client.
         * @param command
-        *   The command to be processed, which contains a `box_id`.
+        *   The command to be processed, which contains a `boxId`.
         */
       Behaviors.receiveMessage {
-        case RegisterWebSocketActor(uniqueId, box_id, ref) =>
+        case RegisterWebSocketActor(uniqueId, boxId, ref) =>
           context.log.info(s"Registering WebSocket client with id: $uniqueId.")
-          webSocketClients.get(box_id) match {
+          webSocketClients.get(boxId) match {
             case Some(innerMap) =>
               // Outer key exists, add to the inner map
               innerMap(uniqueId) = ref
             case None =>
               // Outer key does not exist, create a new inner map and add it
-              webSocketClients(box_id) = mutable.Map(uniqueId -> ref)
+              webSocketClients(boxId) = mutable.Map(uniqueId -> ref)
           }
           Behaviors.same
 
         case NewCommand(command, wsUniqueId) =>
           val manager = remoteManagers.getOrElseUpdate(
-            command.box_id, {
+            command.boxId, {
               context.log.info(
-                s"Creating new RemoteManager for box_id: ${command.box_id}"
+                s"Creating new RemoteManager for boxId: ${command.boxId}"
               )
               context.spawn(
-                RemoteManager(webSocketClients),
-                s"remote-manager-${command.box_id}"
+                GameManager(webSocketClients),
+                s"remote-manager-${command.boxId}"
               )
             }
           )
 
           // Routes incoming commands to the appropriate handler in the manager actor.
           command match {
-            case ConnectBox(box_id, uniqueId) =>
+            case ConnectBox(boxId, uniqueId) =>
               context.log.info(s"connectbox command: $command")
-              manager ! ConnectBox(box_id, wsUniqueId)
+              manager ! ConnectBox(boxId, wsUniqueId)
 
-            case StartGameCommand(box_id, uniqueId) =>
-              manager ! StartGameCommand(box_id, wsUniqueId)
+            case StartGameCommand(boxId, uniqueId) =>
+              manager ! StartGameCommand(boxId, wsUniqueId)
 
-            case StopGameCommand(box_id, uniqueId) =>
-              manager ! StopGameCommand(box_id, wsUniqueId)
+            case StopGameCommand(boxId, uniqueId) =>
+              manager ! StopGameCommand(boxId, wsUniqueId)
 
-            case VoteCommand(box_id, vote, uniqueId) =>
-              manager ! VoteCommand(box_id, vote, wsUniqueId)
+            case VoteCommand(boxId, vote, uniqueId) =>
+              manager ! VoteCommand(boxId, vote, wsUniqueId)
 
-            case ConnectRemote(box_id, uniqueId) =>
-              manager ! ConnectRemote(box_id, wsUniqueId)
+            case ConnectRemote(boxId, uniqueId) =>
+              manager ! ConnectRemote(boxId, wsUniqueId)
 
-            case DisconnectRemote(box_id, uniqueId) =>
-              manager ! DisconnectRemote(box_id, wsUniqueId)
+            case DisconnectRemote(boxId, uniqueId) =>
+              manager ! DisconnectRemote(boxId, wsUniqueId)
 
             case _ =>
               context.log.info(s"Unknown command: $command")

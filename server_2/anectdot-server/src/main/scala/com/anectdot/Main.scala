@@ -13,6 +13,7 @@ import akka.stream.OverflowStrategy
 import akka.stream.scaladsl.Flow
 import akka.stream.scaladsl.Sink
 import akka.stream.scaladsl.Source
+import org.slf4j.LoggerFactory
 import spray.json._
 
 import java.util.UUID
@@ -20,7 +21,7 @@ import scala.concurrent.ExecutionContextExecutor
 import scala.io.StdIn
 
 object Main extends JsonSupport {
-
+  private val logger = LoggerFactory.getLogger(getClass)
   def main(args: Array[String]): Unit = {
     val commandRouter = new CommandRouter()
     implicit val system: ActorSystem[CommandRouterTrait] =
@@ -29,13 +30,13 @@ object Main extends JsonSupport {
       system.executionContext
 
     val route: Route =
-      path("ws" / IntNumber) { box_id =>
-        handleWebSocketMessages(webSocketFlow(system, box_id))
+      path("ws" / IntNumber) { boxId =>
+        handleWebSocketMessages(webSocketFlow(system, boxId))
       }
 
     val bindingFuture = Http().newServerAt("localhost", 8080).bind(route)
 
-    println(
+    logger.info(
       "Server now online at ws://localhost:8080/ws\nPress RETURN to stop..."
     )
     StdIn.readLine()
@@ -53,7 +54,7 @@ object Main extends JsonSupport {
     */
   def webSocketFlow(
       commandRouter: ActorRef[CommandRouterTrait],
-      box_id: Int
+      boxId: Int
   ): Flow[Message, Message, Any] = {
     val uniqueId = UUID.randomUUID().toString
     val completionMatcher: PartialFunction[Any, CompletionStrategy] = {
@@ -75,7 +76,7 @@ object Main extends JsonSupport {
     val incoming = Sink.foreach[Message] {
       case TextMessage.Strict(text) =>
         if (!text.startsWith("{") || !text.endsWith("}")) {
-          println(s"WARN : invalid json input data ($text)")
+          logger.warn(s"Invalid json input data ($text)")
         } else {
           val command = text.parseJson.convertTo[Command]
           commandRouter ! NewCommand(command, uniqueId)
@@ -84,7 +85,7 @@ object Main extends JsonSupport {
     }
 
     Flow.fromSinkAndSourceMat(incoming, outgoing) { (_, actorRef) =>
-      commandRouter ! RegisterWebSocketActor(uniqueId, box_id, actorRef.toTyped)
+      commandRouter ! RegisterWebSocketActor(uniqueId, boxId, actorRef.toTyped)
       val response =
         CommandResponse(uniqueId, "Connection", "success")
       actorRef ! TextMessage(
