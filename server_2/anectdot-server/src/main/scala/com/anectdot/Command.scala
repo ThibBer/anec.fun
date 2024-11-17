@@ -20,7 +20,7 @@ case class StartVoting(boxId: Int, uniqueId: String) extends Command
 
 case class CommandResponse(uniqueId: String, commandType: String, status: String, message: Option[String] = None)
 
-case class VoiceFlow(box_id: Int, uniqueId: String, payload: Option[String] ) extends Command
+case class VoiceFlow(boxId: Int, uniqueId: String, payload: Option[String] ) extends Command
 
 trait JsonSupport extends SprayJsonSupport with DefaultJsonProtocol {
 

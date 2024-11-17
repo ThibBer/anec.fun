@@ -215,12 +215,13 @@ object GameManager {
             )
           }
           Behaviors.same
-        case VoiceFlow(box_id, uniqueId, payload) =>
+
+        case VoiceFlow(boxId, uniqueId, payload) =>
           payload match
             case None => context.log.info("payload None")
             case Some(payload) =>
               context.log.info(payload)
-              webSocketClients(box_id)(uniqueId) ! TextMessage("Received")
+              webSocketClients(boxId)(uniqueId) ! TextMessage("Received")
           Behaviors.same
         case _ =>
           Behaviors.unhandled
