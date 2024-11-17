@@ -4,8 +4,8 @@ import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport
 import spray.json.*
 
 sealed trait Command {
-  def boxId: Int;
-  def uniqueId : String;
+  def boxId: Int
+  def uniqueId : String
 }
 
 case class StartGameCommand(boxId: Int, uniqueId: String) extends Command
@@ -79,7 +79,7 @@ trait JsonSupport extends SprayJsonSupport with DefaultJsonProtocol {
         case Some(JsString("ConnectBox")) => json.convertTo[ConnectBox]
         case Some(JsString("StartVoting")) => json.convertTo[StartVoting]
         case Some(JsString("VoiceFlow")) => json.convertTo[VoiceFlow]
-        case _ => throw new DeserializationException("Unknown command type")
+        case _ => throw DeserializationException("Unknown command type")
       }
     }
   }

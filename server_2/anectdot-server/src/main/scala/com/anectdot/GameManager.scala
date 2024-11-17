@@ -54,15 +54,14 @@ object GameManager {
       Behaviors.receiveMessage {
         case ConnectBox(boxId, uniqueId) =>
           boxActor match {
-            case None => {
+            case None =>
               boxActor = Some(context.self)
               val response =
                 CommandResponse(uniqueId, "ConnectBox", "success")
               webSocketClients(boxId)(uniqueId) ! TextMessage(
                 response.toJson.compactPrint
               )
-            }
-            case Some(_) => {
+            case Some(_) =>
               val response = CommandResponse(
                 uniqueId,
                 "ConnectBox",
@@ -72,12 +71,11 @@ object GameManager {
               webSocketClients(boxId)(uniqueId) ! TextMessage(
                 response.toJson.compactPrint
               )
-            }
           }
           Behaviors.same
 
         case StartGameCommand(boxId, uniqueId) =>
-          if (boxActor == None) {
+          if (boxActor.isEmpty) {
             val response = CommandResponse(
               uniqueId,
               "StartGameCommand",
@@ -239,26 +237,21 @@ object GameManager {
       boxId: Int
   ): Unit = {
     webSocketClients(boxId).foreach {
-      case (uniqueId, remote) => {
+      case (uniqueId, remote) =>
         newState match {
-          case States.VOTING => {
+          case States.VOTING =>
             val response = CommandResponse(uniqueId, "VOTING", "success")
             remote ! TextMessage(response.toJson.compactPrint)
-          }
-          case States.PAUSED => {
+          case States.PAUSED =>
             val response = CommandResponse(uniqueId, "PAUSED", "success")
             remote ! TextMessage(response.toJson.compactPrint)
-          }
-          case States.STARTED => {
+          case States.STARTED =>
             val response = CommandResponse(uniqueId, "STARTED", "success")
             remote ! TextMessage(response.toJson.compactPrint)
-          }
-          case States.STOPPED => {
+          case States.STOPPED =>
             val response = CommandResponse(uniqueId, "STOPPED", "success")
             remote ! TextMessage(response.toJson.compactPrint)
-          }
         }
-      }
     }
   }
 
@@ -276,10 +269,9 @@ object GameManager {
       boxId: Int
   ): Unit = {
     webSocketClients(boxId).foreach {
-      case (uniqueId, remote) => {
+      case (uniqueId, remote) =>
         val response = CommandResponse(uniqueId, "VoteCommand", "success")
         remote ! TextMessage(response.toJson.compactPrint)
-      }
     }
   }
 }
