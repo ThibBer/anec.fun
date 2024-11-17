@@ -28,3 +28,5 @@ inThisBuild(
     scalacOptions += "-Wunused:imports"
   )
 )
+
+ThisBuild / scalafixDependencies += "io.github.dedis" %% "scapegoat-scalafix" % "1.1.3"

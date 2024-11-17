@@ -4,19 +4,19 @@ import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport
 import spray.json.*
 
 sealed trait Command {
-  def box_id: Int;
+  def boxId: Int;
   def uniqueId : String;
 }
 
-case class StartGameCommand(box_id: Int, uniqueId: String) extends Command
-case class StopGameCommand(box_id: Int, uniqueId: String) extends Command
-case class VoteCommand(box_id: Int,vote: String, uniqueId: String) extends Command
-case class ConnectRemote(box_id: Int, uniqueId: String) extends Command
-case class DisconnectRemote(box_id: Int, uniqueId: String) extends Command
+case class StartGameCommand(boxId: Int, uniqueId: String) extends Command
+case class StopGameCommand(boxId: Int, uniqueId: String) extends Command
+case class VoteCommand(boxId: Int,vote: String, uniqueId: String) extends Command
+case class ConnectRemote(boxId: Int, uniqueId: String) extends Command
+case class DisconnectRemote(boxId: Int, uniqueId: String) extends Command
 
-case class ConnectBox(box_id: Int, uniqueId: String) extends Command
+case class ConnectBox(boxId: Int, uniqueId: String) extends Command
 
-case class StartVoting(box_id: Int, uniqueId: String) extends Command
+case class StartVoting(boxId: Int, uniqueId: String) extends Command
 
 case class CommandResponse(uniqueId: String, commandType: String, status: String, message: Option[String] = None)
 
@@ -85,9 +85,9 @@ trait JsonSupport extends SprayJsonSupport with DefaultJsonProtocol {
   }
 }
 case class VoteSubmittedNotification(vote: String, uniqueId: String) extends Command {
-  def box_id: Int = -1
+  def boxId: Int = -1
 }
 
 case class GameStateChangedNotification(newState: States, uniqueId: String) extends Command {
-  def box_id: Int = -1
+  def boxId: Int = -1
 }
