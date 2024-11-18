@@ -19,9 +19,9 @@ import spray.json._
 import java.util.UUID
 import scala.concurrent.ExecutionContextExecutor
 import scala.io.StdIn
-
+private val logger = LoggerFactory.getLogger(getClass)
 object Main extends JsonSupport {
-  private val logger = LoggerFactory.getLogger(getClass)
+
   def main(args: Array[String]): Unit = {
     val commandRouter = new CommandRouter()
     implicit val system: ActorSystem[CommandRouterTrait] =
@@ -75,6 +75,7 @@ object Main extends JsonSupport {
 
     val incoming = Sink.foreach[Message] {
       case TextMessage.Strict(text) =>
+        logger.info(s"Received message: $text")
         if (!text.startsWith("{") || !text.endsWith("}")) {
           logger.warn(s"Invalid json input data ($text)")
         } else {

@@ -108,6 +108,8 @@ class CommandRouter {
             case DisconnectRemote(boxId, uniqueId) =>
               manager ! DisconnectRemote(boxId, wsUniqueId)
 
+            case StartVoting(boxId, uniqueId) =>
+              manager ! StartVoting(boxId, wsUniqueId)
             case _ =>
               context.log.info(s"Unknown command: $command")
           }

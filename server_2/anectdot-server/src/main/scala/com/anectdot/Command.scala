@@ -18,7 +18,7 @@ case class ConnectBox(boxId: Int, uniqueId: String) extends Command
 
 case class StartVoting(boxId: Int, uniqueId: String) extends Command
 
-case class CommandResponse(uniqueId: String, commandType: String, status: String, message: Option[String] = None)
+case class CommandResponse(uniqueId: String, commandType: String, status: String, message: Option[String] = None,senderUniqueId: Option[String] = None)
 
 trait JsonSupport extends SprayJsonSupport with DefaultJsonProtocol {
 
@@ -45,7 +45,7 @@ trait JsonSupport extends SprayJsonSupport with DefaultJsonProtocol {
     StartVoting.apply
   )
 
-  implicit val commandResponseFormat: RootJsonFormat[CommandResponse] = jsonFormat4(CommandResponse.apply)
+  implicit val commandResponseFormat: RootJsonFormat[CommandResponse] = jsonFormat5(CommandResponse.apply)
 
   implicit object CommandJsonFormat extends RootJsonFormat[Command] {
     def write(command: Command): JsValue = command match {
@@ -73,7 +73,10 @@ trait JsonSupport extends SprayJsonSupport with DefaultJsonProtocol {
           json.convertTo[DisconnectRemote]
         case Some(JsString("ConnectBox")) => json.convertTo[ConnectBox]
         case Some(JsString("StartVoting")) => json.convertTo[StartVoting]
-        case _ => throw new DeserializationException("Unknown command type")
+        case _ => {
+          logger.error(s"Invalid command: $json")
+          throw new RuntimeException("Invalid command")
+        }
       }
     }
   }

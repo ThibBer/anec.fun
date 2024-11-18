@@ -81,19 +81,19 @@ Then you can send json messages to the server that respect the following schema:
 - `ConnectRemote`: `{ "commandType": "ConnectRemote", "remote_id": 1 }`
 
 ```json
-{"box_id": 2, "remote_id": 1, "commandType": "ConnectRemote"}
+{"boxId": 2, "remote_id": 1, "commandType": "ConnectRemote"}
 ```
 
 - `StartGameCommand`:
 
 ```json
-{"box_id": 2, "commandType": "StartGameCommand"}
+{"boxId": 2, "commandType": "StartGameCommand"}
 ```
 
 - `VoteCommand`: `{ "commandType": "VoteCommand", "vote": "yes" }`
 
 ```json
-{"box_id": 2, "vote": "yes", "commandType": "VoteCommand"}
+{"boxId": 2, "vote": "yes", "commandType": "VoteCommand"}
 ```
 
 The game expect at least two remotes to be connected before allowing to start a game.
@@ -107,25 +107,25 @@ The game must be in voting state to allow voting commands from the remotes.
 ### Box
 
 - Connection:
-  - command:`{ "box_id": 1, "uniqueId": "1","commandType": "ConnectBox"}`
+  - command:`{ "boxId": 1, "uniqueId": "1","commandType": "ConnectBox"}`
   - possible answers:
     - `{ "uniqueId": "1", "commandType": "ConnectBox", "status": "success"}`
     - `{ "uniqueId": "1", "commandType": "ConnectBox", "status": "error", "message": "Box already connected" }`
 - Starting a game *broadcasted to all remotes*:
-  - command:`{ "box_id": 1, "uniqueId": "1", "commandType": "StartGameCommand" }`
+  - command:`{ "boxId": 1, "uniqueId": "1", "commandType": "StartGameCommand" }`
   - possible answers:
     - `{ "uniqueId": "1", "commandType": "StartGameCommand", "status": "success" }`
     - `{ "uniqueId": "1", "commandType": "StartGameCommand", "status": "error", "message": "Not enough players" }`
     - `{ "uniqueId": "1", "commandType": "StartGameCommand", "status": "error", "message": "Box not connected" }`
     - `{ "uniqueId": "1", "commandType": "StartGameCommand", "status": "error", "message": "Game already started" }`
 - Start voting *broadcasted to all remotes*:
-  - command:`{ "box_id": 1, "uniqueId": "1", "commandType": "StartVoting" }`
+  - command:`{ "boxId": 1, "uniqueId": "1", "commandType": "StartVoting" }`
   - possible answers:
     - `{ "uniqueId": "1", "commandType": "StartVoting", "status": "success" }`
     - `{ "uniqueId": "1", "commandType": "StartVoting", "status": "error", "message": "Game not started" }`
     - `{ "uniqueId": "1", "commandType": "StartVoting", "status": "error", "message": "Game already in voting state" }`
 - Stopping a game *broadcasted to all remotes*:
-  - command:`{ "box_id": 1,"uniqueId": "1", "commandType": "StopGameCommand" }`
+  - command:`{ "boxId": 1,"uniqueId": "1", "commandType": "StopGameCommand" }`
   - possible answers:
     - `{ "uniqueId": "1", "commandType": "StopGameCommand", "status": "success" }`
     - `{ "uniqueId": "1", "commandType": "StopGameCommand", "status": "error", "message": "Game not started" }`
@@ -134,13 +134,13 @@ The game must be in voting state to allow voting commands from the remotes.
 ### Remote
 
 - Connection *broadcasted to all remotes*:
-  - command: `{ box_id: "1", "uniqueId": "2", "commandType": "ConnectRemote" }`
+  - command: `{ boxId: "1", "uniqueId": "2", "commandType": "ConnectRemote" }`
   - possible answers:
     - `{ "uniqueId": "2", "commandType": "ConnectRemote", "status": "success" }`
     - `{ "uniqueId": "2", "commandType": "ConnectRemote", "status": "error", "message": "Box not connected" }`
     - `{ "uniqueId": "2", "commandType": "ConnectRemote", "status": "error", "message": "Remote already connected" }`
 - Vote *broadcasted to all remotes*:
-  - command: `{ box_id: "1", "uniqueId": "2","commandType": "VoteCommand", "vote": "yes" }`
+  - command: `{ boxId: "1", "uniqueId": "2","commandType": "VoteCommand", "vote": "yes" }`
   - possible answers:
     - `{ "uniqueId": "2","commandType": "VoteCommand", "status": "success" }`
     - `{ "uniqueId": "2","commandType": "VoteCommand", "status": "error", "message": "Game not in voting state" }`
@@ -148,7 +148,7 @@ The game must be in voting state to allow voting commands from the remotes.
     - `{ "uniqueId": "2","commandType": "VoteCommand", "status": "error", "message": "Invalid vote" }`
     - `{ "uniqueId": "2","commandType": "VoteCommand", "status": "error", "message": "Vote already cast" }`
 - Disconnection:
-  - command: `{ box_id: "1", "uniqueId": "2", "commandType": "DisconnectRemote" }`
+  - command: `{ boxId: "1", "uniqueId": "2", "commandType": "DisconnectRemote" }`
   - possible answers:
     - `{ "uniqueId": "2", "commandType": "DisconnectRemote", "status": "success" }`
     - `{ "uniqueId": "2", "commandType": "DisconnectRemote", "status": "error", "message": "Remote not connected" }`
