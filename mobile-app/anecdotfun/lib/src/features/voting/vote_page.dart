@@ -1,3 +1,5 @@
+import 'package:anecdotfun/src/features/score/score_page.dart';
+import 'package:anecdotfun/src/features/stick_passing/stick_passing_page.dart';
 import 'package:flutter/material.dart';
 import 'vote_controller.dart';
 import '../../core/services/web_socket_connection.dart';
@@ -36,6 +38,15 @@ class VotePageState extends State<VotePage> {
     return ListenableBuilder(
         listenable: voteController.game,
         builder: (context, _) {
+          if (voteController.game.state == GameState.started) {
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              Navigator.pushNamed(context, StickPassingPage.routeName);
+            });
+          } else if (voteController.game.state == GameState.scores) {
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              Navigator.pushNamed(context, PlayerScorePage.routeName);
+            });
+          }
           return Scaffold(
             appBar: AppBar(
               title: Text(

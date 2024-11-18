@@ -26,6 +26,8 @@ abstract class Command {
         return DisconnectRemote(boxId, uniqueId!);
       case 'StatusCommand':
         return StatusCommand(boxId, json['status'], json['message']);
+      case 'StickExploded':
+        return StickExploded(boxId);
       default:
         throw UnsupportedError('Unknown command type: $commandType');
     }
@@ -68,4 +70,8 @@ class StatusCommand extends Command {
   final String status;
   final String message;
   StatusCommand(super.boxId, this.status, this.message);
+}
+
+class StickExploded extends Command {
+  StickExploded(super.boxId);
 }

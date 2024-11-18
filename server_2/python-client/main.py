@@ -26,6 +26,8 @@ class WebSocketClient:
 
         # Execute commands
         for command in self.commands:
+            print(f"Ready to execute command: {command}")
+            input("Press Enter to continue...")
             await self.execute_command(command, websocket)
 
     async def execute_command(self, command, websocket):
@@ -34,8 +36,8 @@ class WebSocketClient:
 
         if self.is_failed_response(response, command):
             print(f"Command failed, retrying: {response}")
-            await asyncio.sleep(3)
-            await self.execute_command(command, websocket)
+            # await asyncio.sleep(3)
+            # await self.execute_command(command, websocket)
         else:
             print(f"Command succeeded: {response}")
 
@@ -61,23 +63,10 @@ async def main():
     box_commands = [
         {"boxId": 2, "uniqueId": "", "commandType": "ConnectBox"},
         {"boxId": 2, "uniqueId": "", "commandType": "StartGameCommand"},
-        {"boxId": 2, "uniqueId": "", "commandType": "StartVoting"},
-    ]
-    remote_1_commands = [
-        {"boxId": 2, "uniqueId": "", "commandType": "ConnectRemote"},
-        {"boxId": 2, "uniqueId": "", "vote": "no", "commandType": "VoteCommand"},
-    ]
-    remote_2_commands = [
-        {"boxId": 2, "uniqueId": "", "commandType": "ConnectRemote"},
-        {"boxId": 2, "uniqueId": "", "vote": "yes", "commandType": "VoteCommand"},
     ]
 
     # Create clients for the box and remotes
-    tasks = [
-        WebSocketClient(2, box_commands).connect(),
-        # WebSocketClient(2, remote_1_commands).connect(),
-        # WebSocketClient(2, remote_2_commands).connect(),
-    ]
+    tasks = [WebSocketClient(2, box_commands).connect()]
 
     await asyncio.gather(*tasks)
 

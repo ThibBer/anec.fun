@@ -6,6 +6,8 @@ import 'features/connection/connection_page.dart';
 import 'settings/settings_controller.dart';
 import 'settings/settings_view.dart';
 import 'features/voting/vote_page.dart';
+import 'features/stick_passing/stick_passing_page.dart';
+import 'features/score/score_page.dart';
 
 class MyApp extends StatelessWidget {
   const MyApp({
@@ -47,6 +49,10 @@ class MyApp extends StatelessWidget {
                     return const ConnectionPage();
                   case VotePage.routeName:
                     return const VotePage();
+                  case StickPassingPage.routeName:
+                    return const StickPassingPage();
+                  case PlayerScorePage.routeName:
+                    return const PlayerScorePage();
                   default:
                     return const ConnectionPage();
                 }

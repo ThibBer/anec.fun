@@ -1,11 +1,10 @@
 package com.anectdot
 
 import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport
-import spray.json.*
+import spray.json._
 
 sealed trait Command {
   def boxId: Int
-  def uniqueId: String
 }
 
 case class StartGameCommand(boxId: Int, uniqueId: String) extends Command
@@ -19,6 +18,7 @@ case class ConnectBox(boxId: Int, uniqueId: String) extends Command
 
 case class StartVoting(boxId: Int, uniqueId: String) extends Command
 
+case class StickExploded(boxId: Int) extends Command
 case class CommandResponse(
     uniqueId: String,
     commandType: String,
@@ -62,6 +62,10 @@ trait JsonSupport extends SprayJsonSupport with DefaultJsonProtocol {
     VoiceFlow.apply
   )
 
+  implicit val stickExplodedFormat: RootJsonFormat[StickExploded] =
+    jsonFormat1(StickExploded.apply)
+
+
   implicit object CommandJsonFormat extends RootJsonFormat[Command] {
     def write(command: Command): JsValue = command match {
       case cmd: StartGameCommand                           => cmd.toJson
@@ -72,6 +76,7 @@ trait JsonSupport extends SprayJsonSupport with DefaultJsonProtocol {
       case cmd: ConnectBox                                 => cmd.toJson
       case cmd: StartVoting                                => cmd.toJson
       case cmd: VoiceFlow                                  => cmd.toJson
+      case cmd: StickExploded                              => cmd.toJson
       case com.anectdot.VoteSubmittedNotification(_, _)    => ???
       case com.anectdot.GameStateChangedNotification(_, _) => ???
     }

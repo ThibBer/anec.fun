@@ -27,6 +27,8 @@ class Game extends ChangeNotifier {
   /// The ID of the box.
   int boxId = -1;
 
+  bool stickExploded = false;
+
   /// The unique ID of the player.
   String uniqueId = "";
 
@@ -66,6 +68,10 @@ class Game extends ChangeNotifier {
         _webSocketConnection.vote(vote);
       }
       notifyListeners();
+    }
+    // If all players have voted, display the scores
+    if (players.values.every((player) => player["vote"] != null)) {
+      updateState(GameState.scores);
     }
   }
 }

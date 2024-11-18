@@ -94,6 +94,7 @@ class WebSocketConnection {
   /// appropriate method.
   void _handleMessage(String message) async {
     final json = jsonDecode(message);
+    print("Received message: $json");
     final command = Command.fromJson(json, game.boxId);
 
     if (command is Connection) {
@@ -101,10 +102,6 @@ class WebSocketConnection {
         onConnectionSuccess("Connected to server successfully!");
         game.uniqueId = command.uniqueId;
       }
-    } else if (command is StartGameCommand) {
-      game.updateState(GameState.started);
-    } else if (command is StopGameCommand) {
-      game.updateState(GameState.stopped);
     } else if (command is VoteCommand) {
       _handleVoteResponse(json);
     } else if (command is ConnectRemote) {
@@ -115,6 +112,13 @@ class WebSocketConnection {
       if (command.message == 'VOTING') {
         game.updateState(GameState.voting);
       }
+     else if (command.message == 'STARTED') {
+        game.updateState(GameState.started);
+      }
+    } else if (command is StickExploded) {
+      game.stickExploded = true;
+    } else {
+      onError("Unknown command received: $command");
     }
   }
 
@@ -209,6 +213,14 @@ class WebSocketConnection {
       "uniqueId": game.uniqueId,
       "vote": vote,
       "commandType": "VoteCommand",
+    });
+  }
+
+  void votingStarted() {
+    sendCommand({
+      "boxId": game.boxId,
+      "uniqueId": game.uniqueId,
+      "commandType": "StartVoting",
     });
   }
 
