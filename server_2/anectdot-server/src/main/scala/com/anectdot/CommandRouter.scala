@@ -43,10 +43,9 @@ class CommandRouter {
         *
         * Handles the following messages:
         *
-        *   - `RegisterWebSocketActor(boxId, ref)`: Registers a WebSocket
-        *     client actor reference for the given `boxId`. Logs the
-        *     registration and updates the `webSocketClients` map with the new
-        *     reference.
+        *   - `RegisterWebSocketActor(boxId, ref)`: Registers a WebSocket client
+        *     actor reference for the given `boxId`. Logs the registration and
+        *     updates the `webSocketClients` map with the new reference.
         *
         *   - `NewCommand(command)`: Processes a new command. Retrieves or
         *     creates a `RemoteManager` actor for the given `command.boxId`. If
@@ -107,9 +106,10 @@ class CommandRouter {
 
             case DisconnectRemote(boxId, uniqueId) =>
               manager ! DisconnectRemote(boxId, wsUniqueId)
-
             case StartVoting(boxId, uniqueId) =>
               manager ! StartVoting(boxId, wsUniqueId)
+            case VoiceFlow(boxId, uniqueId, payload) =>
+              manager ! VoiceFlow(boxId, uniqueId, payload)
             case _ =>
               context.log.info(s"Unknown command: $command")
           }
