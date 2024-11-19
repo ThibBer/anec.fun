@@ -61,11 +61,14 @@ sequenceDiagram
     participant T2 as Remote 2
 
     %% Connecting Box
+    rect rgb(191, 223, 255)
     Note over B,S: Box connects to the server
     B->>S: ConnectBox
     S-->>B: ConnectBox
+    end
 
     %% Connecting Remotes
+    rect rgb(223, 255, 191)
     Note over T1,S: Remotes connect to the server
     T1->>S: ConnectRemote
     S-->>T1: ConnectRemote
@@ -73,36 +76,47 @@ sequenceDiagram
     T2->>S: ConnectRemote
     S-->>T2: ConnectRemote
     S-->>B: ConnectRemote
+    end
 
     %% Starting Game
+    rect rgb(255, 223, 191)
     Note over B,S: Box sends a command to start the game
     B->>S: StartGameCommand
     S-->>B: StartGameCommand
     S-->>T1: StartGameCommand
     S-->>T2: StartGameCommand
+    end
 
     %% Game Loop
     loop Until StopGame
-        %% Stick Exploded Event
-        Note over S,B: Timer runs and stick "explodes"
-        S->>S: Timer (x seconds)
-        S-->>T1: StickExploded
-        S-->>T2: StickExploded
-        S-->>B: StickExploded
-
-        loop Until Timer Ends
-            T1->>T1: ScanStick
-            T2->>T2: ScanStick
+        %% Stick passing
+        rect rgb(191, 191, 255)
+        par
+            Note over T1,T2: Stick is passed between players
+            S->>S: Timer (x seconds)
+            Note over S,B: Timer runs and stick "explodes"
+            S-->>T1: StickExploded
+            S-->>T2: StickExploded
+            S-->>B: StickExploded
+        and
+            loop Until user scan when StickExploded is received
+                T1->>T1: ScanStick
+                T2->>T2: ScanStick
+            end
+        end
         end
 
         %% Speaker Selection
+        rect rgb(255, 191, 223)
         Note over S,T1: Select speaker after explosion
         T1->>S: SpeakerSelection
         S-->>T1: SpeakerSelected
         S-->>T2: SpeakerSelected
         S-->>B: SpeakerSelected
+        end
 
         %% Voting process
+        rect rgb(223, 191, 255)
         Note over B,A: Box instructs stick to start listening
         B->>A: StartListening
         A->>B: VoicePayload
@@ -122,17 +136,22 @@ sequenceDiagram
         S-->>T1: VoteResult
         S-->>T2: VoteResult
         S-->>B: VoteResult
+        end
 
         %% Next turn or stop game
+        rect rgb(191, 255, 223)
         Note over B,S: Box sends the next turn command or stop command
         B->>S: NextTurnCommand
         S-->>B: NextTurnCommand
         S-->>T1: NextTurnCommand
         S-->>T2: NextTurnCommand
-        B->>S: NextTurnCommand
-        S-->>B: NextTurnCommand
+        B->>S: StopGameCommand
+        S-->>B: StopGameCommand
         S-->>T1: StopGameCommand
         S-->>T2: StopGameCommand
+        end
     end
+
+
 
 ```
