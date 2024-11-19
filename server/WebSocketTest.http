@@ -1,3 +1,0 @@
-### Simple WebSocket Request
-// It is possible to send messages to server right from the Services tool window
-WEBSOCKET ws://localhost:8080/ws-echo
