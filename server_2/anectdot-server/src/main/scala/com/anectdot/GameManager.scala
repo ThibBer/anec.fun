@@ -3,10 +3,12 @@ package com.anectdot
 import akka.actor.typed._
 import akka.actor.typed.scaladsl._
 import akka.http.scaladsl.model.ws.TextMessage
+import akka.stream.Materializer
 import com.anectdot.Main.commandResponseFormat
 import spray.json._
 
 import scala.collection.mutable
+import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration.DurationInt
 
 enum States:
@@ -31,6 +33,11 @@ object GameManager {
         var voteNumber: Int = 0
         val scores = mutable.Map[String, Int]()
         var gameState = States.STOPPED
+        implicit val system: ActorSystem[Nothing] =
+          ActorSystem(Behaviors.empty, "DebugSystem")
+        implicit val materializer: Materializer = Materializer(system)
+
+        var speechToText = SpeechToText()
 
         /** Handles commands for managing the remote game session.
           *
@@ -281,12 +288,40 @@ object GameManager {
             Behaviors.same
 
           case VoiceFlow(boxId, uniqueId, payload) =>
-            payload match
-              case None => context.log.info("payload None")
+            payload match {
+              case None => {
+                //              speechToText
+                //                .recognize()
+                //                .via(speechToText.detectIntent(Array("voyage", "ecole")))
+                //                .runForeach(result => {
+                //                  context.log.info(s"Run: $result")
+                //                  webSocketClients(boxId)(uniqueId) ! TextMessage(result)
+                //                })
+                speechToText.recognize().flatMap { text =>
+                  speechToText
+                    .detectIntent(Array("voyage", "ecole"), text)
+                    .map { intent =>
+                      {
+                        speechToText.resetPayloads()
+                        val response = CommandResponse(
+                          uniqueId,
+                          "VoiceFlow",
+                          "success",
+                          Some(intent)
+                        )
+                        webSocketClients(boxId)(uniqueId) ! TextMessage(
+                          response.toJson.compactPrint
+                        )
+                        println(s"Run: $intent")
+                      }
+                    }
+                }
+              }
               case Some(payload) =>
-                context.log.info(payload)
-                webSocketClients(boxId)(uniqueId) ! TextMessage("Received")
+                speechToText.addPayload(payload)
+            }
             Behaviors.same
+
           case _ =>
             Behaviors.unhandled
         }

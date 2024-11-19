@@ -27,8 +27,7 @@ case class CommandResponse(
     senderUniqueId: Option[String] = None
 )
 
-case class VoiceFlow(boxId: Int, uniqueId: String, payload: Option[String])
-    extends Command
+case class VoiceFlow(boxId: Int, uniqueId: String, payload: Option[Array[Byte]] ) extends Command
 
 trait JsonSupport extends SprayJsonSupport with DefaultJsonProtocol {
 
