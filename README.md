@@ -8,7 +8,7 @@
   - [Gameplay](#gameplay)
   - [Project structure](#project-structure)
   - [Setup](#setup)
-  - [Current workflow](#current-workflow)
+  - [Sequence diagram](#sequence-diagram)
 
 ## Introduction
 
@@ -49,6 +49,87 @@ To set up the game, you need to:
 4. Connect the box to the server
 5. Connect the remotes to the box
 
-## Current workflow
+## Sequence diagram
 
-TODO : add flow diagram
+```mermaid
+sequenceDiagram
+    %% Define participants
+    participant A as Stick
+    participant B as Box
+    participant S as Server
+    participant T1 as Remote 1
+    participant T2 as Remote 2
+
+    %% Connecting devices
+    Note over B,S: Box connects to the server
+    B->>S: ConnectBox
+    S-->>B: BoxConnectedAcknowledged
+
+    Note over T1,S: Remotes connect to the server
+    T1->>S: ConnectRemote
+    S-->>T1: RemoteConnectedAcknowledged
+    T2->>S: ConnectRemote
+    S-->>T2: RemoteConnectedAcknowledged
+
+    Note over S,B: Notify box of connected remotes
+    S-->>B: NotifyConnectedRemotes
+
+    %% Game start
+    Note over B,S: Box sends a command to start the game
+    B->>S: StartGameCommand
+    S-->>B: StartGameAcknowledged
+    S-->>T1: StartGameCommand
+    S-->>T2: StartGameCommand
+
+    %% Stick event
+    Note over S,B: Timer runs and stick "explodes"
+    S->>S: X sec timer
+    S-->>T1: StickExploded
+    S-->>T2: StickExploded
+    S-->>B: StickExploded
+
+    loop Until Timer Ends
+        T1->>T1: ScanStick
+        T2->>T2: ScanStick
+    end
+
+    Note over S,T1: Select speaker after explosion
+    T1->>S: SpeakerSelection
+    S-->>T1: SpeakerSelected
+    S-->>T2: SpeakerSelected
+    S-->>B: SpeakerSelected
+
+    %% Voting process
+    Note over B,A: Box instructs stick to start listening
+    B->>A: StartListening
+    A->>B: VoicePayload
+    B->>S: VoiceFlow (Audio Data)
+    Note over S: Start the voting process
+    S-->>T1: StartVoting
+    S-->>T2: StartVoting
+    S-->>B: StartVoting
+
+    par
+        T1->>S: VoteCommand
+        T2->>S: VoteCommand
+        B->>S: VoteCommand
+    end
+
+    Note over S: Share voting results
+    S-->>T1: VoteResult
+    S-->>T2: VoteResult
+    S-->>B: VoteResult
+
+    %% Next turn or stop game
+    Note over B,S: Box sends the next turn command or stop command
+    B->>S: NextTurnCommand
+    S-->>B: NextTurnAcknowledged
+    S-->>T1: NextTurnCommand
+    S-->>T2: NextTurnCommand
+    B->>S: StopGameCommand
+    S-->>B: StopGameAcknowledged
+    S-->>T1: StopGameCommand
+    S-->>T2: StopGameCommand
+
+
+```
