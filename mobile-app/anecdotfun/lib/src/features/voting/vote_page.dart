@@ -103,6 +103,12 @@ class VotePageState extends State<VotePage> {
                       },
                     ),
                   ),
+                  Text(
+                    voteController.game.stickExploded
+                        ? "you are the speaker, is the anecdote true or false?"
+                        : "you are the listener, vote true or false",
+                    textAlign: TextAlign.center,
+                  ),
                   // Voting buttons
                   voteController.game.state == GameState.voting
                       ? Padding(

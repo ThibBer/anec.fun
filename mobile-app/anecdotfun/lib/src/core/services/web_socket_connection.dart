@@ -117,6 +117,9 @@ class WebSocketConnection {
       }
     } else if (command is StickExploded) {
       game.stickExploded = true;
+
+    } else if (command is VoteResult) {
+      game.updateScores(json['message']);
     } else {
       onError("Unknown command received: $command");
     }
@@ -207,11 +210,12 @@ class WebSocketConnection {
     });
   }
 
-  void vote(String vote) {
+  void vote(String vote, bool speaker) {
     sendCommand({
       "boxId": game.boxId,
       "uniqueId": game.uniqueId,
       "vote": vote,
+      "speaker": speaker,
       "commandType": "VoteCommand",
     });
   }

@@ -29,9 +29,11 @@ object GameManager {
         var remoteWebSocketActors = Set[String]()
         var boxActor: Option[ActorRef[Command]] = None
         var voteNumber: Int = 0
+        var votes = mutable.Map[String, String]()
         val scores = mutable.Map[String, Int]()
         var gameState = States.STOPPED
-
+        var speakerId: String = ""
+        var voteResult: String = ""
         /** Handles commands for managing the remote game session.
           *
           * Supported Commands:
@@ -235,11 +237,20 @@ object GameManager {
             }
             Behaviors.same
 
-          case VoteCommand(boxId, vote, uniqueId) =>
+          case VoteCommand(boxId, vote, uniqueId, speaker) =>
             if (gameState == States.VOTING) {
               context.log.info(s"Received vote: $vote")
               broadcastVote(webSocketClients, boxId, vote, uniqueId)
               voteNumber += 1
+
+              if (speaker) {
+                speakerId = uniqueId
+                voteResult = vote
+              }
+              else {
+                votes(uniqueId) = vote
+              }
+
               if (voteNumber == remoteWebSocketActors.size) {
                 // gameState = States.STARTED
                 // broadcastGameState(
@@ -248,8 +259,22 @@ object GameManager {
                 //   boxId
                 // )
                 // update the score of each remote
-                scores(uniqueId) = scores.getOrElse(uniqueId, 0) + 1
-                // TODO send broadcast command to all clients to tell the vote result
+                if (votes.getOrElse(uniqueId, "") == voteResult) {
+                  scores(uniqueId) = scores.getOrElse(uniqueId, 0) + 1 // Every player can compute their own score, this is just for backup
+                }
+                // Send the vote result to all clients
+                for (remote <- remoteWebSocketActors) {
+                  val response = CommandResponse(
+                    remote,
+                    "VoteResult",
+                    "success",
+                    Some(voteResult.toString),
+                    senderUniqueId = Some(speakerId),
+                  )
+                  webSocketClients(boxId)(remote) ! TextMessage(
+                    response.toJson.compactPrint
+                  )
+                }
               }
             } else {
               context.log.info("Cannot vote, game is not in VOTING state")

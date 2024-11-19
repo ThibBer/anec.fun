@@ -33,5 +33,4 @@ To support additional languages, please visit the tutorial on
 - [ ] Handle new rounds (the box send a message to the server and the server to clients) -> redirect from result page to game screen.
 - [ ] Handle connection lost
 - [ ] keep connection alive
-- [ ] on vote page add feedback to tell who is telling the annectode
-- [ ] one player is the voter, he cannot vote but he's voting to tell if the anectode is true or false, server must send the result of the voter to the other players so we can display the scores
+- [ ] on vote page add feedback to tell who is telling the annectode -> server must tell to clients who is telling the anectode

@@ -28,6 +28,8 @@ abstract class Command {
         return StatusCommand(boxId, json['status'], json['message']);
       case 'StickExploded':
         return StickExploded(boxId);
+      case 'VoteResult':
+        return VoteResult(boxId);
       default:
         throw UnsupportedError('Unknown command type: $commandType');
     }
@@ -74,4 +76,8 @@ class StatusCommand extends Command {
 
 class StickExploded extends Command {
   StickExploded(super.boxId);
+}
+
+class VoteResult extends Command {
+  VoteResult(super.boxId);
 }

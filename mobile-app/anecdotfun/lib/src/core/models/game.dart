@@ -24,10 +24,13 @@ class Game extends ChangeNotifier {
     _webSocketConnection = connection;
   }
 
+  // Maintain score of each player
+  final Map<String, int> playerScores = {};
+
   /// The ID of the box.
   int boxId = -1;
 
-  bool stickExploded = false;
+  bool stickExploded = false; // Means player is speaker this round
 
   /// The unique ID of the player.
   String uniqueId = "";
@@ -65,13 +68,20 @@ class Game extends ChangeNotifier {
       players[uniqueId]!["vote"] = vote;
       // Only send to WebSocket if the vote originates from the app
       if (!isFromServer) {
-        _webSocketConnection.vote(vote);
+        _webSocketConnection.vote(vote, true);
       }
       notifyListeners();
     }
-    // If all players have voted, display the scores
-    if (players.values.every((player) => player["vote"] != null)) {
-      updateState(GameState.scores);
-    }
+  }
+
+  void updateScores(String result) {
+    // Update each player's score based on the result and his vote
+    players.forEach((uniqueId, playerData) {
+      if (playerData["vote"] == result) {
+        playerScores[uniqueId] = (playerScores[uniqueId] ?? 0) + 1;
+      }
+    });
+    updateState(GameState.scores);
+    notifyListeners();
   }
 }

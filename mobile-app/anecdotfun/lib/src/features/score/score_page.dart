@@ -75,10 +75,8 @@ class PlayerScorePageState extends State<PlayerScorePage> {
                     itemBuilder: (context, index) {
                       String uniqueId =
                           scoreController.game.players.keys.elementAt(index);
-                      Map<String, dynamic> playerData =
-                          scoreController.game.players[uniqueId]!;
-                      int score = playerData["score"] ?? 0;
-
+                      int score =
+                          scoreController.game.playerScores[uniqueId] ?? 0;
                       return Card(
                         margin: const EdgeInsets.symmetric(vertical: 8),
                         child: ListTile(
