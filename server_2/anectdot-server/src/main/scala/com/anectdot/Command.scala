@@ -9,7 +9,7 @@ sealed trait Command {
 
 case class StartGameCommand(boxId: Int, uniqueId: String) extends Command
 case class StopGameCommand(boxId: Int, uniqueId: String) extends Command
-case class VoteCommand(boxId: Int, vote: String, uniqueId: String)
+case class VoteCommand(boxId: Int, vote: String, uniqueId: String, speaker:Boolean)
     extends Command
 case class ConnectRemote(boxId: Int, uniqueId: String) extends Command
 case class DisconnectRemote(boxId: Int, uniqueId: String) extends Command
@@ -37,7 +37,7 @@ trait JsonSupport extends SprayJsonSupport with DefaultJsonProtocol {
   implicit val stopGameFormat: RootJsonFormat[StopGameCommand] = jsonFormat2(
     StopGameCommand.apply
   )
-  implicit val voteFormat: RootJsonFormat[VoteCommand] = jsonFormat3(
+  implicit val voteFormat: RootJsonFormat[VoteCommand] = jsonFormat4(
     VoteCommand.apply
   )
   implicit val connectRemoteFormat: RootJsonFormat[ConnectRemote] = jsonFormat2(
