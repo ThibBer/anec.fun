@@ -106,7 +106,7 @@ def onRequestChangeGameState(value: String): Unit = {
   }
 
   val obj = JsObject(
-    "box_id" -> JsNumber(boxId),
+    "boxId" -> JsNumber(boxId),
     "uniqueId" -> JsString(uniqueId),
     "commandType" -> JsString(command)
   )
