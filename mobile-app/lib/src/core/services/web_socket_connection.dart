@@ -67,11 +67,13 @@ class WebSocketConnection {
   late void Function(String) onConnectionSuccess;
   late void Function(String) onRemoteConnectionSuccess;
 
+  late Timer _heartbeatTimer;
+
   void init() {
     game.boxId = game.boxId;
+
     try {
-      channel = WebSocketChannel.connect(
-          Uri.parse('ws://10.0.2.2:8080/ws/${game.boxId}'));
+      channel = WebSocketChannel.connect(Uri.parse('ws://localhost:8080/ws/${game.boxId}'));
 
       // Listen for messages from the server
       channel.stream.listen((message) {
@@ -80,6 +82,19 @@ class WebSocketConnection {
         onError(error.toString());
       }, onDone: () {
         onConnectionClosed("Connection closed by server.");
+      });
+
+      _heartbeatTimer = Timer.periodic(Duration(seconds: 20), (timer) {
+        if (channel.closeCode != null) {
+          _heartbeatTimer.cancel();
+          return;
+        }
+
+        try {
+          channel.sink.add("heartbeat");
+        } catch (error) {
+          onError("Failed to send heartbeat");
+        }
       });
     } catch (error) {
       onError("Failed to initialize connection: $error");
@@ -111,9 +126,8 @@ class WebSocketConnection {
     } else if (command is StatusCommand) {
       if (command.message == 'VOTING') {
         game.updateState(GameState.voting);
-      }
-     else if (command.message == 'STARTED') {
-        game.updateState(GameState.started);
+      } else if (command.message == 'ROUND_STARTED') {
+        game.updateState(GameState.roundStarted);
       }
     } else if (command is StickExploded) {
       game.stickExploded = true;
@@ -215,7 +229,7 @@ class WebSocketConnection {
       "boxId": game.boxId,
       "uniqueId": game.uniqueId,
       "vote": vote,
-      "speaker": speaker,
+      "isSpeaker": speaker,
       "commandType": "VoteCommand",
     });
   }
@@ -225,6 +239,14 @@ class WebSocketConnection {
       "boxId": game.boxId,
       "uniqueId": game.uniqueId,
       "commandType": "StartVoting",
+    });
+  }
+
+  void sendStickScanned() {
+    sendCommand({
+      "boxId": game.boxId,
+      "uniqueId": game.uniqueId,
+      "commandType": "ScannedStickCommand",
     });
   }
 

@@ -1,3 +1,5 @@
+#include "SR04.h"
+
 #define PIN_BUTTON_MODE_EMOTION 8
 #define PIN_BUTTON_MODE_ANECDOTE 9
 #define EMOTION_MODE_LED 11
@@ -7,6 +9,9 @@
 #define GAME_STATE_LED_BLUE 7
 
 #define PIN_BUTTON_START_GAME 12
+
+#define ULTRASONIC_SENSOR_ECHO_PIN 3
+#define ULTRASONIC_SENSOR_TRIG_PIN 4
 
 enum Theme {EMOTION, ANECDOTE};
 enum GameState {START, STOP, STARTED, STOPPED};
@@ -19,6 +24,9 @@ GameState gameState = STOPPED;
 
 unsigned long currentTime = 0;
 unsigned long previousTimeButton = 0;
+unsigned long previousUltrasonicTime = 0;
+
+SR04 sr04 = SR04(ULTRASONIC_SENSOR_ECHO_PIN, ULTRASONIC_SENSOR_TRIG_PIN);
 
 String themeToString(Theme theme);
 String gameStateToString(GameState gameState);
@@ -80,6 +88,14 @@ void loop() {
     }
 
     previousTimeButton = currentTime;
+  }
+
+  if(currentTime - previousUltrasonicTime >= 100){
+    if(sr04.Distance() <= 10){
+      Serial.println("HandDetected=true");
+    }
+
+    previousUltrasonicTime = currentTime;
   }
 }
 

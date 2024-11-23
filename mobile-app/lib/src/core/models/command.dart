@@ -45,6 +45,10 @@ class StartGameCommand extends Command {
   StartGameCommand(super.boxId);
 }
 
+class StartRoundCommand extends Command {
+  StartRoundCommand(super.boxId);
+}
+
 class StopGameCommand extends Command {
   StopGameCommand(super.boxId);
 }

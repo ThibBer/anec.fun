@@ -8,8 +8,7 @@ import akka.http.scaladsl.model.ws.TextMessage
 import scala.collection.mutable
 
 sealed trait CommandRouterTrait
-final case class NewCommand(command: Command, uniqueId: String)
-    extends CommandRouterTrait
+final case class NewCommand(command: Command, uniqueId: String) extends CommandRouterTrait
 final case class RegisterWebSocketActor(
     uniqueId: String,
     boxId: Int,
@@ -33,8 +32,7 @@ class CommandRouter {
       val remoteManagers = mutable.Map[Int, ActorRef[Command]]()
       // Map of WebSocket clients and their unique ids for each boxId.
       // The key is the boxId, and the value is a map of unique ids to actor references.
-      val webSocketClients =
-        mutable.Map[Int, mutable.Map[String, ActorRef[TextMessage]]]()
+      val webSocketClients = mutable.Map[Int, mutable.Map[String, ActorRef[TextMessage]]]()
 
       /** Handles incoming messages for the CommandRouter actor.
         *
@@ -89,27 +87,35 @@ class CommandRouter {
           // Routes incoming commands to the appropriate handler in the manager actor.
           command match {
             case ConnectBox(boxId, uniqueId) =>
-              context.log.info(s"connectbox command: $command")
               manager ! ConnectBox(boxId, wsUniqueId)
 
             case StartGameCommand(boxId, uniqueId) =>
               manager ! StartGameCommand(boxId, wsUniqueId)
 
+            case StartRoundCommand(boxId, uniqueId) =>
+              manager ! StartRoundCommand(boxId, wsUniqueId)
+
             case StopGameCommand(boxId, uniqueId) =>
               manager ! StopGameCommand(boxId, wsUniqueId)
 
-            case VoteCommand(boxId, vote, uniqueId, speaker) =>
-              manager ! VoteCommand(boxId, vote, wsUniqueId, speaker)
+            case VoteCommand(boxId, vote, uniqueId, isSpeaker) =>
+              manager ! VoteCommand(boxId, vote, wsUniqueId, isSpeaker)
 
             case ConnectRemote(boxId, uniqueId) =>
               manager ! ConnectRemote(boxId, wsUniqueId)
 
             case DisconnectRemote(boxId, uniqueId) =>
               manager ! DisconnectRemote(boxId, wsUniqueId)
+
             case StartVoting(boxId, uniqueId) =>
               manager ! StartVoting(boxId, wsUniqueId)
+
             case VoiceFlow(boxId, uniqueId, payload) =>
               manager ! VoiceFlow(boxId, uniqueId, payload)
+
+            case ScannedStickCommand(boxId, uniqueId) =>
+              manager ! ScannedStickCommand(boxId, uniqueId)
+
             case _ =>
               context.log.info(s"Unknown command: $command")
           }
