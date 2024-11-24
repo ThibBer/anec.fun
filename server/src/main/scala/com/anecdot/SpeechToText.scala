@@ -13,8 +13,7 @@ import akka.http.scaladsl.model.Multipart.FormData
 import akka.http.scaladsl.model.headers
 import akka.http.scaladsl.unmarshalling.Unmarshal
 import akka.stream.Materializer
-import akka.stream.scaladsl.Source
-import akka.stream.scaladsl.StreamConverters
+import akka.stream.scaladsl.{Flow, Source, StreamConverters}
 import akka.util.ByteString
 import com.azure.ai.openai.OpenAIAsyncClient
 import com.azure.ai.openai.OpenAIClientBuilder
@@ -24,13 +23,13 @@ import com.azure.ai.openai.models.ChatRequestMessage
 import com.azure.ai.openai.models.ChatRequestSystemMessage
 import com.azure.ai.openai.models.ChatRequestUserMessage
 import com.azure.core.credential.AzureKeyCredential
-import spray.json.DefaultJsonProtocol._
-import spray.json._
+import spray.json.DefaultJsonProtocol.*
+import spray.json.*
 
 import java.io.ByteArrayInputStream
 import java.util
 import scala.collection.immutable
-import scala.compat.java8.FutureConverters._
+import scala.compat.java8.FutureConverters.*
 import scala.concurrent.ExecutionContextExecutor
 import scala.concurrent.Future
 
@@ -95,7 +94,7 @@ class SpeechToText(implicit
   }
 
   def recognize(
-  ): Future[String] /*Source[String, NotUsed]*/ = {
+  ): Source[String, NotUsed] = {
     println(s"Payloads size: ${accumulatedPayloads.length}")
     val audioSource: Source[ByteString, NotUsed] = Source
       .single(accumulatedPayloads)
@@ -152,19 +151,46 @@ class SpeechToText(implicit
         ""
       }
 
-//    Source.future(responseFuture)
-    responseFuture
+    Source.future(responseFuture)
+//    responseFuture
   }
 
   def resetPayloads(): Unit = {
     accumulatedPayloads = ByteString.empty
   }
 
-  def detectIntent(intents: Array[String], text: String): Future[String] = {
+//  def detectIntent(intents: Array[String], text: String): Future[String] = {
+//    val intentsList = intents.mkString(", ")
+//    val systemPrompt = new ChatRequestSystemMessage(
+//      s"Tu es un assistant qui classe des histoires suivant plusieurs catégories: $intentsList. Tu vas répondre en json la catégorie qui correspond le mieux à l'histoire"
+//    )
+//    val userMessage = new ChatRequestUserMessage(text)
+//
+//    val messages = util.ArrayList[ChatRequestMessage]()
+//    messages.add(systemPrompt)
+//    messages.add(userMessage)
+//    openAiClient
+//      .getChatCompletions(
+//        modelName,
+//        new ChatCompletionsOptions(messages).setResponseFormat(
+//          ChatCompletionsJsonResponseFormat()
+//        )
+//      )
+//      .map(chatCompletion => {
+//        val intent = chatCompletion.getChoices.get(0).getMessage.getContent
+//        println(intent)
+//        intent
+//      })
+//      .toFuture
+//      .toScala
+//  }
+  def detectIntent(intents: Array[String]): Flow[String, String, ?] = {
     val intentsList = intents.mkString(", ")
     val systemPrompt = new ChatRequestSystemMessage(
       s"Tu es un assistant qui classe des histoires suivant plusieurs catégories: $intentsList. Tu vas répondre en json la catégorie qui correspond le mieux à l'histoire"
     )
+    Flow[String].mapAsync(1) { text =>
+      {
     val userMessage = new ChatRequestUserMessage(text)
 
     val messages = util.ArrayList[ChatRequestMessage]()
@@ -184,36 +210,9 @@ class SpeechToText(implicit
       })
       .toFuture
       .toScala
+
+      }
+    }
   }
-  //    def detectIntent(intents: Array[String]): Flow[String, String, ?] = {
-  //    val intentsList = intents.mkString(", ")
-  //    val systemPrompt = new ChatRequestSystemMessage(
-  //      s"Tu es un assistant qui classe des histoires suivant plusieurs catégories: $intentsList. Tu vas répondre en json la catégorie qui correspond le mieux à l'histoire"
-  //    )
-  //    Flow[String].mapAsync(1) { text =>
-  //      {
-  //        val userMessage = new ChatRequestUserMessage(text)
-  //
-  //        val messages = util.ArrayList[ChatRequestMessage]()
-  //        messages.add(systemPrompt)
-  //        messages.add(userMessage)
-  //       openAiClient
-  //          .getChatCompletions(
-  //            modelName,
-  //            new ChatCompletionsOptions(messages).setResponseFormat(
-  //              ChatCompletionsJsonResponseFormat()
-  //            )
-  //          )
-  //          .map(chatCompletion => {
-  //            val intent = chatCompletion.getChoices.get(0).getMessage.getContent
-  //            println(intent)
-  //            intent
-  //          })
-  //          .toFuture
-  //          .toScala
-  //
-  //      }
-  //    }
-//  }
 
 }

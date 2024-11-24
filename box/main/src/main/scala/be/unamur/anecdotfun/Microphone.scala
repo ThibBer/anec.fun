@@ -2,24 +2,25 @@ package be.unamur.anecdotfun
 
 import akka.NotUsed
 import akka.stream.{IOResult, OverflowStrategy, QueueOfferResult}
-import akka.stream.scaladsl.{FileIO, Flow, Keep, RunnableGraph, Sink, Source, StreamConverters}
+import akka.stream.scaladsl.{Flow, Keep, RunnableGraph, Sink, Source, StreamConverters}
 import akka.util.ByteString
 import com.fazecast.jSerialComm.{SerialPort, SerialPortInvalidPortException}
 
 import java.io.{BufferedInputStream, BufferedOutputStream}
-import java.nio.file.Paths
 import scala.concurrent.Future
 import scala.util.{Failure, Success}
 import system.dispatcher
+
+import scala.concurrent.duration.FiniteDuration
 
 
 class Microphone {
   private val portName = "COM4"
   private var comPort: Option[SerialPort] = None
 
-  def startListening(): Option[RunnableGraph[NotUsed]] = {
+  def startListening(to: Sink[ByteString, Future[?]], duration: FiniteDuration): Option[RunnableGraph[NotUsed]] = {
     try {
-      val (queue, source) = Source.queue[ByteString](bufferSize = 1024, overflowStrategy = OverflowStrategy.dropHead)
+      val (queue, source) = Source.queue[ByteString](bufferSize = 128, overflowStrategy = OverflowStrategy.dropHead)
         .preMaterialize()
       val port = SerialPort.getCommPorts.find(_.getSystemPortName == portName).getOrElse {
         throw new IllegalStateException(s"Could not find $portName port")
@@ -32,7 +33,7 @@ class Microphone {
       val readerThread = new Thread(() => {
         port.setComPortTimeouts(SerialPort.TIMEOUT_READ_SEMI_BLOCKING, 0, 0)
         val stream = port.getInputStream
-        val buffer = new Array[Byte](1024)
+        val buffer = new Array[Byte](128)
         var bytesRead = 0
         try {
           while ( {
@@ -40,7 +41,7 @@ class Microphone {
             bytesRead
           } != -1) {
             // Potentially a bug somewhere but the stream reads 1 then 31 bytes instead of 32.
-            if (bytesRead > 1) {
+            if (bytesRead >= 1) {
               queue.offer(ByteString(buffer.take(bytesRead))) onComplete {
                 case Success(QueueOfferResult.Enqueued) => println(s"Enqueued: $bytesRead")
                 case Success(QueueOfferResult.Dropped) => println(s"Dropped: $bytesRead")
@@ -63,10 +64,11 @@ class Microphone {
       println(s"Port opened, reading serial on $port")
       comPort = Some(port)
       readerThread.start()
+
       Some(
         source
           .via(convertSound())
-          .to(FileIO.toPath(Paths.get("test.wav")))
+          .to(to)
       )
     } catch {
       case e: SerialPortInvalidPortException =>
@@ -90,10 +92,10 @@ class Microphone {
       "1",
       "-i",
       "pipe:0",
-      "-ab",
+      "-ar",
       "16k",
       "-f",
-      "s16le",
+      "wav",
       "pipe:1").start
 
 
@@ -107,6 +109,8 @@ class Microphone {
 
 
   def close(): Unit = comPort match
-    case Some(port) => port.closePort()
+    case Some(port) =>
+      port.closePort()
+
     case None => println("Not opened")
 }

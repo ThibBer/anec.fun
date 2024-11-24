@@ -1,7 +1,10 @@
 package be.unamur.anecdotfun
 
-import akka.actor.ActorSystem
+import scala.concurrent.duration.DurationInt
+import akka.actor.{ActorSystem, Cancellable}
 import akka.http.scaladsl.model.{DateTime, StatusCode}
+import akka.stream.scaladsl.Sink
+import akka.util.ByteString
 import be.unamur.anecdotfun.GameState.{START, STOP}
 import com.typesafe.config.ConfigFactory
 import spray.json.*
@@ -9,11 +12,13 @@ import be.unamur.anecdotfun.CommandResponseJsonProtocol.commandResponseFormat
 
 val config = ConfigFactory.load()
 implicit val system: ActorSystem = ActorSystem("box-anecdotfun", config)
+implicit val ec: scala.concurrent.ExecutionContext = scala.concurrent.ExecutionContext.global
 
 val boxId = config.getInt("akka.game.box.id")
 var webSocketClient = WebSocketClient(config.getString("akka.game.server.base-url") + boxId)
 val serial = SerialThread(config.getString("akka.game.arduino.com-port"))
 var uniqueId = ""
+
 
 object Main {
   def main(args: Array[String]): Unit = {
@@ -81,21 +86,21 @@ object Main {
 
       commandResponse.commandType match {
         case CommandType.CONNECTION =>
-          if (isCommandSuccessful){
+          if (isCommandSuccessful) {
             uniqueId = commandResponse.uniqueId
           }
         case CommandType.START_GAME =>
-          if(isCommandSuccessful){
+          if (isCommandSuccessful) {
             onGameStateChanged("STARTED")
-          }else{
+          } else {
             onGameStateChanged("STOPPED")
           }
         case CommandType.STOP_GAME =>
-          if(isCommandSuccessful){
+          if (isCommandSuccessful) {
             onGameStateChanged("STOPPED")
           }
         case CommandType.STICK_EXPLODED =>
-          if(isCommandSuccessful){
+          if (isCommandSuccessful) {
             onStickExploded()
           }
         case _ => println(s"Unmanaged response command type (${commandResponse.commandType})")
@@ -143,7 +148,31 @@ object Main {
   }
 
   private def onStickExploded(): Unit = {
-    //TODO micro : add microphone payload to message
+    // todo: maka anecdote duration configurable
+    val duration = 10.seconds
+    val mic = Microphone()
+    val sink = Sink.foreach[ByteString](data => webSocketClient.send(JsObject(
+      "boxId" -> JsNumber(boxId),
+      "uniqueId" -> JsString(uniqueId),
+      "commandType" -> JsString(CommandType.VOICE_FLOW),
+      "payload" -> JsArray(data.map(a => JsNumber(a)).toVector)
+    )))
+    mic.startListening(sink, duration) match {
+      case None => println("Error")
+      case Some(graph) =>
+
+        val runningGraph = graph.run()
+        val cancellable: Cancellable = system.scheduler.scheduleOnce(duration) {
+          println(s"Stopping graph after $duration seconds")
+          mic.close()
+          webSocketClient.send(JsObject(
+            "boxId" -> JsNumber(boxId),
+            "uniqueId" -> JsString(uniqueId),
+            "commandType" -> JsString(CommandType.VOICE_FLOW),
+            "payload" -> JsNull
+          ))
+        }
+    }
     webSocketClient.send(JsObject(
       "boxId" -> JsNumber(boxId),
       "uniqueId" -> JsString(uniqueId),

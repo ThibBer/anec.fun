@@ -26,7 +26,7 @@ object GameManager {
         var remoteWebSocketActors = Set[String]()
         var boxActor: Option[ActorRef[Command]] = None
         var voteNumber: Int = 0
-        var votes = mutable.Map[String, String]()
+        val votes = mutable.Map[String, String]()
         val scores = mutable.Map[String, Int]()
         var gameState = States.STOPPED
         var isStickExploded = false
@@ -34,7 +34,7 @@ object GameManager {
         implicit val system: ActorSystem[Nothing] =
           ActorSystem(Behaviors.empty, "DebugSystem")
 
-        // var speechToText = SpeechToText()
+        val speechToText = SpeechToText()
 
         var speakerId: String = ""
         var voteResult: String = ""
@@ -289,11 +289,10 @@ object GameManager {
                 logger.info("All remotes voted")
                 // update the score of each remote
                 if (votes.getOrElse(uniqueId, "") == voteResult) {
-                  scores(uniqueId) =
-                    scores.getOrElse(
-                      uniqueId,
-                      0
-                    ) + 1 // Every player can compute their own score, this is just for backup
+                  scores(uniqueId) = scores.getOrElse(
+                    uniqueId,
+                    0
+                  ) + 1 // Every player can compute their own score, this is just for backup
                 }
 
                 // Send the vote result to all clients
@@ -348,10 +347,12 @@ object GameManager {
               case None => {
                 speechToText
                   .recognize()
-                  .via(speechToText.detectIntent(Array("voyage", "ecole", "autre")))
+                  .via(
+                    speechToText.detectIntent(Array("voyage", "ecole", "autre"))
+                  )
                   .runForeach(result => {
-                    context.log.info(s"Run: $result")
                     // TODO: do something with the result
+                    print(s"Run: $result")
                     webSocketClients(boxId)(uniqueId) ! TextMessage(result)
                   })
 //                speechToText.recognize().flatMap { text =>

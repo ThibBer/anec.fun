@@ -27,8 +27,10 @@ object Main extends JsonCommandSupport {
 
   def main(args: Array[String]): Unit = {
     val commandRouter = new CommandRouter()
-    implicit val system: ActorSystem[CommandRouterTrait] = ActorSystem(commandRouter.commandRouter(), "main-system")
-    implicit val executionContext: ExecutionContextExecutor = system.executionContext
+    implicit val system: ActorSystem[CommandRouterTrait] =
+      ActorSystem(commandRouter.commandRouter(), "main-system")
+    implicit val executionContext: ExecutionContextExecutor =
+      system.executionContext
 
     val route: Route =
       path("ws" / IntNumber) { boxId =>
@@ -53,7 +55,10 @@ object Main extends JsonCommandSupport {
     * @return
     *   The WebSocket flow.
     */
-  private def webSocketFlow(commandRouter: ActorRef[CommandRouterTrait], boxId: Int): Flow[Message, Message, Any] = {
+  private def webSocketFlow(
+      commandRouter: ActorRef[CommandRouterTrait],
+      boxId: Int
+  ): Flow[Message, Message, Any] = {
     val uniqueId = UUID.randomUUID().toString
     val completionMatcher: PartialFunction[Any, CompletionStrategy] = {
       case "complete" => CompletionStrategy.draining
@@ -72,25 +77,29 @@ object Main extends JsonCommandSupport {
       )
 
     val incoming = Sink.foreach[Message] {
-      case TextMessage.Strict("heartbeat") => // no action, used to keep connection opened
+      case TextMessage.Strict(
+            "heartbeat"
+          ) => // no action, used to keep connection opened
       case TextMessage.Strict(text @ jsonRegex()) =>
         logger.info(s"Received message: $text")
 
-        try{
+        try {
           val command = text.parseJson.convertTo[Command]
           commandRouter ! NewCommand(command, uniqueId)
-        } catch{
+        } catch {
           case e: Exception =>
             logger.error(e.getMessage)
         }
 
-      case TextMessage.Strict(text) => logger.info(s"Received and ignored message : $text")
+      case TextMessage.Strict(text) =>
+        logger.info(s"Received and ignored message : $text")
       case _ =>
     }
 
     Flow.fromSinkAndSourceMat(incoming, outgoing) { (_, actorRef) =>
       commandRouter ! RegisterWebSocketActor(uniqueId, boxId, actorRef.toTyped)
-      val response = CommandResponse(uniqueId, "Connection", ResponseState.SUCCESS)
+      val response =
+        CommandResponse(uniqueId, "Connection", ResponseState.SUCCESS)
       actorRef ! TextMessage(response.toJson.compactPrint)
     }
   }
