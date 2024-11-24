@@ -33,4 +33,4 @@ To support additional languages, please visit the tutorial on
 - [ ] Handle new rounds (the box send a message to the server and the server to clients) -> redirect from result page to game screen.
 - [ ] Handle connection lost
 - [ ] keep connection alive
-- [ ] on vote page add feedback to tell who is telling the annectode -> server must tell to clients who is telling the anectode
+- [ ] on vote page add feedback to tell who is telling the anecdote -> server must tell to clients who is telling the anecdote
