@@ -1,4 +1,4 @@
-package com.anectdot
+package com.anecdot
 
 object ResponseState {
   val SUCCESS = "success"

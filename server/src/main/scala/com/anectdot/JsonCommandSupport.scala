@@ -1,4 +1,4 @@
-package com.anectdot
+package com.anecdot
 
 import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport
 import spray.json._
@@ -30,8 +30,8 @@ trait JsonCommandSupport extends SprayJsonSupport with DefaultJsonProtocol {
       case cmd: VoiceFlow                                  => cmd.toJson
       case cmd: StickExploded                              => cmd.toJson
       case cmd: ScannedStickCommand                        => cmd.toJson
-      case com.anectdot.VoteSubmittedNotification(_, _)    => ???
-      case com.anectdot.GameStateChangedNotification(_, _) => ???
+      case com.anecdot.VoteSubmittedNotification(_, _)    => ???
+      case com.anecdot.GameStateChangedNotification(_, _) => ???
     }
 
     def read(json: JsValue): Command = {

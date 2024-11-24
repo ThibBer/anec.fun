@@ -1,4 +1,4 @@
-package com.anectdot
+package com.anecdot
 
 sealed trait Command {
   def boxId: Int

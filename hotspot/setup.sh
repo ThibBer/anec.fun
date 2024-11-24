@@ -27,9 +27,9 @@ sudo systemctl restart dhcpcd
 
 ## Step 2.1: add custom dns record
 echo "Adding dns record..."
-if ! grep -q "192.168.4.1    anectdot.fun" /etc/hosts; then
+if ! grep -q "192.168.4.1    anec.fun" /etc/hosts; then
     sudo tee -a /etc/hosts > /dev/null <<EOL
-192.168.4.1    anectdot.fun
+192.168.4.1    anec.fun
 EOL
 else
     echo "DNS record already exists."

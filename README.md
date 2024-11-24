@@ -1,8 +1,8 @@
-# Anectdot
+# Anecdot
 
 ## Table of Contents
 
-- [Anectdot](#anectdot)
+- [Anecdot](#anecdot)
   - [Table of Contents](#table-of-contents)
   - [Introduction](#introduction)
   - [Gameplay](#gameplay)
@@ -12,7 +12,7 @@
 
 ## Introduction
 
-Anectdot is a multiplayer game where players take turns telling anecdotes about a particular theme. The game is played with a box that serves as a central hub and remote devices that players use to interact with the game.
+Anecdot is a multiplayer game where players take turns telling anecdotes about a particular theme. The game is played with a box that serves as a central hub and remote devices that players use to interact with the game.
 
 ## Gameplay
 

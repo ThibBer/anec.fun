@@ -1,9 +1,9 @@
-package com.anectdot
+package com.anecdot
 
 import akka.actor.typed.*
 import akka.actor.typed.scaladsl.*
 import akka.http.scaladsl.model.ws.TextMessage
-import com.anectdot.Main.commandResponseFormat
+import com.anecdot.Main.commandResponseFormat
 import spray.json.*
 
 import scala.collection.mutable

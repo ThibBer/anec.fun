@@ -13,7 +13,7 @@ A simple script to create a Wi-Fi hotspot on a Raspberry Pi that allows users to
 
 3. Reboot
 4. Connect to the hotspot using another device like a phone or another computer
-5. Open a browser and navigate to `http://anectdot.fun` (or on Android click the notification that says "Sign in to Wi-Fi network")
+5. Open a browser and navigate to `http://anec.fun` (or on Android click the notification that says "Sign in to Wi-Fi network")
 6. Enter the SSID and password for the network you want to connect to
 
 ## Structure of hotspoter

@@ -1,4 +1,4 @@
-package com.anectdot
+package com.anecdot
 
 import akka.actor.typed.ActorRef
 import akka.actor.typed.ActorSystem
