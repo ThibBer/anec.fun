@@ -1,10 +1,10 @@
-# Anectdot Server
+# Anec.fun Server
 
-Welcome to the Anectdot Server project! This README will guide you through the setup and usage of the server.
+Welcome to the Anecdotfun Server project! This README will guide you through the setup and usage of the server.
 
 ## Table of Contents
 
-- [Anectdot Server](#anectdot-server)
+- [Anec.fun Server](#anecfun-server)
   - [Table of Contents](#table-of-contents)
   - [Introduction](#introduction)
   - [Installation](#installation)

@@ -1,4 +1,4 @@
-name := "anectdotfun"
+name := "anecdotfun"
 
 version := "0.0.1"
 
