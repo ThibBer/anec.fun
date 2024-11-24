@@ -124,7 +124,8 @@ class SpeechToText(implicit
       //      uri = "https://webhook.site/0ef3f9fc-d04b-4dbb-aa52-7c99b0a0bfab",
       uri =
         s"https://$azureAiRegion.api.cognitive.microsoft.com/speechtotext/transcriptions:transcribe?api-version=2024-11-15",
-      headers = List(headers.RawHeader("Ocp-Apim-Subscription-Key", azureAiKey)),
+      headers =
+        List(headers.RawHeader("Ocp-Apim-Subscription-Key", azureAiKey)),
       entity = formData.toEntity
     )
 
