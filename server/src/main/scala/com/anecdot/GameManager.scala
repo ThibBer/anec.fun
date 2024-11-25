@@ -344,7 +344,7 @@ object GameManager {
             context.log.info(s"VoiceFlow $uniqueId for box $boxId")
             // TODO: make intent configurable
             payload match {
-              case None => {
+              case None =>
                 speechToText
                   .recognize()
                   .via(
@@ -354,27 +354,9 @@ object GameManager {
                     // TODO: do something with the result
                     print(s"Run: $result")
                     webSocketClients(boxId)(uniqueId) ! TextMessage(result)
+                    gameState = States.VOTING
+                    broadcastGameState(webSocketClients, gameState, boxId)
                   })
-//                speechToText.recognize().flatMap { text =>
-//                  speechToText
-//                    .detectIntent(Array("voyage", "ecole"), text)
-//                    .map { intent =>
-//                      {
-//                        speechToText.resetPayloads()
-//                        val response = CommandResponse(
-//                          uniqueId,
-//                          "VoiceFlow",
-//                          ResponseState.SUCCESS,
-//                          Some(intent)
-//                        )
-//                        webSocketClients(boxId)(uniqueId) ! TextMessage(
-//                          response.toJson.compactPrint
-//                        )
-//                        println(s"Run: $intent")
-//                      }
-//                    }
-//                }
-              }
               case Some(payload) =>
                 speechToText.addPayload(payload)
             }
