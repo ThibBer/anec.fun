@@ -19,6 +19,10 @@ class StickPassingController with ChangeNotifier {
     webSocketConnection.votingStarted();
   }
 
+  void onScanSuccessful() {
+    webSocketConnection.sendStickScanned();
+  }
+
   disposeController() {
     super.dispose();
   }

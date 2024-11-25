@@ -37,7 +37,7 @@ class _StickPassingPageState extends State<StickPassingPage> {
   }
 
   Future<void> _startNfcScan() async {
-    setState(() {
+/*    setState(() {
       _isScanning = true;
       _isSuccess = false;
     });
@@ -54,7 +54,10 @@ class _StickPassingPageState extends State<StickPassingPage> {
         await Future.delayed(const Duration(seconds: 2));
         _startNfcScan();
       }
-    });
+    });*/
+
+    //TODO : use stick scan
+    _controller.onScanSuccessful();
   }
 
   @override
