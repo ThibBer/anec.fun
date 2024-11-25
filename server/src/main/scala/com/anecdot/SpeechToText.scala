@@ -131,10 +131,8 @@ class SpeechToText(implicit
       .singleRequest(request)
       .flatMap { response =>
         if (response.status.isSuccess) {
-          println("Response success")
           Unmarshal(response.entity).to[String].map { body =>
             val response = body.parseJson.convertTo[STTResponse]
-            println(response.combinedPhrases)
             response.combinedPhrases.map(_.text).mkString(" ")
           }
         } else {
@@ -160,7 +158,7 @@ class SpeechToText(implicit
   def detectIntent(intents: Array[String]): Flow[String, String, ?] = {
     val intentsList = intents.mkString(", ")
     val systemPrompt = new ChatRequestSystemMessage(
-      s"Tu es un assistant qui classe des histoires suivant plusieurs catégories: $intentsList. Tu vas répondre en json la catégorie qui correspond le mieux à l'histoire"
+      s"Tu es un assistant qui classe des histoires suivant plusieurs catégories: $intentsList. Tu vas répondre en json la catégorie qui correspond le mieux à l'histoire avec le format {\"category\": \"nom\"}"
     )
     Flow[String].mapAsync(1) { text =>
       {
