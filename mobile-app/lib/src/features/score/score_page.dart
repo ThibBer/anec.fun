@@ -37,7 +37,7 @@ class PlayerScorePageState extends State<PlayerScorePage> {
     return ListenableBuilder(
       listenable: scoreController.game,
       builder: (context, _) {
-        if (scoreController.game.state == GameState.started) {
+        if (scoreController.game.state == GameState.roundStarted) {
           // Schedule navigation after the build completes
           WidgetsBinding.instance.addPostFrameCallback((_) {
             Navigator.pushNamed(context, StickPassingPage.routeName);

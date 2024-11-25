@@ -38,7 +38,7 @@ class VotePageState extends State<VotePage> {
     return ListenableBuilder(
         listenable: voteController.game,
         builder: (context, _) {
-          if (voteController.game.state == GameState.started) {
+          if (voteController.game.state == GameState.roundStarted) {
             WidgetsBinding.instance.addPostFrameCallback((_) {
               Navigator.pushNamed(context, StickPassingPage.routeName);
             });
