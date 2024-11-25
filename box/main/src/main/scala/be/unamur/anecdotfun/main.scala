@@ -11,7 +11,7 @@ val config = ConfigFactory.load()
 implicit val system: ActorSystem = ActorSystem("box-anecdotfun", config)
 
 val boxId = config.getInt("akka.game.box.id")
-var webSocketClient = WebSocketClient("ws://localhost:8080/ws/" + boxId)
+var webSocketClient = WebSocketClient(config.getString("akka.game.server.base-url") + boxId)
 val serial = SerialThread(config.getString("akka.game.arduino.com-port"))
 var uniqueId = ""
 
