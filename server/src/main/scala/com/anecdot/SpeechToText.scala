@@ -120,7 +120,6 @@ class SpeechToText(implicit
 
     val request = HttpRequest(
       method = HttpMethods.POST,
-      //      uri = "https://webhook.site/0ef3f9fc-d04b-4dbb-aa52-7c99b0a0bfab",
       uri =
         s"https://$azureAiRegion.api.cognitive.microsoft.com/speechtotext/transcriptions:transcribe?api-version=2024-11-15",
       headers =
@@ -152,38 +151,12 @@ class SpeechToText(implicit
       }
 
     Source.future(responseFuture)
-//    responseFuture
   }
 
   def resetPayloads(): Unit = {
     accumulatedPayloads = ByteString.empty
   }
 
-//  def detectIntent(intents: Array[String], text: String): Future[String] = {
-//    val intentsList = intents.mkString(", ")
-//    val systemPrompt = new ChatRequestSystemMessage(
-//      s"Tu es un assistant qui classe des histoires suivant plusieurs catégories: $intentsList. Tu vas répondre en json la catégorie qui correspond le mieux à l'histoire"
-//    )
-//    val userMessage = new ChatRequestUserMessage(text)
-//
-//    val messages = util.ArrayList[ChatRequestMessage]()
-//    messages.add(systemPrompt)
-//    messages.add(userMessage)
-//    openAiClient
-//      .getChatCompletions(
-//        modelName,
-//        new ChatCompletionsOptions(messages).setResponseFormat(
-//          ChatCompletionsJsonResponseFormat()
-//        )
-//      )
-//      .map(chatCompletion => {
-//        val intent = chatCompletion.getChoices.get(0).getMessage.getContent
-//        println(intent)
-//        intent
-//      })
-//      .toFuture
-//      .toScala
-//  }
   def detectIntent(intents: Array[String]): Flow[String, String, ?] = {
     val intentsList = intents.mkString(", ")
     val systemPrompt = new ChatRequestSystemMessage(
@@ -191,25 +164,25 @@ class SpeechToText(implicit
     )
     Flow[String].mapAsync(1) { text =>
       {
-    val userMessage = new ChatRequestUserMessage(text)
+        val userMessage = new ChatRequestUserMessage(text)
 
-    val messages = util.ArrayList[ChatRequestMessage]()
-    messages.add(systemPrompt)
-    messages.add(userMessage)
-    openAiClient
-      .getChatCompletions(
-        modelName,
-        new ChatCompletionsOptions(messages).setResponseFormat(
-          ChatCompletionsJsonResponseFormat()
-        )
-      )
-      .map(chatCompletion => {
-        val intent = chatCompletion.getChoices.get(0).getMessage.getContent
-        println(intent)
-        intent
-      })
-      .toFuture
-      .toScala
+        val messages = util.ArrayList[ChatRequestMessage]()
+        messages.add(systemPrompt)
+        messages.add(userMessage)
+        openAiClient
+          .getChatCompletions(
+            modelName,
+            new ChatCompletionsOptions(messages).setResponseFormat(
+              ChatCompletionsJsonResponseFormat()
+            )
+          )
+          .map(chatCompletion => {
+            val intent = chatCompletion.getChoices.get(0).getMessage.getContent
+            println(intent)
+            intent
+          })
+          .toFuture
+          .toScala
 
       }
     }
