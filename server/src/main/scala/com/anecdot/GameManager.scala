@@ -420,7 +420,7 @@ object GameManager {
       newState: States,
       boxId: Int
   ): Unit = {
-    println(s"Broadcasting voting state (${newState.toString})")
+    println(s"Broadcasting state (${newState.toString})")
 
     // Iterate over each client connected to the specified boxId
     webSocketClients(boxId).foreach { case (uniqueId, remote) =>
