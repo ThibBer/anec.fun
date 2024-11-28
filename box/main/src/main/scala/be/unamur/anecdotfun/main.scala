@@ -17,6 +17,7 @@ implicit val ec: scala.concurrent.ExecutionContext = scala.concurrent.ExecutionC
 val boxId = config.getInt("akka.game.box.id")
 var webSocketClient = WebSocketClient(config.getString("akka.game.server.base-url") + boxId)
 val serial = SerialThread(config.getString("akka.game.arduino.com-port"))
+val mic = Microphone(serial)
 var uniqueId = ""
 
 
@@ -148,19 +149,19 @@ object Main {
   }
 
   private def onStickExploded(): Unit = {
-    // todo: maka anecdote duration configurable
+    // todo: make anecdote duration configurable
     val duration = 10.seconds
-    val mic = Microphone()
-    val sink = Sink.foreach[ByteString](data => webSocketClient.send(JsObject(
-      "boxId" -> JsNumber(boxId),
-      "uniqueId" -> JsString(uniqueId),
-      "commandType" -> JsString(CommandType.VOICE_FLOW),
-      "payload" -> JsArray(data.map(a => JsNumber(a)).toVector)
-    )))
+    val sink = Sink.foreach[ByteString](data => {
+      webSocketClient.send(JsObject(
+        "boxId" -> JsNumber(boxId),
+        "uniqueId" -> JsString(uniqueId),
+        "commandType" -> JsString(CommandType.VOICE_FLOW),
+        "payload" -> JsArray(data.map(a => JsNumber(a)).toVector)
+      ))
+    })
     mic.startListening(sink, duration) match {
-      case None => println("Error")
+      case None => println("Error start listening")
       case Some(graph) =>
-
         val runningGraph = graph.run()
         val cancellable: Cancellable = system.scheduler.scheduleOnce(duration) {
           println(s"Stopping graph after $duration seconds")

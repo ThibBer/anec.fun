@@ -2,9 +2,9 @@ package be.unamur.anecdotfun
 
 import akka.NotUsed
 import akka.stream.{IOResult, OverflowStrategy, QueueOfferResult}
-import akka.stream.scaladsl.{Flow, Keep, RunnableGraph, Sink, Source, StreamConverters}
+import akka.stream.scaladsl.{Flow, Keep, RunnableGraph, Sink, Source, SourceQueueWithComplete, StreamConverters}
 import akka.util.ByteString
-import com.fazecast.jSerialComm.{SerialPort, SerialPortInvalidPortException}
+import com.fazecast.jSerialComm.SerialPortInvalidPortException
 
 import java.io.{BufferedInputStream, BufferedOutputStream}
 import scala.concurrent.Future
@@ -14,62 +14,50 @@ import system.dispatcher
 import scala.concurrent.duration.FiniteDuration
 
 
-class Microphone {
-  private val portName = "COM4"
-  private var comPort: Option[SerialPort] = None
+class Microphone(serial: SerialThread) {
+  private var queue: Option[SourceQueueWithComplete[ByteString]] = None
+  private var source: Option[Source[ByteString, NotUsed]] = None
+
+  private def handleVoiceFlowData(bytes: Array[Byte]): Unit = {
+    queue.foreach { q =>
+      q.offer(ByteString(bytes)).onComplete {
+        case Success(QueueOfferResult.Enqueued) =>
+        case Success(QueueOfferResult.Dropped) =>
+          println("Dropped")
+        case Success(QueueOfferResult.Failure(e)) =>
+          println("Failure")
+          e.printStackTrace()
+        case Success(QueueOfferResult.QueueClosed) =>
+          println("Queue closed")
+        case Failure(e) =>
+          println("Failure")
+          e.printStackTrace()
+      }
+    }
+  }
 
   def startListening(to: Sink[ByteString, Future[?]], duration: FiniteDuration): Option[RunnableGraph[NotUsed]] = {
     try {
-      val (queue, source) = Source.queue[ByteString](bufferSize = 128, overflowStrategy = OverflowStrategy.dropHead)
-        .preMaterialize()
-      val port = SerialPort.getCommPorts.find(_.getSystemPortName == portName).getOrElse {
-        throw new IllegalStateException(s"Could not find $portName port")
-      }
-      if (!port.openPort(1000)) {
-        println("Port is not opened")
-        return None
-      }
-      port.setBaudRate(115200)
-      val readerThread = new Thread(() => {
-        port.setComPortTimeouts(SerialPort.TIMEOUT_READ_SEMI_BLOCKING, 0, 0)
-        val stream = port.getInputStream
-        val buffer = new Array[Byte](128)
-        var bytesRead = 0
-        try {
-          while ( {
-            bytesRead = stream.read(buffer)
-            bytesRead
-          } != -1) {
-            // Potentially a bug somewhere but the stream reads 1 then 31 bytes instead of 32.
-            if (bytesRead >= 1) {
-              queue.offer(ByteString(buffer.take(bytesRead))) onComplete {
-                case Success(QueueOfferResult.Enqueued) => println(s"Enqueued: $bytesRead")
-                case Success(QueueOfferResult.Dropped) => println(s"Dropped: $bytesRead")
-                case Success(QueueOfferResult.Failure(ex)) => println(s"Failed to enqueue: $bytesRead, reason: $ex")
-                case Success(QueueOfferResult.QueueClosed) => println(s"Queue closed: $bytesRead")
-                case Failure(ex) => println(s"Offer failed: $ex")
-              }
-            }
+      val (q, s) = Source.queue[ByteString](bufferSize = 1024, overflowStrategy = OverflowStrategy.dropTail)
+        .watchTermination() { (mat, future) =>
+          println("Stream started")
+          future.onComplete {
+            case Success(_) => println("Stream completed successfully")
+            case Failure(e) => println(s"Stream failed with error: $e")
           }
-          println("end while")
-        } catch {
-          case e: Exception =>
-            e.printStackTrace()
-        } finally {
-          println("closed")
-          stream.close()
+          mat
         }
-      })
+        .preMaterialize()
 
-      println(s"Port opened, reading serial on $port")
-      comPort = Some(port)
-      readerThread.start()
+      queue = Some(q)
+      source = Some(s)
 
-      Some(
-        source
-          .via(convertSound())
-          .to(to)
-      )
+      serial.onReceiveVoiceSerialData = handleVoiceFlowData
+      serial.startVoiceFlow(duration)
+      Some(s
+        .conflate((a, b) => a ++ b)
+        .via(convertSound())
+        .to(to))
     } catch {
       case e: SerialPortInvalidPortException =>
         println("Wrong port")
@@ -107,10 +95,7 @@ class Microphone {
     Flow.fromSinkAndSourceMat(sink, source)(Keep.left)
   }
 
-
-  def close(): Unit = comPort match
-    case Some(port) =>
-      port.closePort()
-
-    case None => println("Not opened")
+  def close(): Unit = {
+    serial.stopVoiceFlow()
+  }
 }
