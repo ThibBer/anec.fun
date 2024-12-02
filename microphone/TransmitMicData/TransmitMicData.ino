@@ -24,28 +24,41 @@ Input/Microphone: Analog pin A0 on all boards
 #include "RF24Audio.h"
 #include "printf.h"  // General includes for radio and audio lib
 
+#define PIN_BUTTON 7
+#define PIN_LED 5
+
 const uint64_t addresses[2] = { 0xABCDABCD71LL, 0x544d52687CLL };
+const byte endOfSequence[] = { -128, 127, -128, 127, -128, 127, -128, 127, -128, 127, -128, 127, -128, 127, -128, 127, -128, 127, -128, 127, -128, 127, -128, 127, -128, 127, -128, 127, -128, 127, -128, 127 };
 
-
-RF24 radio(7, 8);  // Set radio up using pins 7 (CE) 8 (CS)
-RF24Audio rfAudio(radio,0);     // Set up the audio using the radio, and set to radio number 0
+RF24 radio(2, 3);             // Set radio up using pins 2 (CE) 3 (CS)
+RF24Audio rfAudio(radio, 0);  // Set up the audio using the radio, and set to radio number 0
 
 void makePayload();
+void sendEoS();
+void blinkLED(int count, int delay);
+void blinkLED(int count);
 
 void setup() {
+  pinMode(PIN_BUTTON, INPUT_PULLUP);
+  pinMode(PIN_LED, OUTPUT);
+
   Serial.begin(115200);
   // initialize the transceiver on the SPI bus
   if (!radio.begin()) {
     Serial.println(F("radio hardware is not responding!!"));
-    while (1) {}  // hold in infinite loop
+    while (1) {
+      blinkLED(3, 100);
+      blinkLED(2, 200);
+      delay(500);
+    }  // hold in infinite loop
   }
   radio.setChannel(1);             // Set RF channel to 1
   radio.setAutoAck(0);             // Disable ACKnowledgement packets to allow multicast reception
   radio.setCRCLength(RF24_CRC_8);  // Only use 8bit CRC for audio
-  //radio.setDataRate(RF24_1MBPS);  // Library default is RF24_1MBPS for RF24 and RF24Audio
+  // radio.setDataRate(RF24_1MBPS);  // Library default is RF24_1MBPS for RF24 and RF24Audio
 
   // print example's introductory prompt
-  Serial.println(F("Program: ReceiveMicData"));
+  Serial.println(F("Program: TransmitMicData"));
 
   // Set the PA Level low to try preventing power supply related problems
   // because these examples are likely run with nodes in close proximity to
@@ -59,22 +72,60 @@ void setup() {
   radio.openWritingPipe(addresses[1]);     // Set up reading and writing pipes.
   radio.openReadingPipe(1, addresses[0]);  // All of the radios listen by default to the same multicast pipe
   radio.startListening();                  // put radio in RX mode
-  radio.stopListening();                   // put radio in TX mode
+  // radio.stopListening();                  // put radio in TX mode
   // rfAudio.broadcast(255);
   // rfAudio.transmit();
-  printf_begin();                          // needed only once for printing details
+  printf_begin();  // needed only once for printing details
 
   radio.printPrettyDetails();
 }
 
 uint32_t printTimer = 0;
+bool isTransmit = false;
+unsigned long maxTime = 0;
 
 byte audioData[32];  // Set up a buffer for the received data
+byte command[32];
+
+void toggleMode(bool mode) {
+  isTransmit = mode;
+  if (mode) {
+    Serial.println("Start transmitting");
+    radio.stopListening();
+    digitalWrite(PIN_LED, HIGH);
+  } else {
+    sendEoS();
+    Serial.println("Stop transmitting");
+    radio.startListening();
+    digitalWrite(PIN_LED, HIGH);
+  }
+}
+
 
 void loop() {
-  makePayload();
-  if (!radio.writeFast(&audioData, 32)) {
-    Serial.println("Error");
+  if (isTransmit) {
+    if (millis() > maxTime || digitalRead(PIN_BUTTON) == LOW) {
+      toggleMode(false);
+      return;
+    }
+
+    makePayload();
+    if (!radio.writeFast(&audioData, 32)) {
+      Serial.println("Error");
+    }
+  } else {
+    if (radio.available()) {
+      Serial.print("Message received: ");
+      radio.read(&command, 32);
+      Serial.print(command[0]);
+      Serial.print(" | ");
+      Serial.println(command[1]);
+
+      if (command[0] == 1) {
+        maxTime = millis() + (unsigned long)(command[1] * 1000);
+        toggleMode(true);
+      }
+    }
   }
 }
 
@@ -85,12 +136,18 @@ void makePayload() {
   }
 }
 
-/* Documentation and References:
+void sendEoS() {
+  radio.write(&endOfSequence, 32);
+}
 
-References:
-All Library documentation: http://tmrh20.github.io/
-New (2014) RF24 Audio Library: https://github.com/TMRh20/RF24Audio
-Optimized (2014) RF24 Lib Source Code: https://github.com/TMRh20/RF24
-Optimized (2014) RF24 Network Lib: https://github.com/TMRh20/RF24Network
-
-*/
+void blinkLED(int count) {
+  blinkLED(count, 200);
+}
+void blinkLED(int count, int timing) {
+  for (int i = 0; i < count; i++) {
+    delay(timing);
+    digitalWrite(PIN_LED, HIGH);
+    delay(timing);
+    digitalWrite(PIN_LED, LOW);
+  }
+}
