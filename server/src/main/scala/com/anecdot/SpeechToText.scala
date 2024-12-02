@@ -78,10 +78,10 @@ class SpeechToText(implicit
 
   implicit val executionContext: ExecutionContextExecutor =
     system.executionContext
-  private val azureAiKey = System.getenv("AZURE_AI_KEY")
-  private val azureAiRegion = System.getenv("AZURE_AI_REGION")
-  private val openAiEndpoint = System.getenv("OPENAI_ENDPOINT")
-  private val modelName = System.getenv("OPENAI_MODEL_NAME")
+  private val azureAiKey = Option(System.getenv("AZURE_AI_KEY")).getOrElse("default_azure_ai_key")
+  private val azureAiRegion = Option(System.getenv("AZURE_AI_REGION")).getOrElse("default_azure_ai_region")
+  private val openAiEndpoint = Option(System.getenv("OPENAI_ENDPOINT")).getOrElse("default_openai_endpoint")
+  private val modelName = Option(System.getenv("OPENAI_MODEL_NAME")).getOrElse("gpt-4o-mini")
   private val openAiClient: OpenAIAsyncClient = new OpenAIClientBuilder()
     .credential(new AzureKeyCredential(azureAiKey))
     .endpoint(openAiEndpoint)
