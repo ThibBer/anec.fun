@@ -29,14 +29,14 @@ class SerialThread(portDescriptor: String) extends Thread {
   override def run(): Unit = {
     super.run()
 
-    comPort.setComPortTimeouts(SerialPort.TIMEOUT_READ_SEMI_BLOCKING, 200, 0)
+    comPort.setComPortTimeouts(SerialPort.TIMEOUT_READ_SEMI_BLOCKING, 0, 0)
 
     val buffer = new Array[Byte](1024)
     var bytesRead = 0
 
     try {
       while ( {
-        bytesRead = comPort.readBytes(buffer, buffer.length);
+        bytesRead = comPort.readBytes(buffer, buffer.length)
         bytesRead
       } != -1) {
         mode match
@@ -63,7 +63,6 @@ class SerialThread(portDescriptor: String) extends Thread {
   }
 
   private def handleVoiceFlowMode(buffer: Array[Byte], bytesRead: Int): Unit = {
-    println(bytesRead)
     if (bytesRead <= 0) {
       return
     }

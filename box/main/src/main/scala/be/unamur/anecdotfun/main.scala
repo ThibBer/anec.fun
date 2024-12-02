@@ -149,8 +149,8 @@ object Main {
   }
 
   private def onStickExploded(): Unit = {
-    // todo: make anecdote duration configurable
-    val duration = 10.seconds
+    // todo: make anecdote max duration configurable
+    val duration = 5.minutes
     val sink = Sink.foreach[ByteString](data => {
       webSocketClient.send(JsObject(
         "boxId" -> JsNumber(boxId),
@@ -161,11 +161,9 @@ object Main {
     })
     mic.startListening(sink, duration) match {
       case None => println("Error start listening")
-      case Some(graph) =>
-        val runningGraph = graph.run()
-        val cancellable: Cancellable = system.scheduler.scheduleOnce(duration) {
-          println(s"Stopping graph after $duration seconds")
-          mic.close()
+      case Some(completionFuture) =>
+        completionFuture.onComplete { _ =>
+          println("Flow completed early, cancelling scheduled task")
           webSocketClient.send(JsObject(
             "boxId" -> JsNumber(boxId),
             "uniqueId" -> JsString(uniqueId),

@@ -2,7 +2,7 @@ package be.unamur.anecdotfun
 
 import akka.NotUsed
 import akka.stream.{IOResult, OverflowStrategy, QueueOfferResult}
-import akka.stream.scaladsl.{Flow, Keep, RunnableGraph, Sink, Source, SourceQueueWithComplete, StreamConverters}
+import akka.stream.scaladsl.{Flow, Keep, Sink, Source, SourceQueueWithComplete, StreamConverters}
 import akka.util.ByteString
 import com.fazecast.jSerialComm.SerialPortInvalidPortException
 
@@ -34,9 +34,13 @@ class Microphone(serial: SerialThread) {
           e.printStackTrace()
       }
     }
+    if (isEndOfSequence(bytes)) {
+      serial.stopVoiceFlow()
+      queue.foreach(_.complete())
+    }
   }
 
-  def startListening(to: Sink[ByteString, Future[?]], duration: FiniteDuration): Option[RunnableGraph[NotUsed]] = {
+  def startListening[T](to: Sink[ByteString, Future[T]], duration: FiniteDuration): Option[Future[T]] = {
     try {
       val (q, s) = Source.queue[ByteString](bufferSize = 1024, overflowStrategy = OverflowStrategy.dropTail)
         .watchTermination() { (mat, future) =>
@@ -54,10 +58,11 @@ class Microphone(serial: SerialThread) {
 
       serial.onReceiveVoiceSerialData = handleVoiceFlowData
       serial.startVoiceFlow(duration)
-      Some(s
+      val graph = s
         .conflate((a, b) => a ++ b)
         .via(convertSound())
-        .to(to))
+        .runWith(to)
+      Some(graph)
     } catch {
       case e: SerialPortInvalidPortException =>
         println("Wrong port")
@@ -84,6 +89,8 @@ class Microphone(serial: SerialThread) {
       "16k",
       "-f",
       "wav",
+      //      "--blocksize",
+      //      "256",
       "pipe:1").start
 
 
@@ -97,5 +104,10 @@ class Microphone(serial: SerialThread) {
 
   def close(): Unit = {
     serial.stopVoiceFlow()
+  }
+
+  private def isEndOfSequence(buffer: Array[Byte]): Boolean = {
+    val eos = Array(127, -128, 127, -128, 127, -128, 127, -128).map(_.toByte)
+    buffer.sliding(eos.length).exists(_.sameElements(eos))
   }
 }
