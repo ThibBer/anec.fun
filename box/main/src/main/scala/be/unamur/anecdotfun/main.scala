@@ -89,11 +89,16 @@ object Main {
           if (isCommandSuccessful) {
             uniqueId = commandResponse.uniqueId
           }
-        case CommandType.START_GAME =>
+        case CommandType.STATUS =>
           if (isCommandSuccessful) {
-            onGameStateChanged("STARTED")
-          } else {
-            onGameStateChanged("STOPPED")
+            commandResponse.message match {
+              case Some(message) => onGameStateChanged(message)
+              case None =>
+            }
+          }
+        case CommandType.START_GAME =>
+          if (!isCommandSuccessful) {
+            onGameStateChanged("ERROR")
           }
         case CommandType.STOP_GAME =>
           if (isCommandSuccessful) {

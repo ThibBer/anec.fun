@@ -78,7 +78,7 @@ class SpeechToText(implicit
 
   implicit val executionContext: ExecutionContextExecutor =
     system.executionContext
-  private val azureAiKey = System.getenv("AZURE_AI_KEY")
+  private val azureAiKey = "invalid_key"
   private val azureAiRegion = System.getenv("AZURE_AI_REGION")
   private val openAiEndpoint = System.getenv("OPENAI_ENDPOINT")
   private val modelName = System.getenv("OPENAI_MODEL_NAME")

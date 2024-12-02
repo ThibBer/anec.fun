@@ -7,4 +7,5 @@ object CommandType {
   val STOP_GAME = "StopGameCommand"
   val VOICE_FLOW = "VoiceFlow"
   val STICK_EXPLODED = "StickExploded"
+  val STATUS = "StatusCommand"
 }
