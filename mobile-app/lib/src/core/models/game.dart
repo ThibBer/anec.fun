@@ -38,6 +38,9 @@ class Game extends ChangeNotifier {
   /// The current state of the game.
   GameState state = GameState.stopped;
 
+  /// The theme of the game
+  String theme = "";
+
   /// The current players in the game.
   /// The key is the unique ID of the player, and the value is a map that contains
   /// the vote status of the player.
@@ -46,6 +49,12 @@ class Game extends ChangeNotifier {
   /// Updates the current state of the game.
   void updateState(GameState newState) {
     state = newState;
+    notifyListeners();
+  }
+
+  /// Updates the theme of the game.
+  void updateTheme(String newTheme) {
+    theme = newTheme;
     notifyListeners();
   }
 

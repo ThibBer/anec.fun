@@ -8,6 +8,7 @@ import spray.json.*
 
 import scala.collection.mutable
 import scala.concurrent.duration.DurationInt
+import scala.util.Random
 
 /** The `GameManager` actor is responsible for managing the state of a game. It
   * handles commands from clients and the box actor, and broadcasts game state
@@ -15,6 +16,12 @@ import scala.concurrent.duration.DurationInt
   * connected clients and the current game state.
   */
 object GameManager {
+
+  // Global variable for the different themes
+  object Global {
+    var themes: List[String] = List("voyage", "ecole", "autre")
+  }
+
   def apply(
       webSocketClients: mutable.Map[Int, mutable.Map[String, ActorRef[
         TextMessage
@@ -30,6 +37,7 @@ object GameManager {
         val scores = mutable.Map[String, Int]()
         var gameState = States.STOPPED
         var isStickExploded = false
+        var theme: String = ""
 
         implicit val system: ActorSystem[Nothing] =
           ActorSystem(Behaviors.empty, "DebugSystem")
@@ -136,7 +144,7 @@ object GameManager {
               )
 
               gameState = States.STARTED
-              broadcastGameState(webSocketClients, gameState, boxId)
+              broadcastGameState(webSocketClients, gameState, boxId, theme)
             }
 
             Behaviors.same
@@ -173,9 +181,11 @@ object GameManager {
                 response.toJson.compactPrint
               )
 
+              theme = Global.themes(Random.nextInt(Global.themes.length))
+              println(s"Élément choisi aléatoirement : $theme")
               timers.startSingleTimer(StickExploded(boxId), 10.seconds)
               gameState = States.ROUND_STARTED
-              broadcastGameState(webSocketClients, gameState, boxId)
+              broadcastGameState(webSocketClients, gameState, boxId, theme)
             }
 
             Behaviors.same
@@ -183,7 +193,7 @@ object GameManager {
           case StartVoting(boxId, uniqueId) =>
             if (gameState == States.ROUND_STARTED) {
               gameState = States.VOTING
-              broadcastGameState(webSocketClients, States.VOTING, boxId)
+              broadcastGameState(webSocketClients, States.VOTING, boxId, theme)
             }
 
             Behaviors.same
@@ -207,7 +217,7 @@ object GameManager {
               remoteWebSocketActors = Set.empty[String]
               scores.clear()
               gameState = States.STOPPED
-              broadcastGameState(webSocketClients, gameState, boxId)
+              broadcastGameState(webSocketClients, gameState, boxId, theme)
             }
 
             Behaviors.same
@@ -255,7 +265,7 @@ object GameManager {
 
           case StopRoundCommand(boxId) =>
             gameState = States.ROUND_STOPPED
-            broadcastGameState(webSocketClients, gameState, boxId)
+            broadcastGameState(webSocketClients, gameState, boxId, theme)
 
             voteNumber = 0
             votes.clear()
@@ -400,7 +410,8 @@ object GameManager {
         TextMessage
       ]]],
       newState: States,
-      boxId: Int
+      boxId: Int,
+      newTheme: String
   ): Unit = {
     println(s"Broadcasting state (${newState.toString})")
 
