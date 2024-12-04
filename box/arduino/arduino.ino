@@ -4,8 +4,8 @@
 #define GAME_STATE_LED_GREEN A1
 #define GAME_STATE_LED_BLUE A2
 
-#define EMOTION_MODE_LED 9
-#define ANECDOTE_MODE_LED 10
+#define ANECDOTE_MODE_LED 9
+#define EMOTION_MODE_LED 10
 #define SPEAKER_PIN 4
 #define MODE_SELECTION_PIN 2
 
@@ -63,6 +63,8 @@ void setup() {
   pinMode(SPEAKER_PIN, OUTPUT);
 
   startCheckupSequence();
+
+  delay(2000);
 
   blinkStartLED(3);
 }
