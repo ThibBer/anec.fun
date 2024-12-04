@@ -5,3 +5,4 @@ object MessageKey:
   val SetGameState = "SetGameState"
   val GameStateChanged = "GameStateChanged"
   val HandDetected = "HandDetected"
+  val VoiceFlowStart = "VoiceFlowStart"
