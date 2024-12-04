@@ -11,6 +11,9 @@ class ConnectionController with ChangeNotifier {
   /// Controller for the box ID text field.
   final TextEditingController boxIdController = TextEditingController();
 
+  /// Controller for the name text field.
+  final TextEditingController nameController = TextEditingController();
+
   WebSocketConnection? _webSocketConnection;
 
   bool _isConnecting = false;
@@ -28,7 +31,8 @@ class ConnectionController with ChangeNotifier {
   /// [onSuccess]: Callback to invoke upon successful connection.
   /// [onError]: Callback to invoke upon encountering an error.
   void initializeWebSocket(
-    String boxId, {
+    String boxId,
+    String username, {
     required void Function() onSuccess,
     required void Function(String) onError,
   }) {
@@ -38,6 +42,7 @@ class ConnectionController with ChangeNotifier {
     try {
       _webSocketConnection = WebSocketConnection(
         boxId: int.parse(boxId),
+        username: username,
         onError: (error) {
           _connectionMessage = "Error: $error";
           _isConnecting = false;
@@ -83,9 +88,15 @@ class ConnectionController with ChangeNotifier {
     required void Function() onSuccess,
     required void Function(String) onError,
   }) {
+    // Check name is valid
+    if (nameController.text.trim().isEmpty) {
+      onError("Please enter your name");
+      return;
+    }
     if (formKey.currentState!.validate()) {
       formKey.currentState!.save();
-      initializeWebSocket(boxIdController.text.trim(),
+      initializeWebSocket(
+          boxIdController.text.trim(), nameController.text.trim(),
           onSuccess: onSuccess, onError: onError);
     }
   }

@@ -30,10 +30,14 @@ class Game extends ChangeNotifier {
   /// The ID of the box.
   int boxId = -1;
 
+  String username = "";
+
   bool stickExploded = false; // Means player is speaker this round
 
   /// The unique ID of the player.
   String uniqueId = "";
+
+  String annecdotTellerId = "";
 
   /// The current state of the game.
   GameState state = GameState.stopped;
@@ -50,8 +54,11 @@ class Game extends ChangeNotifier {
   }
 
   /// Adds a player to the game.
-  void addPlayer(String uniqueId) {
-    players[uniqueId] = {"vote": null}; // Initially, no vote
+  void addPlayer(String uniqueId, String username) {
+    players[uniqueId] = {
+      "username": username,
+      "vote": null
+    }; // Initially, no vote
     notifyListeners();
   }
 

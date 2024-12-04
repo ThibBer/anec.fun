@@ -13,7 +13,9 @@ import akka.http.scaladsl.model.Multipart.FormData
 import akka.http.scaladsl.model.headers
 import akka.http.scaladsl.unmarshalling.Unmarshal
 import akka.stream.Materializer
-import akka.stream.scaladsl.{Flow, Source, StreamConverters}
+import akka.stream.scaladsl.Flow
+import akka.stream.scaladsl.Source
+import akka.stream.scaladsl.StreamConverters
 import akka.util.ByteString
 import com.azure.ai.openai.OpenAIAsyncClient
 import com.azure.ai.openai.OpenAIClientBuilder
@@ -23,13 +25,13 @@ import com.azure.ai.openai.models.ChatRequestMessage
 import com.azure.ai.openai.models.ChatRequestSystemMessage
 import com.azure.ai.openai.models.ChatRequestUserMessage
 import com.azure.core.credential.AzureKeyCredential
-import spray.json.DefaultJsonProtocol.*
-import spray.json.*
+import spray.json.DefaultJsonProtocol._
+import spray.json._
 
 import java.io.ByteArrayInputStream
 import java.util
 import scala.collection.immutable
-import scala.compat.java8.FutureConverters.*
+import scala.compat.java8.FutureConverters._
 import scala.concurrent.ExecutionContextExecutor
 import scala.concurrent.Future
 

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../../settings/settings_view.dart';
 import '../voting/vote_page.dart';
 import 'connection_controller.dart';
+import 'package:lottie/lottie.dart';
 
 class ConnectionPage extends StatefulWidget {
   static const routeName = '/';
@@ -46,21 +47,48 @@ class _ConnectionPageState extends State<ConnectionPage> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
+            Expanded(
+              child: Lottie.asset(
+                'assets/animations/welcome.json',
+                repeat: true,
+                renderCache: RenderCache.raster,
+                fit: BoxFit.contain,
+              ),
+            ),
             Form(
               key: _controller.formKey,
-              child: TextFormField(
-                controller: _controller.boxIdController,
-                decoration: const InputDecoration(
-                  labelText: 'Box ID',
-                  hintText: 'Enter the box ID',
-                  border: OutlineInputBorder(),
-                ),
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Please enter your box ID';
-                  }
-                  return null;
-                },
+              child: Column(
+                children: [
+                  TextFormField(
+                    controller: _controller.nameController,
+                    decoration: const InputDecoration(
+                      labelText: 'Your Name',
+                      hintText: 'Enter your name',
+                      border: OutlineInputBorder(),
+                    ),
+                    validator: (value) {
+                      if (value == null || value.isEmpty) {
+                        return 'Please enter your name';
+                      }
+                      return null;
+                    },
+                  ),
+                  const SizedBox(height: 20),
+                  TextFormField(
+                    controller: _controller.boxIdController,
+                    decoration: const InputDecoration(
+                      labelText: 'Box ID',
+                      hintText: 'Enter the box ID',
+                      border: OutlineInputBorder(),
+                    ),
+                    validator: (value) {
+                      if (value == null || value.isEmpty) {
+                        return 'Please enter your box ID';
+                      }
+                      return null;
+                    },
+                  ),
+                ],
               ),
             ),
             const SizedBox(height: 20),

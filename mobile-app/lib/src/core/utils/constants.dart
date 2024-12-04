@@ -1,1 +1,10 @@
-enum GameState { started, roundStarted, roundStopped, stopped , paused, voting, scores }
+enum GameState {
+  started,
+  roundStarted,
+  roundStopped,
+  stopped,
+  paused,
+  voting,
+  scores,
+  stickExploded
+}

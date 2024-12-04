@@ -30,6 +30,8 @@ abstract class Command {
         return StickExploded(boxId);
       case 'VoteResult':
         return VoteResult(boxId);
+      case 'AnnecdotTeller':
+        return AnnecdotTeller(boxId);
       default:
         throw UnsupportedError('Unknown command type: $commandType');
     }
@@ -84,4 +86,8 @@ class StickExploded extends Command {
 
 class VoteResult extends Command {
   VoteResult(super.boxId);
+}
+
+class AnnecdotTeller extends Command {
+  AnnecdotTeller(super.boxId);
 }

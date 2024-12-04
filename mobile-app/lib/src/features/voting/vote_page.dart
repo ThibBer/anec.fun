@@ -80,6 +80,7 @@ class VotePageState extends State<VotePage> {
                             voteController.game.players.keys.elementAt(index);
                         Map<String, dynamic> playerData =
                             voteController.game.players[uniqueId]!;
+                        String username = playerData["username"];
                         String voteStatus = playerData["vote"] == null
                             ? 'No vote yet'
                             : playerData["vote"] == "true"
@@ -96,19 +97,22 @@ class VotePageState extends State<VotePage> {
                                 style: const TextStyle(color: Colors.white),
                               ),
                             ),
-                            title: Text('Player: $uniqueId'),
+                            title: Text(username[0].toUpperCase() +
+                                username.substring(1)),
                             subtitle: Text(voteStatus),
                           ),
                         );
                       },
                     ),
                   ),
-                  Text(
-                    voteController.game.stickExploded
-                        ? "you are the speaker, is the anecdote true or false?"
-                        : "you are the listener, vote true or false",
-                    textAlign: TextAlign.center,
-                  ),
+                  if (voteController.game.state == GameState.voting)
+                    Text(
+                      voteController.game.uniqueId ==
+                              voteController.game.annecdotTellerId
+                          ? "you are the speaker, is the anecdote true or false?"
+                          : "you are the listener, vote true or false",
+                      textAlign: TextAlign.center,
+                    ),
                   // Voting buttons
                   voteController.game.state == GameState.voting
                       ? Padding(

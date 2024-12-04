@@ -37,7 +37,7 @@ object Main extends JsonCommandSupport {
         handleWebSocketMessages(webSocketFlow(system, boxId))
       }
 
-    val bindingFuture = Http().newServerAt("localhost", 8080).bind(route)
+    val bindingFuture = Http().newServerAt("0.0.0.0", 8080).bind(route)
 
     logger.info(
       "Server now online at ws://localhost:8080/ws\nPress RETURN to stop..."

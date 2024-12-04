@@ -101,8 +101,8 @@ class CommandRouter {
             case VoteCommand(boxId, vote, uniqueId, isSpeaker) =>
               manager ! VoteCommand(boxId, vote, wsUniqueId, isSpeaker)
 
-            case ConnectRemote(boxId, uniqueId) =>
-              manager ! ConnectRemote(boxId, wsUniqueId)
+            case ConnectRemote(boxId, uniqueId, username) =>
+              manager ! ConnectRemote(boxId, wsUniqueId, username)
 
             case DisconnectRemote(boxId, uniqueId) =>
               manager ! DisconnectRemote(boxId, wsUniqueId)

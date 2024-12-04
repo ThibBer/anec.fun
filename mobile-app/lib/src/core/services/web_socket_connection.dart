@@ -19,6 +19,7 @@ class WebSocketConnection {
 
   factory WebSocketConnection({
     int? boxId,
+    String? username,
     void Function(String)? onError,
     void Function(String)? onMessage,
     void Function(String)? onConnectionClosed,
@@ -27,6 +28,9 @@ class WebSocketConnection {
   }) {
     if (boxId != null) {
       _instance.game.boxId = boxId;
+    }
+    if (username != null) {
+      _instance.game.username = username;
     }
     if (onError != null) _instance.onError = onError;
     if (onMessage != null) _instance.onMessage = onMessage;
@@ -70,10 +74,9 @@ class WebSocketConnection {
   late Timer _heartbeatTimer;
 
   void init() {
-    game.boxId = game.boxId;
-
     try {
-      channel = WebSocketChannel.connect(Uri.parse('ws://localhost:8080/ws/${game.boxId}'));
+      channel = WebSocketChannel.connect(
+          Uri.parse('ws://192.168.0.70:8080/ws/${game.boxId}'));
 
       // Listen for messages from the server
       channel.stream.listen((message) {
@@ -129,11 +132,16 @@ class WebSocketConnection {
       } else if (command.message == 'ROUND_STARTED') {
         game.updateState(GameState.roundStarted);
       }
+      else if (command.message == 'STICK_EXPLODED') {
+        game.updateState(GameState.stickExploded);
+      }
     } else if (command is StickExploded) {
       game.stickExploded = true;
 
     } else if (command is VoteResult) {
       game.updateScores(json['message']);
+    } else if (command is AnnecdotTeller) {
+      game.annecdotTellerId = json['senderUniqueId'];
     } else {
       onError("Unknown command received: $command");
     }
@@ -155,7 +163,7 @@ class WebSocketConnection {
           await votingPageReadyCompleter.future;
         }
       }
-      game.addPlayer(response['senderUniqueId']);
+      game.addPlayer(response['senderUniqueId'], response['message']);
     } else {
       onError(response['message']);
     }
@@ -213,6 +221,7 @@ class WebSocketConnection {
       "boxId": game.boxId,
       "uniqueId": game.uniqueId,
       "commandType": "ConnectRemote",
+      "username": game.username
     });
   }
 

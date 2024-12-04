@@ -8,15 +8,17 @@ class WebSocketClient:
         self.box_id = box_id
         self.commands = commands
         self.unique_id = ""
+        self.websocket = None  # Store the WebSocket connection
 
     async def connect(self):
         uri = f"ws://localhost:8080/ws/{self.box_id}"
         async with websockets.connect(uri) as websocket:
-            await self.handle_connection(websocket)
+            self.websocket = websocket
+            await asyncio.gather(self.handle_connection(), self.send_heartbeat())
 
-    async def handle_connection(self, websocket):
+    async def handle_connection(self):
         # Initial handshake to get uniqueId
-        initial_response = await self.receive_message(websocket)
+        initial_response = await self.receive_message()
         self.unique_id = initial_response.get("uniqueId", "")
         print(f"Connected with uniqueId: {self.unique_id}")
 
@@ -28,27 +30,45 @@ class WebSocketClient:
         for command in self.commands:
             print(f"Ready to execute command: {command}")
             input("Press Enter to continue...")
-            await self.execute_command(command, websocket)
+            await self.execute_command(command)
 
-    async def execute_command(self, command, websocket):
-        await self.send_message(command, websocket)
-        response = await self.receive_message(websocket)
+    async def send_heartbeat(self):
+        """Send a heartbeat message every 5 seconds."""
+        try:
+            while True:
+                heartbeat_message = "heartbeat"
+                await self.send_message(heartbeat_message)
+                await asyncio.sleep(5)
+        except websockets.ConnectionClosed as e:
+            print(f"Heartbeat stopped due to connection closure: {e}")
+        except asyncio.CancelledError:
+            print("Heartbeat task cancelled")
+
+    async def execute_command(self, command):
+        await self.send_message(command)
+        response = await self.receive_message()
 
         if self.is_failed_response(response, command):
             print(f"Command failed, retrying: {response}")
-            # await asyncio.sleep(3)
-            # await self.execute_command(command, websocket)
         else:
             print(f"Command succeeded: {response}")
 
-    async def send_message(self, message, websocket):
+    async def send_message(self, message):
         json_message = json.dumps(message)
-        await websocket.send(json_message)
-        print(f"Sent: {json_message}")
+        try:
+            await self.websocket.send(json_message)
+            print(f"Sent: {json_message}")
+        except websockets.ConnectionClosed as e:
+            print(f"Failed to send message: {e}")
+            raise
 
-    async def receive_message(self, websocket):
-        response = await websocket.recv()
-        return json.loads(response)
+    async def receive_message(self):
+        try:
+            response = await self.websocket.recv()
+            return json.loads(response)
+        except websockets.ConnectionClosed as e:
+            print(f"Failed to receive message: {e}")
+            raise
 
     @staticmethod
     def is_failed_response(response, command):
@@ -63,9 +83,10 @@ async def main():
     box_commands = [
         {"boxId": 2, "uniqueId": "", "commandType": "ConnectBox"},
         {"boxId": 2, "uniqueId": "", "commandType": "StartGameCommand"},
+        {"boxId": 2, "uniqueId": "", "commandType": "StartRoundCommand"},
     ]
 
-    # Create clients for the box and remotes
+    # Create clients for the box
     tasks = [WebSocketClient(2, box_commands).connect()]
 
     await asyncio.gather(*tasks)

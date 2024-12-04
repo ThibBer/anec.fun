@@ -8,7 +8,7 @@ case class StartGameCommand(boxId: Int, uniqueId: String) extends Command
 case class StartRoundCommand(boxId: Int, uniqueId: String) extends Command
 case class StopGameCommand(boxId: Int, uniqueId: String) extends Command
 case class VoteCommand(boxId: Int, vote: String, uniqueId: String, isSpeaker:Boolean) extends Command
-case class ConnectRemote(boxId: Int, uniqueId: String) extends Command
+case class ConnectRemote(boxId: Int, uniqueId: String, username: String) extends Command
 case class DisconnectRemote(boxId: Int, uniqueId: String) extends Command
 case class ConnectBox(boxId: Int, uniqueId: String) extends Command
 case class StartVoting(boxId: Int, uniqueId: String) extends Command
