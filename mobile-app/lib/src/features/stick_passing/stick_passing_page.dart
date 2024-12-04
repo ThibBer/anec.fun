@@ -147,12 +147,12 @@ class _StickPassingPageState extends State<StickPassingPage> {
               Future.delayed(Duration(milliseconds: 100));
             }
             WidgetsBinding.instance.addPostFrameCallback((_) {
-              Navigator.pushNamed(context, TellingAnecdotePage.routeName);
+              Navigator.pushReplacementNamed(context, TellingAnecdotePage.routeName);
             });
           }
           // if (_controller.game.state == GameState.voting) {
           //   WidgetsBinding.instance.addPostFrameCallback((_) {
-          //     Navigator.pushNamed(context, VotePage.routeName);
+          //     Navigator.pushReplacementNamed(context, VotePage.routeName);
           //   });
           // }
           return Scaffold(

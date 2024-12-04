@@ -40,11 +40,11 @@ class VotePageState extends State<VotePage> {
         builder: (context, _) {
           if (voteController.game.state == GameState.roundStarted) {
             WidgetsBinding.instance.addPostFrameCallback((_) {
-              Navigator.pushNamed(context, StickPassingPage.routeName);
+              Navigator.pushReplacementNamed(context, StickPassingPage.routeName);
             });
           } else if (voteController.game.state == GameState.scores) {
             WidgetsBinding.instance.addPostFrameCallback((_) {
-              Navigator.pushNamed(context, PlayerScorePage.routeName);
+              Navigator.pushReplacementNamed(context, PlayerScorePage.routeName);
             });
           }
           return Scaffold(
