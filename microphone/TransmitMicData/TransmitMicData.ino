@@ -78,6 +78,7 @@ void setup() {
   printf_begin();  // needed only once for printing details
 
   radio.printPrettyDetails();
+  toggleMode(true);
 }
 
 uint32_t printTimer = 0;
@@ -97,7 +98,8 @@ void toggleMode(bool mode) {
     sendEoS();
     Serial.println("Stop transmitting");
     radio.startListening();
-    digitalWrite(PIN_LED, HIGH);
+    digitalWrite(PIN_LED, LOW);
+    
   }
 }
 
