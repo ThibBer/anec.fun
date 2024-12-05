@@ -116,6 +116,9 @@ class CommandRouter {
             case ScannedStickCommand(boxId, uniqueId) =>
               manager ! ScannedStickCommand(boxId, uniqueId)
 
+            case SetGameModeCommand(boxId, uniqueId, gameMode) =>
+              manager ! SetGameModeCommand(boxId, uniqueId, gameMode)
+
             case _ =>
               context.log.info(s"Unknown command: $command")
           }

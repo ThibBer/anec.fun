@@ -1,5 +1,6 @@
 package be.unamur.anecdotfun
 
+// Used for websocket interactions
 object CommandType {
   val CONNECTION = "Connection"
   val CONNECT_BOX = "ConnectBox"
@@ -8,4 +9,6 @@ object CommandType {
   val VOICE_FLOW = "VoiceFlow"
   val STICK_EXPLODED = "StickExploded"
   val STATUS = "StatusCommand"
+  val SET_GAME_MODE = "SetGameModeCommand"
+  val GAME_MODE_CHANGED = "GameModeChanged"
 }

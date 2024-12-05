@@ -32,8 +32,8 @@ object GameManager {
         var gameState = States.STOPPED
         var isStickExploded = false
         var isStickExplodedConfirmationReceived = false
-        implicit val system: ActorSystem[Nothing] =
-          ActorSystem(Behaviors.empty, "DebugSystem")
+        var gameMode = GameMode.THEME
+        implicit val system: ActorSystem[Nothing] = ActorSystem(Behaviors.empty, "DebugSystem")
 
         val speechToText = SpeechToText()
 
@@ -380,6 +380,30 @@ object GameManager {
             }
             Behaviors.same
 
+          case SetGameModeCommand(boxId, userId, mode) =>
+            if(gameState != States.STOPPED){
+              val response = CommandResponse(
+                userId,
+                "SetGameModeCommand",
+                ResponseState.FAILED,
+                Some("Can't switch game mode while game is not stopped")
+              )
+
+              webSocketClients(boxId)(userId) ! TextMessage(
+                response.toJson.compactPrint
+              )
+            }else{
+              webSocketClients(boxId)(userId) ! TextMessage(
+                CommandResponse(userId, "SetGameModeCommand", ResponseState.SUCCESS).toJson.compactPrint
+              )
+
+              gameMode = mode
+              logger.debug(s"Game mode changed to $mode")
+              broadcastGameMode(webSocketClients, boxId, gameMode)
+            }
+
+            Behaviors.same
+
           case _ => Behaviors.unhandled
         }
       }
@@ -519,6 +543,24 @@ object GameManager {
         "AnnecdotTeller",
         ResponseState.SUCCESS,
         senderUniqueId = Some(senderUniqueId)
+      )
+      remote ! TextMessage(response.toJson.compactPrint)
+    }
+  }
+
+  private def broadcastGameMode(
+      webSocketClients: mutable.Map[Int, mutable.Map[String, ActorRef[
+        TextMessage
+      ]]],
+      boxId: Int,
+      gameMode: String
+  ): Unit = {
+    webSocketClients(boxId).foreach { case (uniqueId, remote) =>
+      val response = CommandResponse(
+        uniqueId,
+        "GameModeChanged",
+        ResponseState.SUCCESS,
+        Some(gameMode)
       )
       remote ! TextMessage(response.toJson.compactPrint)
     }

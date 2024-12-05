@@ -16,6 +16,7 @@ trait JsonCommandSupport extends SprayJsonSupport with DefaultJsonProtocol {
   implicit val voiceFlowFormat: RootJsonFormat[VoiceFlow] = jsonFormat3(VoiceFlow.apply)
   implicit val stickExplodedFormat: RootJsonFormat[StickExploded] = jsonFormat1(StickExploded.apply)
   implicit val scanStickFormat: RootJsonFormat[ScannedStickCommand] = jsonFormat2(ScannedStickCommand.apply)
+  implicit val setGameModeFormat: RootJsonFormat[SetGameModeCommand] = jsonFormat3(SetGameModeCommand.apply)
 
   implicit object CommandJsonFormat extends RootJsonFormat[Command] {
     def write(command: Command): JsValue = command match {
@@ -30,6 +31,7 @@ trait JsonCommandSupport extends SprayJsonSupport with DefaultJsonProtocol {
       case cmd: VoiceFlow                                  => cmd.toJson
       case cmd: StickExploded                              => cmd.toJson
       case cmd: ScannedStickCommand                        => cmd.toJson
+      case cmd: SetGameModeCommand                         => cmd.toJson
       case com.anecdot.VoteSubmittedNotification(_, _)    => ???
       case com.anecdot.GameStateChangedNotification(_, _) => ???
     }
@@ -48,6 +50,7 @@ trait JsonCommandSupport extends SprayJsonSupport with DefaultJsonProtocol {
         case Some(JsString("StartVoting")) => json.convertTo[StartVoting]
         case Some(JsString("VoiceFlow")) => json.convertTo[VoiceFlow]
         case Some(JsString("ScannedStickCommand")) => json.convertTo[ScannedStickCommand]
+        case Some(JsString("SetGameModeCommand")) => json.convertTo[SetGameModeCommand]
         case _ =>
           logger.error(s"Invalid command: $json")
           throw DeserializationException("Unknown command type")

@@ -15,6 +15,7 @@ case class StartVoting(boxId: Int, uniqueId: String) extends Command
 case class StickExploded(boxId: Int) extends Command
 case class ScannedStickCommand(boxId: Int, uniqueId: String) extends Command
 case class StopRoundCommand(boxId: Int) extends Command
+case class SetGameModeCommand(boxId: Int, uniqueId: String, gameMode: String) extends Command
 
 case class CommandResponse(
     uniqueId: String,
