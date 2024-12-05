@@ -72,9 +72,6 @@ void setup() {
 
   delay(2000);
 
-  blinkStartLED(3);
-
-  
   int modeSelectionSwitch = digitalRead(MODE_SELECTION_PIN);
   bool isGameModeEmotion = modeSelectionSwitch == EMOTION;
   digitalWrite(EMOTION_MODE_LED, isGameModeEmotion ? HIGH : LOW);
@@ -144,7 +141,7 @@ void loop() {
 }
 
 void startCheckupSequence(){
-  int delayDuration = 400;
+  int delayDuration = 250;
 
   digitalWrite(EMOTION_MODE_LED, HIGH);
   delay(delayDuration);
@@ -175,8 +172,12 @@ void startCheckupSequence(){
   analogWrite(GAME_STATE_LED_GREEN, 255);
   analogWrite(GAME_STATE_LED_BLUE, 255);
   delay(delayDuration);
+  analogWrite(GAME_STATE_LED_RED, 0);
+  analogWrite(GAME_STATE_LED_GREEN, 0);
+  analogWrite(GAME_STATE_LED_BLUE, 0);
+  delay(delayDuration);
 
-  playSound(1200, delayDuration);
+  playSound(800, delayDuration);
   delay(delayDuration);
 }
 
@@ -321,12 +322,12 @@ void onGameStateChanged(GameState newGameState){
   switch(newGameState){
     case STARTED:
       playSound(1000, 150);
-      delay(150);
+      delay(400);
       playSound(1000, 150);
-      delay(150);
+      delay(400);
       playSound(1000, 150);
-      delay(150);
-      playSound(1500, 600);
+      delay(400);
+      playSound(800, 600);
 
       setGameStateLedColor(255);
 
@@ -339,7 +340,12 @@ void onGameStateChanged(GameState newGameState){
       break;
     case STOPPED:
       setGameStateLedColor(0);
-      playSound(500, 1500);
+
+      playSound(800, 300);
+      delay(500);
+      playSound(800, 300);
+      delay(500);
+      playSound(800, 300);
 
       break;
   }
@@ -350,7 +356,7 @@ void onGameStateChanged(GameState newGameState){
 }
 
 void playButtonClickSound(){
-  playSound(1000, 200);
+  playSound(600, 200);
 }
 
 void playSound(int toneHz, int msDuration){
@@ -358,8 +364,7 @@ void playSound(int toneHz, int msDuration){
 }
 
 void playShutdownSound(){
-  for (int freq = 1000; freq >= 100; freq -= 50) {
-    playSound(freq, 100); // Joue une tonalité à la fréquence "freq" pendant 100ms
-    delay(120); // Léger chevauchement pour plus de fluidité
-  }
+  playSound(800, 500);
+  delay(200);
+  playSound(400, 1000);
 }
