@@ -57,8 +57,12 @@ class SerialThread(portDescriptor: String) extends Thread {
     messageBuffer.append(receivedText)
 
     if (receivedText.contains("\n")) {
-      onReceiveSerialData(messageBuffer.toString().trim())
+      val lines = messageBuffer.toString().split("\n", 2)
+      onReceiveSerialData(lines(0).trim())
       messageBuffer.clear()
+      if (lines.length > 1) {
+        messageBuffer.append(lines(1))
+      }
     }
   }
 

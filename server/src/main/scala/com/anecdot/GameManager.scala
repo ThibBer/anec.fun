@@ -11,9 +11,6 @@ import spray.json._
 import scala.collection.mutable
 import scala.concurrent.duration.DurationInt
 
-
-
-
 /** The `GameManager` actor is responsible for managing the state of a game. It
   * handles commands from clients and the box actor, and broadcasts game state
   * updates to all connected clients. It also keeps track of the number of
@@ -36,6 +33,7 @@ object GameManager {
         var gameState = States.STOPPED
         var isStickExploded = false
         var isStickExplodedConfirmationReceived = false
+        var gameMode = GameMode.THEME
         implicit val system: ActorSystem[Nothing] =
           ActorSystem(Behaviors.empty, "DebugSystem")
 
@@ -409,7 +407,7 @@ object GameManager {
               players = remoteWebSocketActors.map { case (id, username) =>
                 id -> Map(
                   "username" -> username,
-                  "vote" -> votes.getOrElse(id,"")
+                  "vote" -> votes.getOrElse(id, "")
                 )
               }.toMap,
               playerScores = scores.toMap,
@@ -431,6 +429,34 @@ object GameManager {
 
           case ClientDisconnected(boxId, uniqueId) =>
             broadcastClientDisconnected(webSocketClients, boxId, uniqueId)
+            Behaviors.same
+
+          case SetGameModeCommand(boxId, userId, mode) =>
+            if (gameState != States.STOPPED) {
+              val response = CommandResponse(
+                userId,
+                "SetGameModeCommand",
+                ResponseState.FAILED,
+                Some("Can't switch game mode while game is not stopped")
+              )
+
+              webSocketClients(boxId)(userId) ! TextMessage(
+                response.toJson.compactPrint
+              )
+            } else {
+              webSocketClients(boxId)(userId) ! TextMessage(
+                CommandResponse(
+                  userId,
+                  "SetGameModeCommand",
+                  ResponseState.SUCCESS
+                ).toJson.compactPrint
+              )
+
+              gameMode = mode
+              logger.debug(s"Game mode changed to $mode")
+              broadcastGameMode(webSocketClients, boxId, gameMode)
+            }
+
             Behaviors.same
 
           case _ => Behaviors.unhandled
@@ -590,6 +616,24 @@ object GameManager {
         "ClientDisconnected",
         ResponseState.SUCCESS,
         senderUniqueId = Some(senderUniqueId)
+      )
+      remote ! TextMessage(response.toJson.compactPrint)
+    }
+  }
+
+  private def broadcastGameMode(
+      webSocketClients: mutable.Map[Int, mutable.Map[String, ActorRef[
+        TextMessage
+      ]]],
+      boxId: Int,
+      gameMode: String
+  ): Unit = {
+    webSocketClients(boxId).foreach { case (uniqueId, remote) =>
+      val response = CommandResponse(
+        uniqueId,
+        "GameModeChanged",
+        ResponseState.SUCCESS,
+        Some(gameMode)
       )
       remote ! TextMessage(response.toJson.compactPrint)
     }

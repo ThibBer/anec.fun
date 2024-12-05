@@ -138,19 +138,19 @@ class WebSocketConnection {
         game.updateState(GameState.voting);
       } else if (command.message == 'ROUND_STARTED') {
         game.updateState(GameState.roundStarted);
-      }
-      else if (command.message == 'STICK_EXPLODED') {
+      } else if (command.message == 'STICK_EXPLODED') {
         game.updateState(GameState.stickExploded);
       }
     } else if (command is StickExploded) {
       game.stickExploded = true;
-
     } else if (command is VoteResult) {
       game.updateScores(json['message']);
     } else if (command is AnnecdotTeller) {
       game.annecdotTellerId = json['senderUniqueId'];
     } else if (command is RetrieveStateCommand) {
       game.restoreGameState(json);
+    } else if (command is GameModeChanged) {
+      game.updateMode(GameMode.values.byName(command.gameMode.toLowerCase()));
     } else {
       game.setError("Unknown command received: $command");
     }

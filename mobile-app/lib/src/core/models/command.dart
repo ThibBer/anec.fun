@@ -34,6 +34,8 @@ abstract class Command {
         return AnnecdotTeller(boxId);
       case 'RetrieveStateCommand':
         return RetrieveStateCommand(boxId);
+      case 'GameModeChanged':
+        return GameModeChanged(boxId, json["message"]);
       default:
         throw UnsupportedError('Unknown command type: $commandType');
     }
@@ -96,4 +98,10 @@ class AnnecdotTeller extends Command {
 
 class RetrieveStateCommand extends Command {
   RetrieveStateCommand(super.boxId);
+}
+
+class GameModeChanged extends Command {
+  final String gameMode;
+
+  GameModeChanged(super.boxId, this.gameMode);
 }

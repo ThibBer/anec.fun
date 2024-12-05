@@ -9,3 +9,8 @@ enum GameState {
   stickExploded,
   connectionLost,
 }
+
+enum GameMode {
+  theme,
+  emotion
+}

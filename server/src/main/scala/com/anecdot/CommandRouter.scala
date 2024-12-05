@@ -23,6 +23,7 @@ final case class UpdateWebSocketActor(
     boxId: Int,
     ref: ActorRef[TextMessage]
 ) extends CommandRouterTrait
+
 /** The `CommandRouter` actor is responsible for routing commands within the
   * application. It acts as a central point for handling various commands and
   * directing them to the appropriate handlers.
@@ -91,8 +92,8 @@ class CommandRouter {
 
         case NewCommand(command, wsUniqueId) =>
           context.log.info(
-                  s"${command.getClass.getSimpleName} command received for boxId: ${command.boxId}"
-                )
+            s"${command.getClass.getSimpleName} command received for boxId: ${command.boxId}"
+          )
           val manager = remoteManagers.getOrElseUpdate(
             command.boxId, {
               context.log.info(
@@ -139,6 +140,10 @@ class CommandRouter {
 
             case ClientDisconnected(boxId, uniqueId) =>
               manager ! ClientDisconnected(boxId, uniqueId)
+
+            case SetGameModeCommand(boxId, uniqueId, gameMode) =>
+              manager ! SetGameModeCommand(boxId, uniqueId, gameMode)
+
             case _ =>
               context.log.info(s"Unknown command: $command")
           }

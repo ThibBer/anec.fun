@@ -9,6 +9,7 @@ import be.unamur.anecdotfun.GameState.{START, STOP}
 import com.typesafe.config.ConfigFactory
 import spray.json.*
 import be.unamur.anecdotfun.CommandResponseJsonProtocol.commandResponseFormat
+import scala.sys.process.Process
 
 val config = ConfigFactory.load()
 implicit val system: ActorSystem = ActorSystem("box-anecdotfun", config)
@@ -33,8 +34,9 @@ object Main {
 
   private val serialMessageAction: Map[String, String => Unit] = Map(
     MessageKey.SetGameState -> onRequestChangeGameState,
-    MessageKey.Mode -> onRequestChangeMode,
+    MessageKey.GameMode -> onRequestChangeGameMode,
     MessageKey.HandDetected -> onHandDetected,
+    MessageKey.RequestShutdown -> onRequestShutdown,
   )
 
   private def onConnectedToWebSocket(statusCode: StatusCode): Unit = {
@@ -109,6 +111,13 @@ object Main {
           if (isCommandSuccessful) {
             onStickExploded()
           }
+        case CommandType.GAME_MODE_CHANGED =>
+          if (isCommandSuccessful) {
+            commandResponse.message match {
+              case Some(message) => onGameModeChanged(message)
+              case None =>
+            }
+          }
         case _ => println(s"Unmanaged response command type (${commandResponse.commandType})")
       }
     } catch {
@@ -139,8 +148,13 @@ object Main {
     ))
   }
 
-  private def onRequestChangeMode(value: String): Unit = {
-    println("The box does not currently support mode switching")
+  private def onRequestChangeGameMode(value: String): Unit = {
+    webSocketClient.send(JsObject(
+      "boxId" -> JsNumber(boxId),
+      "uniqueId" -> JsString(uniqueId),
+      "commandType" -> JsString(CommandType.SET_GAME_MODE),
+      "gameMode" -> JsString(value)
+    ))
   }
 
   private def onHandDetected(value: String): Unit = {
@@ -151,6 +165,25 @@ object Main {
       "uniqueId" -> JsString(uniqueId),
       "commandType" -> JsString("StartRoundCommand")
     ))
+  }
+
+  private def onRequestShutdown(value: String): Unit = {
+    val operatingSystem = System.getProperty("os.name")
+    println(operatingSystem)
+
+    if (operatingSystem != "Linux") {
+      println(s"Can't shutdown $operatingSystem. only linux works")
+      return
+    }
+
+    webSocketClient.send(JsObject(
+      "boxId" -> JsNumber(boxId),
+      "uniqueId" -> JsString(uniqueId),
+      "commandType" -> JsString(CommandType.STOP_GAME)
+    ))
+
+    Process("shutdown -h now")
+    System.exit(0)
   }
 
   private def onStickExploded(): Unit = {
@@ -183,6 +216,10 @@ object Main {
       "commandType" -> JsString("VoiceFlow"),
       "payload" -> JsArray(),
     ))
+  }
+
+  private def onGameModeChanged(state: String): Unit = {
+    serial.send(MessageKey.GameModeChanged + '=' + state)
   }
 
   private def dateTimeString(): String = {

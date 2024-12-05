@@ -1,4 +1,5 @@
 import 'package:anecdotfun/src/features/telling_annectode/telling_anecdote_page.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:lottie/lottie.dart'; // For animations
 import 'stick_passing_controller.dart';
@@ -50,8 +51,8 @@ class _StickPassingPageState extends State<StickPassingPage> {
       _isSuccess = false;
     });
 
-    // Check availability
-    bool isAvailable = await NfcManager.instance.isAvailable();
+    // Check availability, false if web, else from NfcManager
+    bool isAvailable = !kIsWeb && await NfcManager.instance.isAvailable();
 
     // Start a timer to handle the timeout
     Future.delayed(Duration(seconds: 5), () {
@@ -61,7 +62,7 @@ class _StickPassingPageState extends State<StickPassingPage> {
       }
     });
 
-    if (!isAvailable) {
+    if (!isAvailable && context.mounted) {
       // Send a message to the user that NFC is not available
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text("NFC is not available")),
@@ -102,7 +103,9 @@ class _StickPassingPageState extends State<StickPassingPage> {
     }
 
     // Stop the session
-    NfcManager.instance.stopSession();
+    if (!kIsWeb) {
+      NfcManager.instance.stopSession();
+    }
   }
 
   void _validateScan() {
@@ -126,7 +129,9 @@ class _StickPassingPageState extends State<StickPassingPage> {
         _controller
             .onScanSuccessful(); // Optional, add a callback for timeout handling
       }
-      NfcManager.instance.stopSession();
+      if (!kIsWeb) {
+        NfcManager.instance.stopSession();
+      }
       setState(() {
         _isScanning = false;
         _isExploded = false;
@@ -167,20 +172,23 @@ class _StickPassingPageState extends State<StickPassingPage> {
                 children: [
                   if (_isScanning) ...[
                     Lottie.asset(
-                      'assets/animations/scanner.json', // Replace with a proper scanner animation
+                      'assets/animations/scanner.json',
+                      // Replace with a proper scanner animation
                       renderCache: RenderCache.raster,
                     ),
                     const Text('Scanning for the stick...'),
                   ] else if (_isSuccess) ...[
                     Lottie.asset(
-                      'assets/animations/success.json', // Replace with a proper success animation
+                      'assets/animations/success.json',
+                      // Replace with a proper success animation
                       renderCache: RenderCache.raster,
                     ),
                     const Text('Stick successfully passed!'),
                   ] else if (_isExploded) ...[
                     Expanded(
                       child: Lottie.asset(
-                      'assets/animations/explosion.json', // Replace with a proper explosion animation
+                        'assets/animations/explosion.json',
+                        // Replace with a proper explosion animation
                         renderCache: RenderCache.raster,
                         fit: BoxFit.contain,
                       ),
