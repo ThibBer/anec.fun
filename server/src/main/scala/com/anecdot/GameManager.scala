@@ -284,6 +284,8 @@ object GameManager {
               if (isSpeaker) {
                 speakerId = uniqueId
                 voteResult = vote
+              }else if (uniqueId == speakerId) {// Check if this is the vote for the box
+                scores(uniqueId) = scores.getOrElse(uniqueId, 0) + 1
               } else {
                 votes(uniqueId) = vote
               }
