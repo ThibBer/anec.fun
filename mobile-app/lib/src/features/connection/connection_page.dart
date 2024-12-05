@@ -101,7 +101,7 @@ class _ConnectionPageState extends State<ConnectionPage> {
                         onPressed: () {
                           _controller.submitForm(
                             onSuccess: () {
-                              Navigator.pushReplacementNamed(context, VotePage.routeName);
+                              Navigator.pushNamed(context, VotePage.routeName);
                             },
                             onError: (error) {
                               ScaffoldMessenger.of(context).showSnackBar(
