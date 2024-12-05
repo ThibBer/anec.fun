@@ -34,6 +34,7 @@ trait JsonCommandSupport extends SprayJsonSupport with DefaultJsonProtocol {
       case cmd: SetGameModeCommand                         => cmd.toJson
       case com.anecdot.VoteSubmittedNotification(_, _)    => ???
       case com.anecdot.GameStateChangedNotification(_, _) => ???
+      case com.anecdot.StopRoundCommand(_) => ???
     }
 
     def read(json: JsValue): Command = {
