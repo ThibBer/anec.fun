@@ -32,6 +32,8 @@ abstract class Command {
         return VoteResult(boxId);
       case 'AnnecdotTeller':
         return AnnecdotTeller(boxId);
+      case 'GameModeChanged':
+        return GameModeChanged(boxId, json["message"]);
       default:
         throw UnsupportedError('Unknown command type: $commandType');
     }
@@ -90,4 +92,10 @@ class VoteResult extends Command {
 
 class AnnecdotTeller extends Command {
   AnnecdotTeller(super.boxId);
+}
+
+class GameModeChanged extends Command {
+  final String gameMode;
+
+  GameModeChanged(super.boxId, this.gameMode);
 }

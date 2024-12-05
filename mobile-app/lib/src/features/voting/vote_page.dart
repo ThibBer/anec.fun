@@ -64,10 +64,19 @@ class VotePageState extends State<VotePage> {
                     margin: const EdgeInsets.only(bottom: 20),
                     child: Padding(
                       padding: const EdgeInsets.all(16.0),
-                      child: Text(
-                        "Anecdote theme: *put theme here*",
-                        style: Theme.of(context).textTheme.headlineSmall,
-                        textAlign: TextAlign.center,
+                      child: Column(
+                        children: [
+                          Text(
+                            "Mode : ${voteController.game.mode.name}",
+                            style: Theme.of(context).textTheme.headlineSmall,
+                            textAlign: TextAlign.center,
+                          ),
+                          Text(
+                            "Subject : PLACE SUBJECT HERE",
+                            style: Theme.of(context).textTheme.labelSmall,
+                            textAlign: TextAlign.center,
+                          )
+                        ],
                       ),
                     ),
                   ),

@@ -8,3 +8,8 @@ enum GameState {
   scores,
   stickExploded
 }
+
+enum GameMode {
+  theme,
+  emotion
+}

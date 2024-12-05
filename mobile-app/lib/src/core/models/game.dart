@@ -39,6 +39,8 @@ class Game extends ChangeNotifier {
 
   String annecdotTellerId = "";
 
+  GameMode mode = GameMode.theme;
+
   /// The current state of the game.
   GameState state = GameState.stopped;
 
@@ -50,6 +52,12 @@ class Game extends ChangeNotifier {
   /// Updates the current state of the game.
   void updateState(GameState newState) {
     state = newState;
+    notifyListeners();
+  }
+
+  /// Updates the current mode of the game.
+  void updateMode(GameMode newMode) {
+    mode = newMode;
     notifyListeners();
   }
 

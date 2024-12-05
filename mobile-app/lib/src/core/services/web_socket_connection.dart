@@ -137,11 +137,12 @@ class WebSocketConnection {
       }
     } else if (command is StickExploded) {
       game.stickExploded = true;
-
     } else if (command is VoteResult) {
       game.updateScores(json['message']);
     } else if (command is AnnecdotTeller) {
       game.annecdotTellerId = json['senderUniqueId'];
+    } else if (command is GameModeChanged) {
+      game.updateMode(GameMode.values.byName(command.gameMode.toLowerCase()));
     } else {
       onError("Unknown command received: $command");
     }
