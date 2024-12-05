@@ -147,7 +147,8 @@ class _StickPassingPageState extends State<StickPassingPage> {
               Future.delayed(Duration(milliseconds: 100));
             }
             WidgetsBinding.instance.addPostFrameCallback((_) {
-              Navigator.pushNamed(context, TellingAnecdotePage.routeName);
+              Navigator.pushReplacementNamed(
+                  context, TellingAnecdotePage.routeName);
             });
           }
           // if (_controller.game.state == GameState.voting) {

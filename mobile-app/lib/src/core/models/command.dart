@@ -32,6 +32,8 @@ abstract class Command {
         return VoteResult(boxId);
       case 'AnnecdotTeller':
         return AnnecdotTeller(boxId);
+      case 'RetrieveStateCommand':
+        return RetrieveStateCommand(boxId);
       default:
         throw UnsupportedError('Unknown command type: $commandType');
     }
@@ -90,4 +92,8 @@ class VoteResult extends Command {
 
 class AnnecdotTeller extends Command {
   AnnecdotTeller(super.boxId);
+}
+
+class RetrieveStateCommand extends Command {
+  RetrieveStateCommand(super.boxId);
 }

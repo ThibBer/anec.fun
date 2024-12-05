@@ -91,4 +91,65 @@ class Game extends ChangeNotifier {
     updateState(GameState.scores);
     notifyListeners();
   }
+
+  /// Error message to be displayed across the app.
+  String? error;
+
+  /// Updates the error property and notifies listeners.
+  void setError(String? message) {
+    error = message;
+    notifyListeners();
+  }
+
+  /// Success message to be displayed across the app.
+  String? success;
+
+  /// Updates the success property and notifies listeners.
+  void setSuccess(String? message) {
+    success = message;
+    notifyListeners();
+  }
+
+  /// Connection status of the WebSocket.
+  bool _isConnecting = false;
+
+  bool get isConnecting => _isConnecting;
+
+  void setConnecting(bool connecting) {
+    _isConnecting = connecting;
+    notifyListeners();
+  }
+
+  bool connected = false;
+
+  void setConnected(bool connected) {
+    this.connected = connected;
+    notifyListeners();
+  }
+
+  void restoreGameState(Map<String, dynamic> state) {
+    username = state['username'];
+    players.clear();
+    state['players'].forEach((key, value) {
+      players[key] = Map<String, dynamic>.from(value);
+    });
+    playerScores.clear();
+    state['playerScores'].forEach((key, value) {
+      playerScores[key] = value as int;
+    });
+    stickExploded = state['stickExploded'] as bool;
+    annecdotTellerId = state['annecdotTellerId'] as String;
+    state = state['state'];
+    notifyListeners();
+  }
+
+  /// Indicates if the game is in the process of reconnecting.
+  bool _isReconnecting = false;
+
+  bool get isReconnecting => _isReconnecting;
+
+  void setReconnecting(bool reconnecting) {
+    _isReconnecting = reconnecting;
+    notifyListeners();
+  }
 }

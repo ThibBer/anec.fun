@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
 import 'dart:convert';
 import '../models/command.dart';
@@ -20,28 +21,12 @@ class WebSocketConnection {
   factory WebSocketConnection({
     int? boxId,
     String? username,
-    void Function(String)? onError,
-    void Function(String)? onMessage,
-    void Function(String)? onConnectionClosed,
-    void Function(String)? onConnectionSuccess,
-    void Function(String)? onRemoteConnectionSuccess,
   }) {
     if (boxId != null) {
       _instance.game.boxId = boxId;
     }
     if (username != null) {
       _instance.game.username = username;
-    }
-    if (onError != null) _instance.onError = onError;
-    if (onMessage != null) _instance.onMessage = onMessage;
-    if (onConnectionClosed != null) {
-      _instance.onConnectionClosed = onConnectionClosed;
-    }
-    if (onConnectionSuccess != null) {
-      _instance.onConnectionSuccess = onConnectionSuccess;
-    }
-    if (onRemoteConnectionSuccess != null) {
-      _instance.onRemoteConnectionSuccess = onRemoteConnectionSuccess;
     }
 
     return _instance;
@@ -64,28 +49,28 @@ class WebSocketConnection {
   /// The WebSocket channel that is used for communication.
   late WebSocketChannel channel;
 
-  // Callback functions for handling WebSocket events
-  late void Function(String) onError;
-  late void Function(String) onMessage;
-  late void Function(String) onConnectionClosed;
-  late void Function(String) onConnectionSuccess;
-  late void Function(String) onRemoteConnectionSuccess;
-
   late Timer _heartbeatTimer;
 
-  void init() {
+  void init(reconnect) {
+    game.setConnecting(true);
     try {
       channel = WebSocketChannel.connect(
           Uri.parse('ws://192.168.0.70:8080/ws/${game.boxId}'));
 
       // Listen for messages from the server
-      channel.stream.listen((message) {
-        _handleMessage(message);
-      }, onError: (error) {
-        onError(error.toString());
-      }, onDone: () {
-        onConnectionClosed("Connection closed by server.");
-      });
+      channel.stream.listen(
+        (message) => _handleMessage(message),
+        onError: (error) {
+          game.setError("Connection error: $error");
+          _reconnect(); // Attempt to reconnect
+        },
+        onDone: () {
+          game.setError("Connection closed.");
+          if (channel.closeCode == null || channel.closeCode != 1000) {
+            _reconnect(); // Reconnect only if the closure was abnormal
+          }
+        },
+      );
 
       _heartbeatTimer = Timer.periodic(Duration(seconds: 20), (timer) {
         if (channel.closeCode != null) {
@@ -96,12 +81,33 @@ class WebSocketConnection {
         try {
           channel.sink.add("heartbeat");
         } catch (error) {
-          onError("Failed to send heartbeat");
+          game.setError("Failed to send heartbeat");
         }
       });
+      if (reconnect) {
+        retrieveState();
+      }
     } catch (error) {
-      onError("Failed to initialize connection: $error");
+      game.setError("Failed to initialize connection: $error");
+      game.setConnecting(false);
+      _reconnect(); // Attempt to reconnect
     }
+  }
+
+  int _retryCount = 0;
+  final int _maxRetries = 5;
+
+  void _reconnect() {
+    game.updateState(GameState.connectionLost);
+    if (_retryCount >= _maxRetries) {
+      game.setError("Failed to reconnect after $_maxRetries attempts.");
+      return;
+    }
+
+    Future.delayed(Duration(seconds: 2 * _retryCount), () {
+      _retryCount++;
+      init(true); // Reinitialize the connection
+    });
   }
 
   /// Handles incoming messages from the WebSocket connection.
@@ -117,8 +123,9 @@ class WebSocketConnection {
 
     if (command is Connection) {
       if (game.uniqueId.isEmpty) {
-        onConnectionSuccess("Connected to server successfully!");
+        game.setSuccess("Connected to server successfully!");
         game.uniqueId = command.uniqueId;
+        connect();
       }
     } else if (command is VoteCommand) {
       _handleVoteResponse(json);
@@ -142,8 +149,10 @@ class WebSocketConnection {
       game.updateScores(json['message']);
     } else if (command is AnnecdotTeller) {
       game.annecdotTellerId = json['senderUniqueId'];
+    } else if (command is RetrieveStateCommand) {
+      game.restoreGameState(json);
     } else {
-      onError("Unknown command received: $command");
+      game.setError("Unknown command received: $command");
     }
   }
 
@@ -158,14 +167,21 @@ class WebSocketConnection {
     final status = response['status'];
     if (status == 'success') {
       if (response['senderUniqueId'] == game.uniqueId) {
-        onRemoteConnectionSuccess("Remote connected");
+        game.setSuccess("Remote connected");
+        game.setConnected(true);
+        game.setConnecting(false);
+        print("Remote connected");
         if (!votingPageReadyCompleter.isCompleted) {
           await votingPageReadyCompleter.future;
         }
+        // Save our unique ID and timestamp on disk
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setStringList(
+            'uniqueId', [game.uniqueId, DateTime.now().toString()]);
       }
       game.addPlayer(response['senderUniqueId'], response['message']);
     } else {
-      onError(response['message']);
+      game.setError(response['message']);
     }
   }
 
@@ -190,7 +206,7 @@ class WebSocketConnection {
       game.updateVote(response['senderUniqueId'], response['message'],
           isFromServer: true);
     } else {
-      onError(response['message']);
+      game.setError(response['message']);
     }
   }
 
@@ -204,7 +220,7 @@ class WebSocketConnection {
     if (status == 'success') {
       game.removePlayer(game.uniqueId);
     } else {
-      onError(response['message']);
+      game.setError(response['message']);
     }
   }
 
@@ -212,7 +228,7 @@ class WebSocketConnection {
     try {
       channel.sink.add(jsonEncode(commandData));
     } catch (error) {
-      onError("Failed to send command: $error");
+      game.setError("Failed to send command: $error");
     }
   }
 
@@ -259,11 +275,19 @@ class WebSocketConnection {
     });
   }
 
+  void retrieveState() {
+    sendCommand({
+      "boxId": game.boxId,
+      "uniqueId": game.uniqueId,
+      "commandType": "RetrieveStateCommand",
+    });
+  }
+
   void close() {
     try {
       channel.sink.close();
     } catch (error) {
-      onError("Failed to close connection: $error");
+      game.setError("Failed to close connection: $error");
     }
   }
 }

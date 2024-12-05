@@ -6,5 +6,6 @@ enum GameState {
   paused,
   voting,
   scores,
-  stickExploded
+  stickExploded,
+  connectionLost,
 }
