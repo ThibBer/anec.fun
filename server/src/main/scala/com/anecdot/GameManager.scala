@@ -1,10 +1,13 @@
 package com.anecdot
 
-import akka.actor.typed.*
-import akka.actor.typed.scaladsl.*
+import akka.actor.typed._
+import akka.actor.typed.scaladsl._
 import akka.http.scaladsl.model.ws.TextMessage
 import com.anecdot.Main.commandResponseFormat
-import spray.json.*
+import spray.json._
+import spray.json.DefaultJsonProtocol._
+import com.anecdot.Main.mutableMapFormat
+import com.anecdot.support.JsonSupport
 
 import scala.collection.mutable
 import scala.concurrent.duration.DurationInt
@@ -288,12 +291,23 @@ object GameManager {
               if (voteNumber == remoteWebSocketActors.size) {
                 logger.info("All remotes voted")
                 // update the score of each remote
-                if (votes.getOrElse(uniqueId, "") == voteResult) {
-                  scores(uniqueId) = scores.getOrElse(
-                    uniqueId,
-                    0
-                  ) + 1 // Every player can compute their own score, this is just for backup
+
+                // if (votes.getOrElse(uniqueId, "") == voteResult) {
+                //   scores(uniqueId) = scores.getOrElse(
+                //     uniqueId,
+                //     0
+                //   ) + 1 // Every player can compute their own score, this is just for backup
+                // }
+
+                // Update scores for all players who voted correctly
+                votes.foreach { case (playerId, playerVote) =>
+                  if (playerVote == voteResult) {
+                    scores(playerId) = scores.getOrElse(playerId, 0) + 1
+                  }
                 }
+
+                // Send updated scores to all participants
+                broadcastScores(webSocketClients, scores, boxId)
 
                 // Send the vote result to all clients
                 for (remote <- remoteWebSocketActors) {
@@ -496,6 +510,22 @@ object GameManager {
         "StickExploded",
         ResponseState.SUCCESS,
         senderUniqueId = Some(explodedUserId)
+      )
+      remote ! TextMessage(response.toJson.compactPrint)
+    }
+  }
+
+  private def broadcastScores(
+    webSocketClients: mutable.Map[Int, mutable.Map[String, ActorRef[TextMessage]]],
+    scores: mutable.Map[String, Int],
+    boxId: Int
+  ): Unit = {
+    webSocketClients(boxId).foreach { case (uniqueId, remote) =>
+      val response = CommandResponse(
+        uniqueId,
+        "ScoresUpdate",
+        ResponseState.SUCCESS,
+        Some(scores.toJson.compactPrint)
       )
       remote ! TextMessage(response.toJson.compactPrint)
     }

@@ -46,27 +46,27 @@ To install the Anectdot Server, follow these steps:
 
 1. Clone the repository:
 
-    ```sh
-    git clone https://github.com/ThibBer/anec.fun
-    ```
+   ```sh
+   git clone https://github.com/ThibBer/anec.fun
+   ```
 
 2. Navigate to the server directory:
 
-    ```sh
-    cd server_2/anectdot-server
-    ```
+   ```sh
+   cd server
+   ```
 
 3. Compile the project:
 
-    ```sh
-    sbt compile
-    ```
+   ```sh
+   sbt compile
+   ```
 
 4. Run the server:
 
-    ```sh
-    sbt run
-    ```
+   ```sh
+   sbt run
+   ```
 
 ## Usage
 
@@ -81,19 +81,19 @@ Then you can send json messages to the server that respect the following schema:
 - `ConnectRemote`: `{ "commandType": "ConnectRemote", "remote_id": 1 }`
 
 ```json
-{"boxId": 2, "remote_id": 1, "commandType": "ConnectRemote"}
+{ "boxId": 2, "remote_id": 1, "commandType": "ConnectRemote" }
 ```
 
 - `StartGameCommand`:
 
 ```json
-{"boxId": 2, "commandType": "StartGameCommand"}
+{ "boxId": 2, "commandType": "StartGameCommand" }
 ```
 
 - `VoteCommand`: `{ "commandType": "VoteCommand", "vote": "yes" }`
 
 ```json
-{"boxId": 2, "vote": "yes", "commandType": "VoteCommand"}
+{ "boxId": 2, "vote": "yes", "commandType": "VoteCommand" }
 ```
 
 The game expect at least two remotes to be connected before allowing to start a game.
@@ -111,20 +111,20 @@ The game must be in voting state to allow voting commands from the remotes.
   - possible answers:
     - `{ "uniqueId": "1", "commandType": "ConnectBox", "status": "success"}`
     - `{ "uniqueId": "1", "commandType": "ConnectBox", "status": "error", "message": "Box already connected" }`
-- Starting a game *broadcasted to all remotes*:
+- Starting a game _broadcasted to all remotes_:
   - command:`{ "boxId": 1, "uniqueId": "1", "commandType": "StartGameCommand" }`
   - possible answers:
     - `{ "uniqueId": "1", "commandType": "StartGameCommand", "status": "success" }`
     - `{ "uniqueId": "1", "commandType": "StartGameCommand", "status": "error", "message": "Not enough players" }`
     - `{ "uniqueId": "1", "commandType": "StartGameCommand", "status": "error", "message": "Box not connected" }`
     - `{ "uniqueId": "1", "commandType": "StartGameCommand", "status": "error", "message": "Game already started" }`
-- Start voting *broadcasted to all remotes*:
+- Start voting _broadcasted to all remotes_:
   - command:`{ "boxId": 1, "uniqueId": "1", "commandType": "StartVoting" }`
   - possible answers:
     - `{ "uniqueId": "1", "commandType": "StartVoting", "status": "success" }`
     - `{ "uniqueId": "1", "commandType": "StartVoting", "status": "error", "message": "Game not started" }`
     - `{ "uniqueId": "1", "commandType": "StartVoting", "status": "error", "message": "Game already in voting state" }`
-- Stopping a game *broadcasted to all remotes*:
+- Stopping a game _broadcasted to all remotes_:
   - command:`{ "boxId": 1,"uniqueId": "1", "commandType": "StopGameCommand" }`
   - possible answers:
     - `{ "uniqueId": "1", "commandType": "StopGameCommand", "status": "success" }`
@@ -133,13 +133,13 @@ The game must be in voting state to allow voting commands from the remotes.
 
 ### Remote
 
-- Connection *broadcasted to all remotes*:
+- Connection _broadcasted to all remotes_:
   - command: `{ boxId: "1", "uniqueId": "2", "commandType": "ConnectRemote" }`
   - possible answers:
     - `{ "uniqueId": "2", "commandType": "ConnectRemote", "status": "success" }`
     - `{ "uniqueId": "2", "commandType": "ConnectRemote", "status": "error", "message": "Box not connected" }`
     - `{ "uniqueId": "2", "commandType": "ConnectRemote", "status": "error", "message": "Remote already connected" }`
-- Vote *broadcasted to all remotes*:
+- Vote _broadcasted to all remotes_:
   - command: `{ boxId: "1", "uniqueId": "2","commandType": "VoteCommand", "vote": "yes" }`
   - possible answers:
     - `{ "uniqueId": "2","commandType": "VoteCommand", "status": "success" }`
@@ -295,41 +295,41 @@ This method broadcasts each vote to all connected clients, allowing them to trac
 6. **Pause/Stop**: `PauseGameCommand` or `StopGameCommand`
 7. **Cleanup**: Score calculation, announcements, reset of state variables
 
-       +----------------+
-       |   STOPPED      |
-       +----------------+
-              |
-              | ConnectBox command
-              |
-              v
-       +----------------+
-       |   READY        |
-       +----------------+
-              |
-              | ConnectRemote (until min players)
-              |
-              v
-       +----------------+
-       |   STARTED      |
-       +----------------+
-              |
-              | StartVoting command
-              |
-              v
-       +----------------+
-       |   VOTING       |
-       +----------------+
-              |
-              | All votes received
-              |
-              v
-       +----------------+
-       |   STARTED      |
-       +----------------+
-              |
-              | StopGame or PauseGame command
-              |
-              v
-       +----------------+
-       | STOPPED/PAUSED |
-       +----------------+
+   +----------------+
+   | STOPPED |
+   +----------------+
+   |
+   | ConnectBox command
+   |
+   v
+   +----------------+
+   | READY |
+   +----------------+
+   |
+   | ConnectRemote (until min players)
+   |
+   v
+   +----------------+
+   | STARTED |
+   +----------------+
+   |
+   | StartVoting command
+   |
+   v
+   +----------------+
+   | VOTING |
+   +----------------+
+   |
+   | All votes received
+   |
+   v
+   +----------------+
+   | STARTED |
+   +----------------+
+   |
+   | StopGame or PauseGame command
+   |
+   v
+   +----------------+
+   | STOPPED/PAUSED |
+   +----------------+

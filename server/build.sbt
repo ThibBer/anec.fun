@@ -24,7 +24,8 @@ scalacOptions ++= Seq("-deprecation")
 inThisBuild(
   List(
     scalaVersion := "3.5.2",
-    scalafixOnCompile := true,
+    // scalafixOnCompile := true,
+    scalafixOnCompile := false,
     semanticdbEnabled := true,
     semanticdbVersion := scalafixSemanticdb.revision,
     scalacOptions += "-Wunused:imports"

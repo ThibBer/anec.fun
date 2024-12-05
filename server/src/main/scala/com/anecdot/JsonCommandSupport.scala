@@ -2,6 +2,8 @@ package com.anecdot
 
 import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport
 import spray.json._
+import DefaultJsonProtocol._
+import scala.collection.mutable
 
 trait JsonCommandSupport extends SprayJsonSupport with DefaultJsonProtocol {
   implicit val startGameFormat: RootJsonFormat[StartGameCommand] = jsonFormat2(StartGameCommand.apply)

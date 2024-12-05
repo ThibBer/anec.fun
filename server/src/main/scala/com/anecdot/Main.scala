@@ -19,11 +19,14 @@ import spray.json._
 import java.util.UUID
 import scala.concurrent.ExecutionContextExecutor
 import scala.io.StdIn
+import scala.collection.mutable
+import com.anecdot.support.JsonSupport
 
 private val logger = LoggerFactory.getLogger(getClass)
 private val jsonRegex = """\{.*}""".r
 
-object Main extends JsonCommandSupport {
+
+object Main extends JsonCommandSupport with JsonSupport {
 
   def main(args: Array[String]): Unit = {
     val commandRouter = new CommandRouter()
