@@ -1,3 +1,5 @@
+import com.typesafe.sbt.packager.linux.LinuxPlugin.mapGenericFilesToLinux
+
 name := "anecdotfun"
 
 version := "0.0.1"
@@ -31,4 +33,13 @@ inThisBuild(
   )
 )
 
-ThisBuild / scalafixDependencies += "io.github.dedis" %% "scapegoat-scalafix" % "1.1.3"
+ThisBuild / scalafixDependencies += "io.github.dedis" %% "scapegoat-scalafix" % "1.1.4"
+
+enablePlugins(UniversalPlugin)
+enablePlugins(JavaAppPackaging)
+enablePlugins(LinuxPlugin)
+enablePlugins(DockerPlugin)
+
+mapGenericFilesToLinux
+
+dockerExposedPorts ++= Seq(8080)
