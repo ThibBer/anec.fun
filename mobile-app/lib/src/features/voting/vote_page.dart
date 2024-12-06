@@ -73,11 +73,12 @@ class VotePageState extends State<VotePage> {
                             style: Theme.of(context).textTheme.headlineSmall,
                             textAlign: TextAlign.center,
                           ),
-                          Text(
-                            "Subject : PLACE SUBJECT HERE",
-                            style: Theme.of(context).textTheme.labelSmall,
-                            textAlign: TextAlign.center,
-                          )
+                          if (voteController.game.mode.name == "THEME")
+                            Text(
+                              "Subject : ${voteController.game.theme}",
+                              style: Theme.of(context).textTheme.labelSmall,
+                              textAlign: TextAlign.center,
+                            )
                         ],
                       ),
                     ),

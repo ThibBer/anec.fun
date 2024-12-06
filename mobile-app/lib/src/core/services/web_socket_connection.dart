@@ -138,6 +138,7 @@ class WebSocketConnection {
         game.updateState(GameState.voting);
       } else if (command.message == 'ROUND_STARTED') {
         game.updateState(GameState.roundStarted);
+        game.updateTheme(command.theme);
       } else if (command.message == 'STICK_EXPLODED') {
         game.updateState(GameState.stickExploded);
       }

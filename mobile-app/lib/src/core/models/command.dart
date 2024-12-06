@@ -25,7 +25,7 @@ abstract class Command {
       case 'DisconnectRemote':
         return DisconnectRemote(boxId, uniqueId!);
       case 'StatusCommand':
-        return StatusCommand(boxId, json['status'], json['message']);
+        return StatusCommand(boxId, json['status'], json['message'], json['theme']);
       case 'StickExploded':
         return StickExploded(boxId);
       case 'VoteResult':
@@ -81,7 +81,8 @@ class DisconnectRemote extends Command {
 class StatusCommand extends Command {
   final String status;
   final String message;
-  StatusCommand(super.boxId, this.status, this.message);
+  final String theme;
+  StatusCommand(super.boxId, this.status, this.message, this.theme);
 }
 
 class StickExploded extends Command {
