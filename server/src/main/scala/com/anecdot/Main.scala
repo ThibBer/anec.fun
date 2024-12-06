@@ -58,8 +58,10 @@ object Main extends JsonCommandSupport {
   private def webSocketFlow(
       commandRouter: ActorRef[CommandRouterTrait],
       boxId: Int
-  ): Flow[Message, Message, Any] = {
-    val uniqueId = UUID.randomUUID().toString
+  )(implicit system: ActorSystem[?]): Flow[Message, Message, Any] = {
+
+    var uniqueId = UUID.randomUUID().toString
+
     val completionMatcher: PartialFunction[Any, CompletionStrategy] = {
       case "complete" => CompletionStrategy.draining
     }
@@ -77,30 +79,58 @@ object Main extends JsonCommandSupport {
       )
 
     val incoming = Sink.foreach[Message] {
-      case TextMessage.Strict(
-            "heartbeat"
-          ) => // no action, used to keep connection opened
+      case TextMessage.Strict("heartbeat") => // Keep connection alive
       case TextMessage.Strict(text @ jsonRegex()) =>
         logger.info(s"Received message: $text")
-
         try {
           val command = text.parseJson.convertTo[Command]
+          command match {
+            case ConnectBox(_, Some(providedUniqueId)) =>
+              uniqueId = providedUniqueId.asInstanceOf[String]
+              logger.info(s"Reusing provided uniqueId: $uniqueId")
+            case ConnectBox(_, None) =>
+              logger.info(
+                s"New connection, using generated uniqueId: $uniqueId"
+              )
+            case ConnectRemote(boxId, Some(providedUniqueId), username) =>
+              uniqueId = providedUniqueId
+              logger.info(s"Reusing provided uniqueId: $uniqueId")
+            case ConnectRemote(boxId, None, username) =>
+              logger.info(
+                s"New connection, using generated uniqueId: $uniqueId"
+              )
+            case _ => {
+              logger.info(s"Received command: $command")
+            }
+
+          }
           commandRouter ! NewCommand(command, uniqueId)
         } catch {
-          case e: Exception =>
-            logger.error(e.getMessage)
+          case e: Exception => logger.error(e.getMessage)
         }
-
       case TextMessage.Strict(text) =>
-        logger.info(s"Received and ignored message : $text")
+        logger.info(s"Ignored message: $text")
       case _ =>
     }
 
-    Flow.fromSinkAndSourceMat(incoming, outgoing) { (_, actorRef) =>
-      commandRouter ! RegisterWebSocketActor(uniqueId, boxId, actorRef.toTyped)
-      val response =
-        CommandResponse(uniqueId, "Connection", ResponseState.SUCCESS)
-      actorRef ! TextMessage(response.toJson.compactPrint)
-    }
+    // Apply watchTermination directly to the Flow
+    Flow
+      .fromSinkAndSourceMat(incoming, outgoing) { (_, actorRef) =>
+        commandRouter ! RegisterWebSocketActor(
+          uniqueId,
+          boxId,
+          actorRef.toTyped
+        )
+        val response =
+          CommandResponse(uniqueId, "Connection", ResponseState.SUCCESS)
+        actorRef ! TextMessage(response.toJson.compactPrint)
+        actorRef
+      }
+      .watchTermination() { (_, termination) =>
+        termination.onComplete { _ =>
+          logger.info("WebSocket connection closed.")
+          commandRouter ! NewCommand(ClientDisconnected(boxId, uniqueId), uniqueId)
+        }(system.executionContext)
+      }
   }
 }

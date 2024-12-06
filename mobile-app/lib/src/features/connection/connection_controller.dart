@@ -1,10 +1,16 @@
+import 'package:anecdotfun/src/core/models/game.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+
 import '../../core/services/web_socket_connection.dart';
 import 'package:flutter/material.dart';
 
 /// A controller class to manage the connection logic of the connection page.
 ///
 /// This class handles form validation, WebSocket initialization, and disposal of resources.
-class ConnectionController with ChangeNotifier {
+class ConnectionController {
+  late final Game game;
+  ConnectionController({required this.game});
+
   /// A key to identify the form and access its state.
   final GlobalKey<FormState> formKey = GlobalKey<FormState>();
 
@@ -16,94 +22,59 @@ class ConnectionController with ChangeNotifier {
 
   WebSocketConnection? _webSocketConnection;
 
-  bool _isConnecting = false;
-  String? _connectionMessage;
-
-  /// Whether the controller is currently attempting to connect.
-  bool get isConnecting => _isConnecting;
-
-  /// Message related to the current connection status.
-  String? get connectionMessage => _connectionMessage;
-
   /// Initializes the WebSocket connection using the provided box ID.
   ///
   /// [boxId]: The ID of the box to connect to.
   /// [onSuccess]: Callback to invoke upon successful connection.
   /// [onError]: Callback to invoke upon encountering an error.
-  void initializeWebSocket(
-    String boxId,
-    String username, {
-    required void Function() onSuccess,
-    required void Function(String) onError,
-  }) {
-    _isConnecting = true;
-    _connectionMessage = null;
-    notifyListeners();
-    try {
-      _webSocketConnection = WebSocketConnection(
-        boxId: int.parse(boxId),
-        username: username,
-        onError: (error) {
-          _connectionMessage = "Error: $error";
-          _isConnecting = false;
-          notifyListeners();
-          onError(error);
-        },
-        onMessage: (message) {
-          _connectionMessage = "Received: $message";
-          notifyListeners();
-        },
-        onConnectionClosed: (message) {
-          _connectionMessage = "Connection closed: $message";
-          _isConnecting = false;
-          notifyListeners();
-        },
-        onConnectionSuccess: (message) {
-          _webSocketConnection?.connect();
-          _connectionMessage = "Connected successfully: $message";
-          _isConnecting = false;
-          notifyListeners();
-        },
-        onRemoteConnectionSuccess: (message) {
-          _connectionMessage = "Remote connection success: $message";
-          _isConnecting = false;
-          notifyListeners();
-          onSuccess();
-        },
-      );
-      _webSocketConnection?.init();
-    } catch (error) {
-      _connectionMessage = "Failed to connect: $error";
-      _isConnecting = false;
-      notifyListeners();
-      onError(error.toString());
-    }
+  void initializeWebSocket(String boxId, String username, {reconnect = false}) {
+    _webSocketConnection = WebSocketConnection(
+      boxId: int.parse(boxId),
+      username: username,
+    );
+    _webSocketConnection?.init(reconnect);
   }
 
   /// Submits the form and attempts to establish a WebSocket connection.
   ///
   /// [onSuccess]: Callback to invoke upon successful connection.
   /// [onError]: Callback to invoke upon encountering an error.
-  void submitForm({
-    required void Function() onSuccess,
-    required void Function(String) onError,
-  }) {
+  void submitForm() {
     // Check name is valid
     if (nameController.text.trim().isEmpty) {
-      onError("Please enter your name");
+      game.setError("Please enter your name");
       return;
     }
     if (formKey.currentState!.validate()) {
       formKey.currentState!.save();
       initializeWebSocket(
-          boxIdController.text.trim(), nameController.text.trim(),
-          onSuccess: onSuccess, onError: onError);
+          boxIdController.text.trim(), nameController.text.trim());
     }
+  }
+
+  void reconnect() async {
+    final prefs = await SharedPreferences.getInstance();
+    var uniqueId, _ = prefs.getStringList('uniqueId');
+    initializeWebSocket(uniqueId, "", reconnect: true);
+    game.setReconnecting(true);
   }
 
   /// Disposes the controller, releasing any resources held.
   void disposeController() {
     boxIdController.dispose();
     _webSocketConnection?.close();
+  }
+
+  Future<bool> promptReconnect() async {
+    // Check if stored unique ID is available and not too old
+    final prefs = await SharedPreferences.getInstance();
+    var _, timestamp = prefs.getStringList('uniqueId');
+    // check if timestamp is not older than 15 minutes
+    if (timestamp != null &&
+        DateTime.now().difference(DateTime.parse(timestamp[1])).inMinutes <
+            15) {
+      return true;
+    }
+    return false;
   }
 }
