@@ -11,4 +11,5 @@ object CommandType {
   val STATUS = "StatusCommand"
   val SET_GAME_MODE = "SetGameModeCommand"
   val GAME_MODE_CHANGED = "GameModeChanged"
+  val ANECDOTE_TELLER =  "AnnecdotTeller"
 }

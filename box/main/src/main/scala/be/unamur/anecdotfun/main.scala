@@ -110,7 +110,7 @@ object Main {
           if (isCommandSuccessful) {
             onGameStateChanged("STOPPED")
           }
-        case CommandType.STICK_EXPLODED =>
+        case CommandType.ANECDOTE_TELLER =>
           if (isCommandSuccessful) {
             onStickExploded()
           }
