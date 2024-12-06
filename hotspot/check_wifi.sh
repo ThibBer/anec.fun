@@ -72,6 +72,7 @@ do
         # Check if hostapd is running, start it if needed
         if ! is_active "hostapd"; then
             echo "Starting hotspot..."
+	    sleep 5
             sudo systemctl restart hostapd
         else
             echo "Hotspot is already running."

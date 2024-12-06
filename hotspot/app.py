@@ -84,10 +84,10 @@ def network_scan() -> None:
     networks = cards
     socketio.emit("task_complete", {"result": cards})
 
-    subprocess.run(["sudo", "systemctl", "start", "hostapd"])
     subprocess.run(["sudo", "systemctl", "stop", "NetworkManager"])
     subprocess.run(["sudo", "systemctl", "stop", "wpa_supplicant"])
-
+    subprocess.run(["sleep", "5"])
+    subprocess.run(["sudo", "systemctl", "start", "hostapd"])
 
 @app.route("/refresh_cards")
 def refresh_cards() -> str:
