@@ -40,7 +40,7 @@ class PlayerScorePageState extends State<PlayerScorePage> {
         if (scoreController.game.state == GameState.roundStarted) {
           // Schedule navigation after the build completes
           WidgetsBinding.instance.addPostFrameCallback((_) {
-            Navigator.pushNamed(context, StickPassingPage.routeName);
+            Navigator.pushReplacementNamed(context, StickPassingPage.routeName);
           });
         }
         return Scaffold(

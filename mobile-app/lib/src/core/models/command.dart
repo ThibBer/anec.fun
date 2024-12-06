@@ -32,6 +32,8 @@ abstract class Command {
         return VoteResult(boxId);
       case 'AnnecdotTeller':
         return AnnecdotTeller(boxId);
+      case 'RetrieveStateCommand':
+        return RetrieveStateCommand(boxId);
       case 'GameModeChanged':
         return GameModeChanged(boxId, json["message"]);
       default:
@@ -92,6 +94,10 @@ class VoteResult extends Command {
 
 class AnnecdotTeller extends Command {
   AnnecdotTeller(super.boxId);
+}
+
+class RetrieveStateCommand extends Command {
+  RetrieveStateCommand(super.boxId);
 }
 
 class GameModeChanged extends Command {

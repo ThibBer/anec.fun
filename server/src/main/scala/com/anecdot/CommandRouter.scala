@@ -8,9 +8,18 @@ import akka.http.scaladsl.model.ws.TextMessage
 import scala.collection.mutable
 
 sealed trait CommandRouterTrait
-final case class NewCommand(command: Command, uniqueId: String) extends CommandRouterTrait
+final case class NewCommand(command: Command, uniqueId: String)
+    extends CommandRouterTrait
+
 final case class RegisterWebSocketActor(
     uniqueId: String,
+    boxId: Int,
+    ref: ActorRef[TextMessage]
+) extends CommandRouterTrait
+
+final case class UpdateWebSocketActor(
+    uniqueId: String,
+    newUniqueId: String,
     boxId: Int,
     ref: ActorRef[TextMessage]
 ) extends CommandRouterTrait
@@ -32,7 +41,8 @@ class CommandRouter {
       val remoteManagers = mutable.Map[Int, ActorRef[Command]]()
       // Map of WebSocket clients and their unique ids for each boxId.
       // The key is the boxId, and the value is a map of unique ids to actor references.
-      val webSocketClients = mutable.Map[Int, mutable.Map[String, ActorRef[TextMessage]]]()
+      val webSocketClients =
+        mutable.Map[Int, mutable.Map[String, ActorRef[TextMessage]]]()
 
       /** Handles incoming messages for the CommandRouter actor.
         *
@@ -71,7 +81,19 @@ class CommandRouter {
           }
           Behaviors.same
 
+        case UpdateWebSocketActor(uniqueId, newUniqueId, boxId, ref) =>
+          context.log.info(
+            s"Updating WebSocket client with id: $uniqueId to $newUniqueId."
+          )
+          // Replace the old uniqueId with the new one
+          webSocketClients(boxId) -= uniqueId
+          webSocketClients(boxId)(newUniqueId) = ref
+          Behaviors.same
+
         case NewCommand(command, wsUniqueId) =>
+          context.log.info(
+            s"${command.getClass.getSimpleName} command received for boxId: ${command.boxId}"
+          )
           val manager = remoteManagers.getOrElseUpdate(
             command.boxId, {
               context.log.info(
@@ -87,7 +109,7 @@ class CommandRouter {
           // Routes incoming commands to the appropriate handler in the manager actor.
           command match {
             case ConnectBox(boxId, uniqueId) =>
-              manager ! ConnectBox(boxId, wsUniqueId)
+              manager ! ConnectBox(boxId, Some(wsUniqueId))
 
             case StartGameCommand(boxId, uniqueId) =>
               manager ! StartGameCommand(boxId, wsUniqueId)
@@ -102,7 +124,7 @@ class CommandRouter {
               manager ! VoteCommand(boxId, vote, wsUniqueId, isSpeaker)
 
             case ConnectRemote(boxId, uniqueId, username) =>
-              manager ! ConnectRemote(boxId, wsUniqueId, username)
+              manager ! ConnectRemote(boxId, Some(wsUniqueId), username)
 
             case DisconnectRemote(boxId, uniqueId) =>
               manager ! DisconnectRemote(boxId, wsUniqueId)
@@ -116,13 +138,15 @@ class CommandRouter {
             case ScannedStickCommand(boxId, uniqueId) =>
               manager ! ScannedStickCommand(boxId, uniqueId)
 
+            case ClientDisconnected(boxId, uniqueId) =>
+              manager ! ClientDisconnected(boxId, uniqueId)
+
             case SetGameModeCommand(boxId, uniqueId, gameMode) =>
               manager ! SetGameModeCommand(boxId, uniqueId, gameMode)
 
             case _ =>
               context.log.info(s"Unknown command: $command")
           }
-
           Behaviors.same
       }
   }
