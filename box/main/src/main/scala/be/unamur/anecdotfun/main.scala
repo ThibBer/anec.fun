@@ -201,7 +201,14 @@ object Main {
       ))
     })
     mic.startListening(sink, duration) match {
-      case None => println("Error start listening")
+      case None =>
+        println("Error start listening")
+        webSocketClient.send(JsObject(
+          "boxId" -> JsNumber(boxId),
+          "uniqueId" -> JsString(uniqueId),
+          "commandType" -> JsString(CommandType.VOICE_FLOW),
+          "payload" -> JsNull
+        ))
       case Some(completionFuture) =>
         completionFuture.onComplete { _ =>
           println("Flow completed early, cancelling scheduled task")
@@ -213,12 +220,6 @@ object Main {
           ))
         }
     }
-    webSocketClient.send(JsObject(
-      "boxId" -> JsNumber(boxId),
-      "uniqueId" -> JsString(uniqueId),
-      "commandType" -> JsString("VoiceFlow"),
-      "payload" -> JsArray(),
-    ))
   }
 
   private def onGameModeChanged(state: String): Unit = {

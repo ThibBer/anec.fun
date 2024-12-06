@@ -32,6 +32,11 @@ class TellingAnecdotePageState extends State<TellingAnecdotePage> {
     return ValueListenableBuilder<bool>(
       valueListenable: _controller.isRecording,
       builder: (context, isRecording, child) {
+        if (_controller.game.state == GameState.voting) {
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            Navigator.pushReplacementNamed(context, VotePage.routeName);
+          });
+        }
         return Scaffold(
           appBar: AppBar(
             title: const Text("Telling Anecdote"),
