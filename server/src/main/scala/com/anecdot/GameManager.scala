@@ -21,7 +21,7 @@ object GameManager {
 
   // Global variable for the different themes
   object Global {
-    var themes: List[String] = List("voyage", "ecole", "autre")
+    var themes: List[String] = List("voyage", "ecole", "famille", "travail", "fete", "sport")
   }
 
   def apply(
