@@ -15,9 +15,12 @@ val config = ConfigFactory.load()
 implicit val system: ActorSystem = ActorSystem("box-anecdotfun", config)
 implicit val ec: scala.concurrent.ExecutionContext = scala.concurrent.ExecutionContext.global
 
-val boxId = config.getInt("akka.game.box.id")
-var webSocketClient = WebSocketClient(config.getString("akka.game.server.base-url") + boxId)
-val serial = SerialThread(config.getString("akka.game.arduino.com-port"))
+val boxId = Option(System.getenv(
+  "BOX_ID")).getOrElse(config.getString("akka.game.box.id")).toInt
+var webSocketClient = WebSocketClient(Option(System.getenv(
+  "BASE_URL")).getOrElse(config.getString("akka.game.server.base-url")) + boxId)
+val serial = SerialThread(Option(System.getenv(
+  "COMPORT")).getOrElse(config.getString("akka.game.arduino.com-port")))
 val mic = Microphone(serial)
 var uniqueId = ""
 
@@ -107,7 +110,7 @@ object Main {
           if (isCommandSuccessful) {
             onGameStateChanged("STOPPED")
           }
-        case CommandType.STICK_EXPLODED =>
+        case CommandType.ANECDOTE_TELLER =>
           if (isCommandSuccessful) {
             onStickExploded()
           }
@@ -198,7 +201,14 @@ object Main {
       ))
     })
     mic.startListening(sink, duration) match {
-      case None => println("Error start listening")
+      case None =>
+        println("Error start listening")
+        webSocketClient.send(JsObject(
+          "boxId" -> JsNumber(boxId),
+          "uniqueId" -> JsString(uniqueId),
+          "commandType" -> JsString(CommandType.VOICE_FLOW),
+          "payload" -> JsNull
+        ))
       case Some(completionFuture) =>
         completionFuture.onComplete { _ =>
           println("Flow completed early, cancelling scheduled task")
@@ -210,12 +220,6 @@ object Main {
           ))
         }
     }
-    webSocketClient.send(JsObject(
-      "boxId" -> JsNumber(boxId),
-      "uniqueId" -> JsString(uniqueId),
-      "commandType" -> JsString("VoiceFlow"),
-      "payload" -> JsArray(),
-    ))
   }
 
   private def onGameModeChanged(state: String): Unit = {

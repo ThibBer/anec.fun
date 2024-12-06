@@ -31,4 +31,17 @@ inThisBuild(
   )
 )
 
-ThisBuild / scalafixDependencies += "io.github.dedis" %% "scapegoat-scalafix" % "1.1.3"
+ThisBuild / scalafixDependencies += "io.github.dedis" %% "scapegoat-scalafix" % "1.1.4"
+
+enablePlugins(UniversalPlugin)
+enablePlugins(JavaAppPackaging, AshScriptPlugin)
+enablePlugins(DockerPlugin)
+
+mapGenericFilesToLinux
+
+
+dockerBaseImage := "eclipse-temurin:23-jre-alpine"
+dockerUsername := Some("vsantele")
+Docker / packageName := "anecdotfun-server"
+dockerRepository := Some("ghcr.io")
+dockerExposedPorts ++= Seq(8080)

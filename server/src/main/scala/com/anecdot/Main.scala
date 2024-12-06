@@ -17,8 +17,9 @@ import org.slf4j.LoggerFactory
 import spray.json._
 
 import java.util.UUID
+import scala.concurrent.Await
 import scala.concurrent.ExecutionContextExecutor
-import scala.io.StdIn
+import scala.concurrent.duration.Duration
 
 private val logger = LoggerFactory.getLogger(getClass)
 private val jsonRegex = """\{.*}""".r
@@ -40,9 +41,10 @@ object Main extends JsonCommandSupport {
     val bindingFuture = Http().newServerAt("0.0.0.0", 8080).bind(route)
 
     logger.info(
-      "Server now online at ws://localhost:8080/ws\nPress RETURN to stop..."
+      "Server now online at ws://localhost:8080/ws"
     )
-    StdIn.readLine()
+    Await.result(system.whenTerminated, Duration.Inf)
+
     bindingFuture.flatMap(_.unbind()).onComplete(_ => system.terminate())
   }
 
