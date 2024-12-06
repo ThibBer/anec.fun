@@ -1,6 +1,3 @@
-import com.typesafe.sbt.packager.linux.LinuxPlugin.mapGenericFilesToLinux
-import com.typesafe.sbt.packager.docker.DockerPlugin.autoImport.*
-
 name := "anecdotfun"
 
 version := "0.0.1"
