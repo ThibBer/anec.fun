@@ -122,8 +122,12 @@ void setup() {
   radio.setAutoAck(0);             // Disable ACKnowledgement packets to allow multicast reception
   radio.setCRCLength(RF24_CRC_8);  // Only use 8bit CRC for audio
   radio.setPALevel(RF24_PA_LOW);
+  radio.startListening();
+
   // radio.setDataRate(RF24_1MBPS);  // Library default is RF24_1MBPS for RF24 and RF24Audio
-  
+  radio.openWritingPipe(addresses[0]);     // Set up reading and writing pipes.
+  radio.openReadingPipe(1, addresses[1]);  // All of the radios listen by default to the same multicast pipe
+
   //startCheckupSequence();
 
   int modeSelectionSwitch = digitalRead(MODE_SELECTION_PIN);
