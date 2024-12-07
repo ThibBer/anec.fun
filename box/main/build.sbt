@@ -1,4 +1,4 @@
-import com.typesafe.sbt.packager.docker.Cmd
+import com.typesafe.sbt.packager.docker.{Cmd, DockerVersion}
 import com.typesafe.sbt.packager.linux.LinuxPlugin.mapGenericFilesToLinux
 import com.typesafe.sbt.packager.docker.DockerPlugin.autoImport.*
 
@@ -34,7 +34,7 @@ dockerBaseImage := "eclipse-temurin:23-jre-alpine"
 dockerUsername := Some("vsantele")
 Docker / packageName := "anecdotfun-box"
 dockerRepository := Some("ghcr.io")
-dockerVersion := Some("lastest")
+dockerVersion := DockerVersion.parse("lastest")
 dockerCommands ++= Seq(
   Cmd("USER", "root"),
   Cmd("RUN", "apk add --no-cache ffmpeg"),
