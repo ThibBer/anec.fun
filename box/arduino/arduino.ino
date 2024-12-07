@@ -111,7 +111,7 @@ void setup() {
 
   // initialize the transceiver on the SPI bus
   if (!radio.begin()) {
-    Serial.println(F("radio hardware is not responding!!"));
+    Serial.println(F("debug: radio hardware is not responding!!"));
     while (1) {
       blinkStartLED(5, 255, 0, 0, 100);
       delay(300);
@@ -213,7 +213,6 @@ void loop() {
     if (startButtonPressedTime != -1) {
       // Short press
       if (currentTime - startButtonPressedTime >= BUTTON_SHORT_PRESS_DURATION && currentTime - startButtonPressedTime < BUTTON_LONG_PRESS_DURATION) {
-        Serial.println("debug: short press");
         if (currentGameState == STOPPED) {
           playButtonClickSound();
           setGameState(START);
