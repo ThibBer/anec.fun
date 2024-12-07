@@ -21,6 +21,7 @@ implicit val ec: scala.concurrent.ExecutionContext = scala.concurrent.ExecutionC
 
 var uniqueId = readSavedUniqueId()
 
+val uniqueIdValidDuration = config.getString("akka.game.box.unique-id-valid-duration").toInt // in minutes
 val boxId = Option(System.getenv("BOX_ID")).getOrElse(config.getString("akka.game.box.id")).toInt
 val baseUrl = Option(System.getenv("BASE_URL")).getOrElse(config.getString("akka.game.server.base-url")) + boxId
 var webSocketClient: WebSocketClient = null
@@ -64,7 +65,7 @@ object Main {
 
   private def onConnectedToWebSocket(statusCode: StatusCode): Unit = {
     exponentialRetryCount = 0
-    
+
     println(s"WebSocket connection established ${dateTimeString()}")
     connectBoxToServer()
   }
@@ -292,7 +293,27 @@ def readSavedUniqueId(): String = {
 
   try {
     println(s"Read uniqueId file : $path")
-    os.read.lines(path).head
+    val lines = os.read.lines(path)
+    val uniqueId = os.read.lines(path).apply(0)
+    val timestamp = os.read.lines(path).apply(1)
+    val dateTime = DateTime.fromIsoDateTimeString(timestamp)
+
+    println(s"UniqueId : $uniqueId")
+    println(s"timestamp : $timestamp")
+    println(s"DateTime : $dateTime")
+
+    dateTime match {
+      case None =>
+        print("Invalid datetime")
+        ""
+      case Some(dt) =>
+        if((DateTime.now.clicks - dt.clicks) / 60000 > uniqueIdValidDuration)
+          print("UniqueId expired")
+          ""
+        else
+          print("UniqueId is valid")
+          uniqueId // local id is valid 10 min
+    }
   } catch {
     case e: NoSuchElementException =>
       println(s"UniqueId file exists but empty : $path")
@@ -304,5 +325,5 @@ def readSavedUniqueId(): String = {
 def saveUniqueId(id: String): Unit = {
   val path = os.Path(System.getProperty("user.home") + "/uniqueId.iot")
   println(s"Save uniqueId file : $path")
-  os.write.over(path, id)
+  os.write.over(path, s"$id\n${DateTime.now}")
 }
