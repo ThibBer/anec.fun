@@ -15,6 +15,7 @@ class SerialThread(portDescriptor: String) extends Thread {
   private var mode = SerialMode.Standard
 
 
+  var onConnected: Unit = {}
   var onReceiveSerialData: String => Unit = _ => {}
   var onReceiveVoiceSerialData: Array[Byte] => Unit = _ => {}
 
@@ -23,7 +24,6 @@ class SerialThread(portDescriptor: String) extends Thread {
 
     comPort.openPort(1000)
     comPort.setBaudRate(115200)
-    println(s"Port opened, reading serial on $portDescriptor")
   }
 
   override def run(): Unit = {

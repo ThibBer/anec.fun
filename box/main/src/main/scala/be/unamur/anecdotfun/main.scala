@@ -2,6 +2,7 @@ package be.unamur.anecdotfun
 
 import akka.actor.ActorSystem
 import akka.http.scaladsl.model.{DateTime, StatusCode}
+import akka.pattern.after
 import akka.stream.scaladsl.Sink
 import akka.util.ByteString
 import be.unamur.anecdotfun.CommandResponseJsonProtocol.commandResponseFormat
@@ -9,6 +10,8 @@ import be.unamur.anecdotfun.GameState.{START, STOP}
 import com.typesafe.config.ConfigFactory
 import spray.json.*
 
+import scala.concurrent.Future
+import scala.concurrent.duration.*
 import scala.concurrent.duration.DurationInt
 import scala.sys.process.Process
 
@@ -20,18 +23,19 @@ var uniqueId = readSavedUniqueId()
 
 val boxId = Option(System.getenv("BOX_ID")).getOrElse(config.getString("akka.game.box.id")).toInt
 val baseUrl = Option(System.getenv("BASE_URL")).getOrElse(config.getString("akka.game.server.base-url")) + boxId
-var webSocketClient = WebSocketClient(if (uniqueId.isEmpty) baseUrl else baseUrl + "?uniqueId=" + uniqueId)
-val serial = SerialThread(Option(System.getenv("COMPORT")).getOrElse(config.getString("akka.game.arduino.com-port")))
+var webSocketClient: WebSocketClient = null
+val comPort = Option(System.getenv("COMPORT")).getOrElse(config.getString("akka.game.arduino.com-port"))
+val serial = SerialThread(comPort)
 val mic = Microphone(serial)
+var exponentialRetryCount = 0
+val exponentialRetryMaxCount = 5
 
 object Main {
   def main(args: Array[String]): Unit = {
     serial.onReceiveSerialData = onReceiveSerialData
+    serial.onConnected = onSerialConnected()
 
-    webSocketClient.onReceiveMessage = onReceiveWebSocketMessage
-    webSocketClient.onConnectionEstablished = onConnectedToWebSocket
-    webSocketClient.onConnectionFailed = (status: StatusCode) => println(s"WebSocket connection failed: $status")
-    webSocketClient.onConnectionClosed = () => println(s"WebSocket connection closed ${dateTimeString()}")
+    serial.start()
   }
 
   private val serialMessageAction: Map[String, String => Unit] = Map(
@@ -41,11 +45,54 @@ object Main {
     MessageKey.RequestShutdown -> onRequestShutdown,
   )
 
-  private def onConnectedToWebSocket(statusCode: StatusCode): Unit = {
-    println(s"WebSocket connection established ${dateTimeString()}")
+  private def onSerialConnected(): Unit = {
+    println(s"Port opened, reading serial on $comPort")
 
-    serial.start()
+    println(s"Try to connect to websocket ...")
+    connectToWebsocket()
+  }
+
+  private def onWebSocketConnectionClosed(): Unit = {
+    println(s"WebSocket connection closed ${dateTimeString()}")
+    websocketConnectionExponentialRetry()
+  }
+
+  private def onConnectionFailed(status: StatusCode): Unit = {
+    println(s"WebSocket connection failed: $status")
+    websocketConnectionExponentialRetry()
+  }
+
+  private def onConnectedToWebSocket(statusCode: StatusCode): Unit = {
+    exponentialRetryCount = 0
+    
+    println(s"WebSocket connection established ${dateTimeString()}")
     connectBoxToServer()
+  }
+
+  private def connectToWebsocket(): Unit = {
+    val websocketUrl = if (uniqueId.isEmpty) baseUrl else baseUrl + "?uniqueId=" + uniqueId
+    webSocketClient = WebSocketClient(websocketUrl)
+
+    webSocketClient.onReceiveMessage = onReceiveWebSocketMessage
+    webSocketClient.onConnectionEstablished = onConnectedToWebSocket
+    webSocketClient.onConnectionFailed = onConnectionFailed
+    webSocketClient.onConnectionClosed = onWebSocketConnectionClosed
+  }
+
+  private def websocketConnectionExponentialRetry(): Unit = {
+    if(exponentialRetryCount >= exponentialRetryMaxCount){
+      println(s"Cancel websocket exponential retry after $exponentialRetryCount try")
+      exponentialRetryCount = 0
+      return
+    }
+
+    after(math.pow(2, exponentialRetryCount).seconds, using = system.scheduler) {
+      Future{
+        exponentialRetryCount = exponentialRetryCount + 1
+        println(s"Websocket exponential retry $exponentialRetryCount/$exponentialRetryMaxCount")
+        connectToWebsocket()
+      }
+    }
   }
 
   private def onReceiveSerialData(serialInput: String): Unit = {
