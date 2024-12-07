@@ -23,8 +23,8 @@ object GameManager {
 
   // Global variable for the different themes
   object Global {
-    var themeSubjects: List[String] = List("voyage", "ecole", "famille", "travail", "fete", "sport")
-    var emotionSubjects: List[String] = List("happiness", "sadness", "fear", "surprise", "disgust")
+    var themeSubjects: Array[String] = Array("voyage", "ecole", "famille", "travail", "fete", "sport")
+    var emotionSubjects: Array[String] = Array("joie", "tristesse", "peur", "surprise", "dégoût")
   }
 
   def apply(
@@ -190,9 +190,7 @@ object GameManager {
                 response.toJson.compactPrint
               )
 
-              subject =
-                if (gameMode == GameMode.THEME) Global.themeSubjects(Random.nextInt(Global.themeSubjects.length))
-                else Global.emotionSubjects(Random.nextInt(Global.emotionSubjects.length))
+              subject = getRandomSubjectForGameMode(gameMode)
               println(s"Random picked subject for mode ($gameMode) : $subject")
               broadcastSubject(webSocketClients, boxId, subject)
               gameState = States.ROUND_STARTED
@@ -391,13 +389,13 @@ object GameManager {
 
           case VoiceFlow(boxId, uniqueId, payload) =>
             context.log.info(s"VoiceFlow $uniqueId for box $boxId")
-            // TODO: make intent configurable
+            
             payload match {
               case None =>
                 speechToText
                   .recognize()
                   .via(
-                    speechToText.detectIntent(Array("voyage", "ecole", "autre"))
+                    speechToText.detectIntent(getSubjectsFromGameMode(gameMode))
                   )
                   .runForeach(result => {
                     // TODO: do something with the result
@@ -704,5 +702,17 @@ object GameManager {
       Some(gameMode)
     )
     client ! TextMessage(response.toJson.compactPrint)
+  }
+
+  private def getRandomSubjectForGameMode(gameMode: String): String  = {
+    val subjects = getSubjectsFromGameMode(gameMode)
+    subjects(Random.nextInt(subjects.length))
+  }
+
+  private def getSubjectsFromGameMode(gameMode: String): Array[String] = {
+    if (gameMode == GameMode.THEME)
+      Global.themeSubjects
+    else
+      Global.emotionSubjects
   }
 }
