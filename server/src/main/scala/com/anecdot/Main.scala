@@ -1,17 +1,23 @@
 package com.anecdot
 
-import akka.actor.typed.{ActorRef, ActorSystem}
-import akka.actor.typed.scaladsl.adapter.*
+import akka.actor.typed.ActorRef
+import akka.actor.typed.ActorSystem
+import akka.actor.typed.scaladsl.adapter._
 import akka.http.scaladsl.Http
-import akka.http.scaladsl.model.ws.{Message, TextMessage}
-import akka.http.scaladsl.server.Directives.*
-import akka.stream.{CompletionStrategy, OverflowStrategy}
-import akka.stream.scaladsl.{Flow, Sink, Source}
+import akka.http.scaladsl.model.ws.Message
+import akka.http.scaladsl.model.ws.TextMessage
+import akka.http.scaladsl.server.Directives._
+import akka.stream.CompletionStrategy
+import akka.stream.OverflowStrategy
+import akka.stream.scaladsl.Flow
+import akka.stream.scaladsl.Sink
+import akka.stream.scaladsl.Source
 import org.slf4j.LoggerFactory
-import spray.json.*
+import spray.json._
 
 import java.util.UUID
-import scala.concurrent.{Await, ExecutionContextExecutor}
+import scala.concurrent.Await
+import scala.concurrent.ExecutionContextExecutor
 import scala.concurrent.duration.Duration
 
 private val logger = LoggerFactory.getLogger(getClass)

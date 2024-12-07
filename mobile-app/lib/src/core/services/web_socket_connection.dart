@@ -110,7 +110,6 @@ class WebSocketConnection {
 
   void _reconnect(String? uniqueId) {
     print("Try to reconnect to web socket");
-    game.updateState(GameState.connectionLost);
     if (_retryCount >= _maxRetries) {
       game.setError("Failed to reconnect after $_maxRetries attempts.");
       return;

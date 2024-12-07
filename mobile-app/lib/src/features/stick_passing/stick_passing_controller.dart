@@ -17,12 +17,16 @@ class StickPassingController extends ChangeNotifier {
     required this.webSocketConnection,
     required this.game,
       required this.context}) {
-    if (isNfcAvailable()) {
+    _initialize();
+  }
+
+  Future<void> _initialize() async {
+    if (await isNfcAvailable()) {
       isScanning = true;
     }
   }
 
-  isNfcAvailable() async {
+  Future<bool> isNfcAvailable() async {
     return await NfcManager.instance.isAvailable();
   }
 
@@ -46,7 +50,7 @@ class StickPassingController extends ChangeNotifier {
     final payload = tag.data['payload'];
     if (payload != null &&
         String.fromCharCodes(payload.sublist(1 + payload[0])) == "stick") {
-      if (validateStick()) {
+      if (isStickExploded()) {
         isScanning = false;
         isExploded = true;
         notifyListeners();
@@ -64,7 +68,7 @@ class StickPassingController extends ChangeNotifier {
 
   /// Validates the scan after timeout
   void validateScanByTap() {
-    if (validateStick()) {
+    if (isStickExploded()) {
       isExploded = true;
       isSuccess = false;
     } else {
@@ -76,21 +80,20 @@ class StickPassingController extends ChangeNotifier {
     notifyListeners();
 
     Future.delayed(const Duration(seconds: 2), () {
-      if (validateStick()) onScanSuccessful();
+      onScanSuccessful();
     });
   }
 
-  /// Validates if the stick is valid
-  bool validateStick() {
+  bool isStickExploded() {
     return game.stickExploded;
   }
 
   /// Handles successful scan logic
-  void onScanSuccessful() {
+  void onScanSuccessful() async {
     webSocketConnection.sendStickScanned();
     isExploded = false;
     isSuccess = false;
-    if (isNfcAvailable()) {
+    if (await isNfcAvailable()) {
       isScanning = true;
     }
     notifyListeners();

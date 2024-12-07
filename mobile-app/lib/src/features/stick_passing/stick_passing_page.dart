@@ -7,7 +7,6 @@ import '../../core/models/game.dart';
 import '../../core/services/web_socket_connection.dart';
 import 'stick_passing_controller.dart';
 
-
 class StickPassingPage extends StatefulWidget {
   static const routeName = '/stick_passing';
 
@@ -19,6 +18,9 @@ class StickPassingPage extends StatefulWidget {
 
 class _StickPassingPageState extends State<StickPassingPage> {
   late final StickPassingController _controller;
+
+  bool _isNfcAvailable = true; // Default to true until checked
+  bool _isNfcChecked = false; // To ensure the check runs only once
 
   @override
   void initState() {
@@ -32,6 +34,14 @@ class _StickPassingPageState extends State<StickPassingPage> {
     _controller.addListener(() {
       setState(() {});
     });
+    // Check NFC availability
+    _checkNfcAvailability();
+  }
+
+  Future<void> _checkNfcAvailability() async {
+    _isNfcAvailable = await _controller.isNfcAvailable();
+    _isNfcChecked = true;
+    setState(() {}); // Trigger UI update
   }
 
   @override
@@ -54,7 +64,7 @@ class _StickPassingPageState extends State<StickPassingPage> {
         return Scaffold(
           appBar: AppBar(
             title: const Text(
-                'Tap the Stick against the phone and pass it to the next player'),
+                'Stick Passing'),
           ),
           body: Center(
             child: Column(
@@ -77,20 +87,32 @@ class _StickPassingPageState extends State<StickPassingPage> {
                       fit: BoxFit.contain,
                     ),
                   ),
-                  const Text('Stick exploded! Game over!'),
-                ] else ...[
-                  if (!_controller.isNfcAvailable())
-                    const Text('NFC is not available on this device'),
-                    ElevatedButton(
-                    onPressed: _controller.validateScanByTap,
-                    child: const Text('Tap to validate the stick'),
-                  )
-                ],
+                  const Text('Stick exploded! Your turn to tell an anecdote!'),
+                ] else
+                  ..._displayManualScan(),
               ],
             ),
           ),
         );
       },
     );
+  }
+
+  List<Widget> _displayManualScan() {
+    if (!_isNfcChecked) {
+      return [const CircularProgressIndicator(), const Text('Checking NFC...')];
+    }
+
+    if (!_isNfcAvailable) {
+      return [
+        const Text('NFC is not available on this device'),
+        ElevatedButton(
+          onPressed: _controller.validateScanByTap,
+          child: const Text('Tap to validate the stick'),
+        ),
+      ];
+    }
+
+    return [const Text('NFC is available. Ready to scan!')];
   }
 }

@@ -119,20 +119,37 @@ class _ConnectionPageState extends State<ConnectionPage> {
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   // Logo
-                  SvgPicture.asset(
-                    'assets/images/logo_long.svg',
-                    semanticsLabel: 'Dart Logo',
-                  ),
-
-                  Expanded(
-                    child: Lottie.asset(
-                      'assets/animations/welcome.json',
-                      repeat: true,
-                      renderCache: RenderCache.raster,
-                      fit: BoxFit.contain,
+                  Visibility(
+                    visible: !_controller.game.isConnecting,
+                    child: Expanded(
+                      child: SvgPicture.asset(
+                        'assets/images/logo_long.svg',
+                        semanticsLabel: 'Dart Logo',
+                      ),
                     ),
                   ),
-                  Form(
+
+                  Visibility(
+                    visible: !_controller.game.isConnecting,
+                    child: Expanded(
+                      child: Theme.of(context).brightness == Brightness.light
+                          ? Lottie.asset(
+                              'assets/animations/welcome.json',
+                              repeat: true,
+                              renderCache: RenderCache.raster,
+                              fit: BoxFit.contain,
+                            )
+                          : Lottie.asset(
+                              'assets/animations/welcome_white.json',
+                              repeat: true,
+                              renderCache: RenderCache.raster,
+                              fit: BoxFit.contain,
+                            ),
+                    ),
+                  ),
+                  Visibility(
+                    visible: !_controller.game.isConnecting,
+                    child: Form(
                     key: _controller.formKey,
                     child: Column(
                       children: [
@@ -167,13 +184,31 @@ class _ConnectionPageState extends State<ConnectionPage> {
                         ),
                       ],
                     ),
+                    ),
                   ),
                   const SizedBox(height: 20),
-                  AnimatedBuilder(
+                  Center(
+                    child: AnimatedBuilder(
                     animation: _controller.game,
                     builder: (context, child) {
                       return _controller.game.isConnecting
-                          ? const CircularProgressIndicator()
+                            ? Column(
+                                children: [
+                                  ColorFiltered(
+                                    colorFilter: ColorFilter.mode(
+                                      Theme.of(context).colorScheme.primary,
+                                      BlendMode.modulate,
+                                    ),
+                                    child: Lottie.asset(
+                                      'assets/animations/loading.json',
+                                      repeat: true,
+                                      renderCache: RenderCache.raster,
+                                      fit: BoxFit.contain,
+                                    ),
+                                  ),
+                                  Text('Connecting... Please wait')
+                                ],
+                              )
                           : ElevatedButton(
                               onPressed: () {
                                 _controller.submitForm();
@@ -181,6 +216,7 @@ class _ConnectionPageState extends State<ConnectionPage> {
                               child: const Text('Connect'),
                             );
                     },
+                    ),
                   ),
                   const SizedBox(height: 20),
                   AnimatedBuilder(
