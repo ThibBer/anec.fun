@@ -139,6 +139,7 @@ class CommandRouter {
               manager ! ScannedStickCommand(boxId, uniqueId)
 
             case ClientDisconnected(boxId, uniqueId) =>
+              logger.info(s"ClientDisconnected($boxId, $uniqueId)")
               manager ! ClientDisconnected(boxId, uniqueId)
 
             case SetGameModeCommand(boxId, uniqueId, gameMode) =>

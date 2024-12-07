@@ -25,7 +25,7 @@ abstract class Command {
       case 'DisconnectRemote':
         return DisconnectRemote(boxId, uniqueId!);
       case 'StatusCommand':
-        return StatusCommand(boxId, json['status'], json['message'], json['theme']);
+        return StatusCommand(boxId, json['status'], json['message']);
       case 'StickExploded':
         return StickExploded(boxId);
       case 'VoteResult':
@@ -36,6 +36,10 @@ abstract class Command {
         return RetrieveStateCommand(boxId);
       case 'GameModeChanged':
         return GameModeChanged(boxId, json["message"]);
+      case 'ClientDisconnected':
+        return ClientDisconnected(boxId, json["senderUniqueId"]);
+      case 'SubjectChanged':
+        return SubjectChanged(boxId, json["message"]);
       default:
         throw UnsupportedError('Unknown command type: $commandType');
     }
@@ -81,8 +85,7 @@ class DisconnectRemote extends Command {
 class StatusCommand extends Command {
   final String status;
   final String message;
-  final String theme;
-  StatusCommand(super.boxId, this.status, this.message, this.theme);
+  StatusCommand(super.boxId, this.status, this.message);
 }
 
 class StickExploded extends Command {
@@ -106,3 +109,16 @@ class GameModeChanged extends Command {
 
   GameModeChanged(super.boxId, this.gameMode);
 }
+
+class ClientDisconnected extends Command {
+  final String disconnectedUserId;
+
+  ClientDisconnected(super.boxId, this.disconnectedUserId);
+}
+
+class SubjectChanged extends Command {
+  final String subject;
+
+  SubjectChanged(super.boxId, this.subject);
+}
+

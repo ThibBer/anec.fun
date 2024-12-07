@@ -21,7 +21,8 @@ lazy val root = project
       "com.typesafe.akka" %% "akka-http" % AkkaHttpVersion,
       "com.typesafe.akka" %% "akka-stream" % AkkaVersion,
       "com.typesafe.akka" %% "akka-stream-testkit" % AkkaVersion % Test,
-      "com.typesafe.akka" %% "akka-http-spray-json" % AkkaHttpVersion
+      "com.typesafe.akka" %% "akka-http-spray-json" % AkkaHttpVersion,
+      "com.lihaoyi" %% "os-lib" % "0.10.1"
     )
   )
 

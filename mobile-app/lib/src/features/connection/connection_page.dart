@@ -1,5 +1,6 @@
 import 'package:anecdotfun/src/core/models/game.dart';
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../../settings/settings_view.dart';
 import '../voting/vote_page.dart';
 import 'connection_controller.dart';
@@ -31,10 +32,17 @@ class _ConnectionPageState extends State<ConnectionPage> {
   }
 
   void _checkReconnection() async {
-    bool shouldReconnect = await _controller.promptReconnect();
-    if (shouldReconnect) {
+    bool canBeReconnected = await _controller.canBeReconnected();
+    if (canBeReconnected) {
       _showReconnectDialog();
+    }else{
+      await _deleteSavedConnectionSettings();
     }
+  }
+
+  Future<void> _deleteSavedConnectionSettings() async {
+    final prefs = await SharedPreferences.getInstance();
+    prefs.remove("connectionSettings");
   }
 
   void _showReconnectDialog() {
@@ -43,11 +51,12 @@ class _ConnectionPageState extends State<ConnectionPage> {
       barrierDismissible: false, // Prevent dismissing by tapping outside
       builder: (context) {
         return AlertDialog(
-          title: const Text('Reconnect to Game'),
+          title: const Text('Reconnect to game'),
           content: const Text('Do you want to reconnect to the last session?'),
           actions: [
             TextButton(
               onPressed: () {
+                _deleteSavedConnectionSettings();
                 Navigator.of(context).pop(); // Close the dialog
               },
               child: const Text('Cancel'),
@@ -64,7 +73,6 @@ class _ConnectionPageState extends State<ConnectionPage> {
       },
     );
   }
-
 
   @override
   Widget build(BuildContext context) {

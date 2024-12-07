@@ -1,24 +1,17 @@
 package com.anecdot
 
-import akka.actor.typed.ActorRef
-import akka.actor.typed.ActorSystem
-import akka.actor.typed.scaladsl.adapter._
+import akka.actor.typed.{ActorRef, ActorSystem}
+import akka.actor.typed.scaladsl.adapter.*
 import akka.http.scaladsl.Http
-import akka.http.scaladsl.model.ws.Message
-import akka.http.scaladsl.model.ws.TextMessage
-import akka.http.scaladsl.server.Directives._
-import akka.http.scaladsl.server.Route
-import akka.stream.CompletionStrategy
-import akka.stream.OverflowStrategy
-import akka.stream.scaladsl.Flow
-import akka.stream.scaladsl.Sink
-import akka.stream.scaladsl.Source
+import akka.http.scaladsl.model.ws.{Message, TextMessage}
+import akka.http.scaladsl.server.Directives.*
+import akka.stream.{CompletionStrategy, OverflowStrategy}
+import akka.stream.scaladsl.{Flow, Sink, Source}
 import org.slf4j.LoggerFactory
-import spray.json._
+import spray.json.*
 
 import java.util.UUID
-import scala.concurrent.Await
-import scala.concurrent.ExecutionContextExecutor
+import scala.concurrent.{Await, ExecutionContextExecutor}
 import scala.concurrent.duration.Duration
 
 private val logger = LoggerFactory.getLogger(getClass)
@@ -33,16 +26,15 @@ object Main extends JsonCommandSupport {
     implicit val executionContext: ExecutionContextExecutor =
       system.executionContext
 
-    val route: Route =
-      path("ws" / IntNumber) { boxId =>
-        handleWebSocketMessages(webSocketFlow(system, boxId))
+    val route = path("ws" / IntNumber) { boxId =>
+      parameters("uniqueId".optional) { uniqueId =>
+        handleWebSocketMessages(webSocketFlow(system, boxId, uniqueId))
       }
+    }
 
     val bindingFuture = Http().newServerAt("0.0.0.0", 8080).bind(route)
 
-    logger.info(
-      "Server now online at ws://localhost:8080/ws"
-    )
+    logger.info("Server now online at ws://localhost:8080/ws")
     Await.result(system.whenTerminated, Duration.Inf)
 
     bindingFuture.flatMap(_.unbind()).onComplete(_ => system.terminate())
@@ -59,10 +51,19 @@ object Main extends JsonCommandSupport {
     */
   private def webSocketFlow(
       commandRouter: ActorRef[CommandRouterTrait],
-      boxId: Int
+      boxId: Int,
+      id: Option[String]
   )(implicit system: ActorSystem[?]): Flow[Message, Message, Any] = {
+    var uniqueId: String = ""
 
-    var uniqueId = UUID.randomUUID().toString
+    id match {
+      case Some(value) =>
+        uniqueId = value
+        logger.info(s"Reuse unique id $value")
+      case None =>
+        uniqueId = UUID.randomUUID().toString
+        logger.info(s"Generate new uniqueId $uniqueId")
+    }
 
     val completionMatcher: PartialFunction[Any, CompletionStrategy] = {
       case "complete" => CompletionStrategy.draining
@@ -84,28 +85,9 @@ object Main extends JsonCommandSupport {
       case TextMessage.Strict("heartbeat") => // Keep connection alive
       case TextMessage.Strict(text @ jsonRegex()) =>
         logger.info(s"Received message: $text")
+
         try {
           val command = text.parseJson.convertTo[Command]
-          command match {
-            case ConnectBox(_, Some(providedUniqueId)) =>
-              uniqueId = providedUniqueId.asInstanceOf[String]
-              logger.info(s"Reusing provided uniqueId: $uniqueId")
-            case ConnectBox(_, None) =>
-              logger.info(
-                s"New connection, using generated uniqueId: $uniqueId"
-              )
-            case ConnectRemote(boxId, Some(providedUniqueId), username) =>
-              uniqueId = providedUniqueId
-              logger.info(s"Reusing provided uniqueId: $uniqueId")
-            case ConnectRemote(boxId, None, username) =>
-              logger.info(
-                s"New connection, using generated uniqueId: $uniqueId"
-              )
-            case _ => {
-              logger.info(s"Received command: $command")
-            }
-
-          }
           commandRouter ! NewCommand(command, uniqueId)
         } catch {
           case e: Exception => logger.error(e.getMessage)
@@ -118,19 +100,15 @@ object Main extends JsonCommandSupport {
     // Apply watchTermination directly to the Flow
     Flow
       .fromSinkAndSourceMat(incoming, outgoing) { (_, actorRef) =>
-        commandRouter ! RegisterWebSocketActor(
-          uniqueId,
-          boxId,
-          actorRef.toTyped
-        )
-        val response =
-          CommandResponse(uniqueId, "Connection", ResponseState.SUCCESS)
+        commandRouter ! RegisterWebSocketActor(uniqueId, boxId, actorRef.toTyped)
+
+        val response = CommandResponse(uniqueId, "Connection", ResponseState.SUCCESS)
         actorRef ! TextMessage(response.toJson.compactPrint)
         actorRef
       }
       .watchTermination() { (_, termination) =>
         termination.onComplete { _ =>
-          logger.info("WebSocket connection closed.")
+          logger.info(s"WebSocket connection closed for $uniqueId.")
           commandRouter ! NewCommand(ClientDisconnected(boxId, uniqueId), uniqueId)
         }(system.executionContext)
       }

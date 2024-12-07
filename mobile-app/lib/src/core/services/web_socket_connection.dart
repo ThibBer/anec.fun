@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:io';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
 import 'dart:convert';
@@ -51,23 +52,30 @@ class WebSocketConnection {
 
   late Timer _heartbeatTimer;
 
-  void init(reconnect) {
+  void init(String? uniqueId) async {
+    game.setError(""); //Reset error message
     game.setConnecting(true);
+
     try {
-      channel = WebSocketChannel.connect(
-          Uri.parse('ws://192.168.0.70:8080/ws/${game.boxId}'));
+      var baseUrl = 'ws://localhost:8080/ws/${game.boxId}';
+      var uri = Uri.parse(uniqueId == null ? baseUrl : "$baseUrl?uniqueId=$uniqueId");
+      print("WebSocket URI : " + uri.toString());
+
+      channel = WebSocketChannel.connect(uri);
+      await channel.ready;
 
       // Listen for messages from the server
       channel.stream.listen(
         (message) => _handleMessage(message),
         onError: (error) {
           game.setError("Connection error: $error");
-          _reconnect(); // Attempt to reconnect
+          game.setConnecting(false);
+          _reconnect(uniqueId); // Attempt to reconnect
         },
         onDone: () {
-          game.setError("Connection closed.");
-          if (channel.closeCode == null || channel.closeCode != 1000) {
-            _reconnect(); // Reconnect only if the closure was abnormal
+          if (channel.closeCode != null && channel.closeCode != 1000) {
+            game.setError("Connection closed, trying to reconnect");
+            _reconnect(uniqueId); // Reconnect only if the closure was abnormal
           }
         },
       );
@@ -84,20 +92,24 @@ class WebSocketConnection {
           game.setError("Failed to send heartbeat");
         }
       });
-      if (reconnect) {
-        retrieveState();
-      }
+
+      retrieveState();
+    } on WebSocketChannelException catch (_) {
+      game.setError("Server unavailable, retry later");
+      game.setConnecting(false);
     } catch (error) {
       game.setError("Failed to initialize connection: $error");
       game.setConnecting(false);
-      _reconnect(); // Attempt to reconnect
+
+      _reconnect(uniqueId); // Attempt to reconnect
     }
   }
 
   int _retryCount = 0;
   final int _maxRetries = 5;
 
-  void _reconnect() {
+  void _reconnect(String? uniqueId) {
+    print("Try to reconnect to web socket");
     game.updateState(GameState.connectionLost);
     if (_retryCount >= _maxRetries) {
       game.setError("Failed to reconnect after $_maxRetries attempts.");
@@ -106,7 +118,7 @@ class WebSocketConnection {
 
     Future.delayed(Duration(seconds: 2 * _retryCount), () {
       _retryCount++;
-      init(true); // Reinitialize the connection
+      init(uniqueId); // Reinitialize the connection
     });
   }
 
@@ -118,7 +130,6 @@ class WebSocketConnection {
   /// appropriate method.
   void _handleMessage(String message) async {
     final json = jsonDecode(message);
-    print("Received message: $json");
     final command = Command.fromJson(json, game.boxId);
 
     if (command is Connection) {
@@ -138,7 +149,6 @@ class WebSocketConnection {
         game.updateState(GameState.voting);
       } else if (command.message == 'ROUND_STARTED') {
         game.updateState(GameState.roundStarted);
-        game.updateTheme(command.theme);
       } else if (command.message == 'STICK_EXPLODED') {
         game.updateState(GameState.stickExploded);
       }
@@ -152,6 +162,10 @@ class WebSocketConnection {
       game.restoreGameState(json);
     } else if (command is GameModeChanged) {
       game.updateMode(GameMode.values.byName(command.gameMode.toLowerCase()));
+    } else if (command is ClientDisconnected) {
+      game.removePlayer(command.disconnectedUserId);
+    } else if (command is SubjectChanged) {
+      game.updateSubject(command.subject);
     } else {
       game.setError("Unknown command received: $command");
     }
@@ -166,24 +180,32 @@ class WebSocketConnection {
   /// error callback with the received message.
   Future<void> _handleConnectResponse(Map<String, dynamic> response) async {
     final status = response['status'];
-    if (status == 'success') {
+    if (status == 'failed') {
+      game.setError(response['message']);
+      game.setConnected(false);
+      game.uniqueId = "";
+      game.boxId = -1;
+      close(1000); // close connection with code 1000, it's a normal behavior to close websocket connection if connect response is failed
+    } else {
       if (response['senderUniqueId'] == game.uniqueId) {
         game.setSuccess("Remote connected");
         game.setConnected(true);
-        game.setConnecting(false);
         print("Remote connected");
         if (!votingPageReadyCompleter.isCompleted) {
           await votingPageReadyCompleter.future;
         }
         // Save our unique ID and timestamp on disk
         final prefs = await SharedPreferences.getInstance();
-        await prefs.setStringList(
-            'uniqueId', [game.uniqueId, DateTime.now().toString()]);
+        var connectionSettings = [game.boxId.toString(), game.uniqueId, DateTime.now().toString()];
+        await prefs.setStringList("connectionSettings", connectionSettings);
+
+        print("Save uniqueId to SharedPreferences : $connectionSettings");
       }
+
       game.addPlayer(response['senderUniqueId'], response['message']);
-    } else {
-      game.setError(response['message']);
     }
+
+    game.setConnecting(false);
   }
 
   /// Marks the voting page as ready.
@@ -277,16 +299,24 @@ class WebSocketConnection {
   }
 
   void retrieveState() {
-    sendCommand({
+    print("retrieveState disabled because server is not ready yet");
+
+/*    sendCommand({
       "boxId": game.boxId,
       "uniqueId": game.uniqueId,
       "commandType": "RetrieveStateCommand",
-    });
+    });*/
   }
 
-  void close() {
+  void close(int? code) {
     try {
-      channel.sink.close();
+      if(code != null){
+        channel.sink.close(code);
+      }else{
+        channel.sink.close();
+      }
+
+      _heartbeatTimer.cancel();
     } catch (error) {
       game.setError("Failed to close connection: $error");
     }

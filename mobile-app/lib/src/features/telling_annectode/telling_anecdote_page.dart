@@ -1,4 +1,6 @@
 import 'package:anecdotfun/src/core/models/game.dart';
+import 'package:anecdotfun/src/core/utils/constants.dart';
+import 'package:anecdotfun/src/features/voting/vote_page.dart';
 import 'package:flutter/material.dart';
 import 'package:lottie/lottie.dart';
 import 'telling_anecdote_controller.dart';
@@ -67,11 +69,20 @@ class TellingAnecdotePageState extends State<TellingAnecdotePage> {
       margin: const EdgeInsets.only(bottom: 20),
       child: Padding(
         padding: const EdgeInsets.all(16.0),
-        child: Text(
-          "Anecdote Theme: ${_controller.theme}",
-          style: Theme.of(context).textTheme.headlineSmall,
-          textAlign: TextAlign.center,
-        ),
+        child: Column(
+          children: [
+            Text(
+              "Mode : ${_controller.game.mode.name}",
+              style: Theme.of(context).textTheme.headlineSmall,
+              textAlign: TextAlign.center,
+            ),
+            Text(
+              "Subject : ${_controller.game.subject}",
+              style: Theme.of(context).textTheme.labelSmall,
+              textAlign: TextAlign.center,
+            )
+          ],
+        )
       ),
     );
   }
