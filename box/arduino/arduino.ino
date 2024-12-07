@@ -56,7 +56,7 @@ RF24 radio(CE_PIN, CSN_PIN);
 const byte endOfSequence[] = { -128, 127, -128, 127, -128, 127, -128, 127, -128, 127, -128, 127, -128, 127, -128, 127, -128, 127, -128, 127, -128, 127, -128, 127, -128, 127, -128, 127, -128, 127, -128, 127 };
 bool isEndOfSequenceReceived = false;
 unsigned long latestAudioDataReceived = -1;
-const unsigned long MAX_DELAY_AUDIO = 5000;
+const unsigned long MAX_DELAY_AUDIO = 2000;
 
 const uint64_t addresses[2] = { 0xABCDABCD71LL, 0x544d52687CLL };
 enum Status {
@@ -164,7 +164,7 @@ void loop() {
         Serial.write(endOfSequence[i]);
       }
     }
-    if (currentTime > maxTimeAudio || isEndOfSequenceReceived) {
+    if (isEndOfSequenceReceived) {
       status = IDLE;
       latestAudioDataReceived = -1;
       isEndOfSequenceReceived = false;
@@ -175,12 +175,8 @@ void loop() {
     if (radio.available()) {
       latestAudioDataReceived = currentTime;
       radio.read(&audioData, 32);
-      isEndOfSequenceReceived = true;
       for (int i = 0; i < samplesToDisplay; i++) {
         Serial.write(audioData[i]);
-        if (isEndOfSequenceReceived && audioData[i] != endOfSequence[i]) {
-          isEndOfSequenceReceived = false;
-        }
       }
     }
     return;
@@ -309,7 +305,6 @@ void onReceiveSerialData(String key, String value) {
   } else if (key == "GameModeChanged") {
     onGameModeChanged(stringToGameMode(value));
   } else if (key == "VoiceFlowStart") {
-    status = RECEIVED;
     askAudio(value.toInt());
   } else if (key == "WebSocketStateChanged") {
     onWebSocketStateChanged(value);
