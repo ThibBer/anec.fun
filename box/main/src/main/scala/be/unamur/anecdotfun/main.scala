@@ -298,20 +298,15 @@ def readSavedUniqueId(): String = {
     val timestamp = os.read.lines(path).apply(1)
     val dateTime = DateTime.fromIsoDateTimeString(timestamp)
 
-    println(s"UniqueId : $uniqueId")
-    println(s"timestamp : $timestamp")
-    println(s"DateTime : $dateTime")
-
     dateTime match {
       case None =>
-        print("Invalid datetime")
+        os.remove(path)
         ""
       case Some(dt) =>
         if((DateTime.now.clicks - dt.clicks) / 60000 > uniqueIdValidDuration)
-          print("UniqueId expired")
+          os.remove(path)
           ""
         else
-          print("UniqueId is valid")
           uniqueId // local id is valid 10 min
     }
   } catch {
