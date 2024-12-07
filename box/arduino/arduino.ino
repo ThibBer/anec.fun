@@ -22,6 +22,8 @@
 #define CE_PIN 7
 #define CSN_PIN 8
 
+enum WebSocketState {CONNECTED, FAILED, CLOSED};
+
 enum GameMode { THEME,
                 EMOTION,
                 REQUESTED };
@@ -42,6 +44,7 @@ const String gameModeLabels[] = { "THEME", "EMOTION" };
 
 GameMode currentGameMode = THEME;
 GameState currentGameState = STOPPED;
+WebSocketState wsState = CLOSED;
 
 unsigned long currentTime = 0;
 unsigned long previousTimeButton = 0;
@@ -56,7 +59,7 @@ RF24 radio(CE_PIN, CSN_PIN);
 const byte endOfSequence[] = { -128, 127, -128, 127, -128, 127, -128, 127, -128, 127, -128, 127, -128, 127, -128, 127, -128, 127, -128, 127, -128, 127, -128, 127, -128, 127, -128, 127, -128, 127, -128, 127 };
 bool isEndOfSequenceReceived = false;
 unsigned long latestAudioDataReceived = -1;
-const unsigned long MAX_DELAY_AUDIO = 5000;
+const unsigned long MAX_DELAY_AUDIO = 2000;
 
 const uint64_t addresses[2] = { 0xABCDABCD71LL, 0x544d52687CLL };
 enum Status {
@@ -77,7 +80,6 @@ GameMode stringToGameMode(String input);
 GameState stringToGameState(String input);
 void onGameModeChanged(GameMode gameMode);
 void onButtonGameModeClick(GameMode gameMode);
-void processSerialInput();
 void setGameState(GameState newGameState);
 void onGameStateChanged(GameState state);
 void onReceiveSerialData(String key, String value);
@@ -93,10 +95,12 @@ void startCheckupSequence();
 void askAudio(int time);
 void playShutdownSound();
 void onWebSocketStateChanged(String value);
+void onStickExploded();
 
 void setup() {
   Serial.begin(115200);
-  Serial.setTimeout(10);
+
+  delay(1000); // wait serial
 
   pinMode(MODE_SELECTION_PIN, INPUT);
   pinMode(PIN_BUTTON_START_GAME, INPUT);
@@ -112,7 +116,7 @@ void setup() {
 
   // initialize the transceiver on the SPI bus
   if (!radio.begin()) {
-    Serial.println(F("radio hardware is not responding!!"));
+    Serial.println(F("debug: radio hardware is not responding!!"));
     while (1) {
       blinkStartLED(5, 255, 0, 0, 100);
       delay(300);
@@ -122,8 +126,12 @@ void setup() {
   radio.setAutoAck(0);             // Disable ACKnowledgement packets to allow multicast reception
   radio.setCRCLength(RF24_CRC_8);  // Only use 8bit CRC for audio
   radio.setPALevel(RF24_PA_LOW);
+  radio.startListening();
+
   // radio.setDataRate(RF24_1MBPS);  // Library default is RF24_1MBPS for RF24 and RF24Audio
-  
+  radio.openWritingPipe(addresses[0]);     // Set up reading and writing pipes.
+  radio.openReadingPipe(1, addresses[1]);  // All of the radios listen by default to the same multicast pipe
+
   //startCheckupSequence();
 
   int modeSelectionSwitch = digitalRead(MODE_SELECTION_PIN);
@@ -131,8 +139,28 @@ void setup() {
   digitalWrite(EMOTION_MODE_LED, isGameModeEmotion ? HIGH : LOW);
   digitalWrite(THEME_MODE_LED, modeSelectionSwitch == THEME ? HIGH : LOW);
 
-  if (isGameModeEmotion) {
-    onButtonGameModeClick(EMOTION);  // No need to check GameMode.THEME because it's default mode
+  Serial.println("InitFinished=true");
+}
+
+void serialEvent() {
+  while (Serial.available() > 0) {
+    static String buffer = "";
+    char character = (char) Serial.read();
+
+    if (character != '\n') {
+      buffer += character;
+    } else {
+      buffer.trim();
+
+      int equalIndex = buffer.indexOf('=');
+      if (equalIndex != -1) {
+        String key = buffer.substring(0, equalIndex);
+        String value = buffer.substring(equalIndex + 1);
+        onReceiveSerialData(key, value);
+      }
+
+      buffer = "";
+    }
   }
 }
 
@@ -146,7 +174,7 @@ void loop() {
         Serial.write(endOfSequence[i]);
       }
     }
-    if (currentTime > maxTimeAudio || isEndOfSequenceReceived) {
+    if (isEndOfSequenceReceived) {
       status = IDLE;
       latestAudioDataReceived = -1;
       isEndOfSequenceReceived = false;
@@ -157,20 +185,14 @@ void loop() {
     if (radio.available()) {
       latestAudioDataReceived = currentTime;
       radio.read(&audioData, 32);
-      isEndOfSequenceReceived = true;
       for (int i = 0; i < samplesToDisplay; i++) {
         Serial.write(audioData[i]);
-        if (isEndOfSequenceReceived && audioData[i] != endOfSequence[i]) {
-          isEndOfSequenceReceived = false;
-        }
       }
     }
     return;
   }
 
-  processSerialInput();
-
-  if (currentTime - previousTimeModeSelection >= 100 && currentGameState == STOPPED) {
+    if (currentTime - previousTimeModeSelection >= 100 && (currentGameState == STOPPED || currentGameState == ROUND_STOPPED) && wsState == CONNECTED) {
     int modeSelectionSwitch = digitalRead(MODE_SELECTION_PIN);
 
     if (modeSelectionSwitch == EMOTION && currentGameMode == THEME) {
@@ -201,7 +223,6 @@ void loop() {
     if (startButtonPressedTime != -1) {
       // Short press
       if (currentTime - startButtonPressedTime >= BUTTON_SHORT_PRESS_DURATION && currentTime - startButtonPressedTime < BUTTON_LONG_PRESS_DURATION) {
-        Serial.println("debug: short press");
         if (currentGameState == STOPPED) {
           playButtonClickSound();
           setGameState(START);
@@ -287,32 +308,29 @@ void blinkStartLED(int count, int r, int g, int b, int timing) {
   }
 }
 
-void processSerialInput() {
-  if (Serial.available() > 0) {
-    String serialData = Serial.readString();
-    serialData.trim();
-
-    int equalIndex = serialData.indexOf('=');
-    if (equalIndex != -1) {
-      String key = serialData.substring(0, equalIndex);
-      String value = serialData.substring(equalIndex + 1);
-
-      onReceiveSerialData(key, value);
-    }
-  }
-}
-
 void onReceiveSerialData(String key, String value) {
   if (key == "GameStateChanged") {
     onGameStateChanged(stringToGameState(value));
   } else if (key == "GameModeChanged") {
     onGameModeChanged(stringToGameMode(value));
   } else if (key == "VoiceFlowStart") {
-    status = RECEIVED;
     askAudio(value.toInt());
   } else if (key == "WebSocketStateChanged") {
     onWebSocketStateChanged(value);
+  } else if (key == "StickExploded") {
+    onStickExploded();
   }
+}
+
+void onStickExploded(){
+  blinkStartLED(500, 0, 0, 255, 200);
+
+  playSound(1000, 150);
+  delay(400);
+  playSound(1000, 150);
+  delay(400);
+
+  setGameStateLedColor(255);
 }
 
 void onGameModeChanged(GameMode gameMode) {
@@ -330,14 +348,22 @@ void onGameModeChanged(GameMode gameMode) {
   currentGameMode = gameMode;
 }
 
-void onWebSocketStateChanged(String value){
-  if(value == "CONNECTED"){
-    blinkStartLED(2, 0, 255, 0, 200);
+void onWebSocketStateChanged(String value) {
+  if (value == "CONNECTED") {
+    blinkStartLED(2, 0, 255, 0, 300);
+    wsState = CONNECTED;
     return;
   }
 
-  if(value == "FAILED" || value == "CLOSED"){
-    blinkStartLED(2, 255, 0, 0, 200);
+  if (value == "FAILED") {
+    blinkStartLED(2, 255, 0, 0, 300);
+    wsState = FAILED;
+    return;
+  }
+
+  if (value == "CLOSED") {
+    blinkStartLED(2, 255, 0, 0, 300);
+    wsState = CLOSED;
   }
 }
 
@@ -434,13 +460,8 @@ void onGameStateChanged(GameState newGameState) {
 
   switch (newGameState) {
     case STARTED:
-      playSound(1000, 150);
+      playSound(1000, 300);
       delay(400);
-      playSound(1000, 150);
-      delay(400);
-      playSound(1000, 150);
-      delay(400);
-      playSound(800, 600);
 
       setGameStateLedColor(255);
 
@@ -451,14 +472,20 @@ void onGameStateChanged(GameState newGameState) {
       }
 
       break;
+    case ROUND_STARTED:
+    case VOTING:
+      setGameStateLedColor(255);
+      break;
+    case STICK_EXPLODED:
+      onStickExploded();
+      break;
     case STOPPED:
-      setGameStateLedColor(0);
+      playSound(800, 300);
+      delay(500);
+      playSound(800, 300);
+      delay(500);
 
-      playSound(800, 300);
-      delay(500);
-      playSound(800, 300);
-      delay(500);
-      playSound(800, 300);
+      setGameStateLedColor(0);
 
       break;
   }
