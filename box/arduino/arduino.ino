@@ -77,7 +77,6 @@ GameMode stringToGameMode(String input);
 GameState stringToGameState(String input);
 void onGameModeChanged(GameMode gameMode);
 void onButtonGameModeClick(GameMode gameMode);
-void processSerialInput();
 void setGameState(GameState newGameState);
 void onGameStateChanged(GameState state);
 void onReceiveSerialData(String key, String value);
@@ -137,6 +136,21 @@ void setup() {
 
   if (isGameModeEmotion) {
     onButtonGameModeClick(EMOTION);  // No need to check GameMode.THEME because it's default mode
+  }
+}
+
+void serialEvent() {
+  if (Serial.available() > 0) {
+    String serialData = Serial.readString();
+    serialData.trim();
+
+    int equalIndex = serialData.indexOf('=');
+    if (equalIndex != -1) {
+      String key = serialData.substring(0, equalIndex);
+      String value = serialData.substring(equalIndex + 1);
+
+      onReceiveSerialData(key, value);
+    }
   }
 }
 
@@ -288,21 +302,6 @@ void blinkStartLED(int count, int r, int g, int b, int timing) {
     delay(timing);
     setGameStateLedColor(0);
     delay(timing);
-  }
-}
-
-void processSerialInput() {
-  if (Serial.available() > 0) {
-    String serialData = Serial.readString();
-    serialData.trim();
-
-    int equalIndex = serialData.indexOf('=');
-    if (equalIndex != -1) {
-      String key = serialData.substring(0, equalIndex);
-      String value = serialData.substring(equalIndex + 1);
-
-      onReceiveSerialData(key, value);
-    }
   }
 }
 
