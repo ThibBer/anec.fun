@@ -118,105 +118,17 @@ class _ConnectionPageState extends State<ConnectionPage> {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  // Logo
-                  Visibility(
-                    visible: !_controller.game.isConnecting,
-                    child: Expanded(
-                      child: SvgPicture.asset(
-                        'assets/images/logo_long.svg',
-                        semanticsLabel: 'Dart Logo',
-                      ),
-                    ),
-                  ),
-
-                  Visibility(
-                    visible: !_controller.game.isConnecting,
-                    child: Expanded(
-                      child: Theme.of(context).brightness == Brightness.light
-                          ? Lottie.asset(
-                              'assets/animations/welcome.json',
-                              repeat: true,
-                              renderCache: RenderCache.raster,
-                              fit: BoxFit.contain,
-                            )
-                          : Lottie.asset(
-                              'assets/animations/welcome_white.json',
-                              repeat: true,
-                              renderCache: RenderCache.raster,
-                              fit: BoxFit.contain,
-                            ),
-                    ),
-                  ),
-                  Visibility(
-                    visible: !_controller.game.isConnecting,
-                    child: Form(
-                    key: _controller.formKey,
-                    child: Column(
-                      children: [
-                        TextFormField(
-                          controller: _controller.nameController,
-                          decoration: const InputDecoration(
-                            labelText: 'Your Name',
-                            hintText: 'Enter your name',
-                            border: OutlineInputBorder(),
-                          ),
-                          validator: (value) {
-                            if (value == null || value.isEmpty) {
-                              return 'Please enter your name';
-                            }
-                            return null;
-                          },
-                        ),
-                        const SizedBox(height: 20),
-                        TextFormField(
-                          controller: _controller.boxIdController,
-                          decoration: const InputDecoration(
-                            labelText: 'Box ID',
-                            hintText: 'Enter the box ID',
-                            border: OutlineInputBorder(),
-                          ),
-                          validator: (value) {
-                            if (value == null || value.isEmpty) {
-                              return 'Please enter your box ID';
-                            }
-                            return null;
-                          },
-                        ),
-                      ],
-                    ),
-                    ),
-                  ),
-                  const SizedBox(height: 20),
-                  Center(
-                    child: AnimatedBuilder(
-                    animation: _controller.game,
-                    builder: (context, child) {
-                      return _controller.game.isConnecting
-                            ? Column(
-                                children: [
-                                  ColorFiltered(
-                                    colorFilter: ColorFilter.mode(
-                                      Theme.of(context).colorScheme.primary,
-                                      BlendMode.modulate,
-                                    ),
-                                    child: Lottie.asset(
-                                      'assets/animations/loading.json',
-                                      repeat: true,
-                                      renderCache: RenderCache.raster,
-                                      fit: BoxFit.contain,
-                                    ),
-                                  ),
-                                  Text('Connecting... Please wait')
-                                ],
-                              )
-                          : ElevatedButton(
-                              onPressed: () {
-                                _controller.submitForm();
-                              },
-                              child: const Text('Connect'),
-                            );
-                    },
-                    ),
+                  Expanded(
+                    child: AnimatedSwitcher(
+                        duration: const Duration(seconds: 1),
+                        transitionBuilder:
+                            (Widget child, Animation<double> animation) {
+                          return ScaleTransition(
+                              scale: animation, child: child);
+                        },
+                        child: _controller.game.isConnecting
+                            ? _buildLoadingWidget()
+                            : _buildFormWidget()),
                   ),
                   const SizedBox(height: 20),
                   AnimatedBuilder(
@@ -243,4 +155,104 @@ class _ConnectionPageState extends State<ConnectionPage> {
           );
         });
   }
+
+  Widget _buildLoadingWidget() {
+    return Center(
+        child: Column(
+      children: [
+        ColorFiltered(
+          colorFilter: ColorFilter.mode(
+            Theme.of(context).colorScheme.primary,
+            BlendMode.modulate,
+          ),
+          child: Lottie.asset(
+            'assets/animations/loading.json',
+            repeat: true,
+            renderCache: RenderCache.raster,
+            fit: BoxFit.contain,
+          ),
+        ),
+        Text('Connecting... Please wait')
+      ],
+    ));
+  }
+
+  Widget _buildFormWidget() {
+    final isKeyboardVisible = MediaQuery.of(context).viewInsets.bottom > 0;
+
+    return Column(
+      mainAxisAlignment: MainAxisAlignment.spaceAround,
+      crossAxisAlignment: CrossAxisAlignment.center,
+      children: [
+        if (!isKeyboardVisible) // Hide SVG and Lottie when the keyboard is visible
+          SvgPicture.asset(
+            'assets/images/logo_long.svg',
+            semanticsLabel: 'Dart Logo',
+            fit: BoxFit.contain, // Ensure it scales properly
+          ),
+
+        if (!isKeyboardVisible) // Hide SVG and Lottie when the keyboard is visible
+          Theme.of(context).brightness == Brightness.light
+              ? Lottie.asset(
+                  'assets/animations/welcome.json',
+                  repeat: true,
+                  renderCache: RenderCache.raster,
+                  fit: BoxFit.contain, // Ensure it scales properly
+                )
+              : Lottie.asset(
+                  'assets/animations/welcome_white.json',
+                  repeat: true,
+                  renderCache: RenderCache.raster,
+                  fit: BoxFit.contain, // Ensure it scales properly
+                ),
+
+        Form(
+          key: _controller.formKey,
+          child: Column(
+            children: [
+              TextFormField(
+                controller: _controller.nameController,
+                decoration: const InputDecoration(
+                  labelText: 'Your Name',
+                  hintText: 'Enter your name',
+                  border: OutlineInputBorder(),
+                ),
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return 'Please enter your name';
+                  }
+                  return null;
+                },
+              ),
+              const SizedBox(height: 20),
+              TextFormField(
+                controller: _controller.boxIdController,
+                decoration: const InputDecoration(
+                  labelText: 'Box ID',
+                  hintText: 'Enter the box ID',
+                  border: OutlineInputBorder(),
+                ),
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return 'Please enter your box ID';
+                  }
+                  return null;
+                },
+              ),
+            ],
+          ),
+        ),
+
+        ElevatedButton(
+          onPressed: () {
+            _controller.submitForm();
+          },
+          child: const Text('Connect'),
+        ),
+
+      ],
+    );
+}
+
+
 }
