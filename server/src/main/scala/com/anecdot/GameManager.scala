@@ -12,6 +12,8 @@ import scala.collection.mutable
 import scala.concurrent.duration.DurationInt
 import scala.util.Random
 
+val timeStickExplosion = (20, 40)
+
 /** The `GameManager` actor is responsible for managing the state of a game. It
   * handles commands from clients and the box actor, and broadcasts game state
   * updates to all connected clients. It also keeps track of the number of
@@ -193,9 +195,9 @@ object GameManager {
                 else Global.emotionSubjects(Random.nextInt(Global.emotionSubjects.length))
               println(s"Random picked subject for mode ($gameMode) : $subject")
               broadcastSubject(webSocketClients, boxId, subject)
-              timers.startSingleTimer(StickExploded(boxId), 10.seconds)
               gameState = States.ROUND_STARTED
               broadcastGameState(webSocketClients, gameState, boxId)
+              timers.startSingleTimer(StickExploded(boxId), Random.between(timeStickExplosion._1, timeStickExplosion._2).seconds)
             }
 
             Behaviors.same
