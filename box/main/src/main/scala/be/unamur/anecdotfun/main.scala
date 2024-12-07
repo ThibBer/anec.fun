@@ -40,6 +40,7 @@ object Main {
   }
 
   private val serialMessageAction: Map[String, String => Unit] = Map(
+    MessageKey.InitFinished -> onArduinoInitFinished,
     MessageKey.SetGameState -> onRequestChangeGameState,
     MessageKey.GameMode -> onRequestChangeGameMode,
     MessageKey.HandDetected -> onHandDetected,
@@ -49,13 +50,16 @@ object Main {
   private def onSerialConnected(): Unit = {
     println(s"Port opened, reading serial on $comPort")
 
-    println(s"Try to connect to websocket ...")
-    connectToWebsocket()
+    Runtime.getRuntime.addShutdownHook(Thread(() => {
+      serial.send("WebSocketStateChanged=CLOSED")
+      serial.send("GameStateChanged=STOPPED")
+    }))
   }
 
   private def onWebSocketConnectionClosed(): Unit = {
     println(s"WebSocket connection closed ${dateTimeString()}")
     serial.send("WebSocketStateChanged=CLOSED")
+    serial.send("GameStateChanged=STOPPED")
     websocketConnectionExponentialRetry()
   }
 
@@ -74,7 +78,7 @@ object Main {
   }
 
   private def connectToWebsocket(): Unit = {
-    val websocketUrl = if (uniqueId.isEmpty) baseUrl else baseUrl + "?uniqueId=" + uniqueId
+    val websocketUrl = if (uniqueId == "") baseUrl else baseUrl + "?uniqueId=" + uniqueId
     webSocketClient = WebSocketClient(websocketUrl)
 
     webSocketClient.onReceiveMessage = onReceiveWebSocketMessage
@@ -166,6 +170,7 @@ object Main {
         case CommandType.ANECDOTE_TELLER =>
           if (isCommandSuccessful) {
             onStickExploded()
+            onAnecdoteTellerPicked()
           }
         case CommandType.GAME_MODE_CHANGED =>
           if (isCommandSuccessful) {
@@ -182,8 +187,19 @@ object Main {
     }
   }
 
+  private def onArduinoInitFinished(state: String): Unit = {
+    println("ArduinoBox init completed")
+
+    println("Try to connect to websocket ...")
+    connectToWebsocket()
+  }
+
   private def onGameStateChanged(state: String): Unit = {
     serial.send(MessageKey.GameStateChanged + '=' + state)
+  }
+
+  private def onStickExploded(): Unit = {
+    serial.send(MessageKey.StickExploded + "=true")
   }
 
   private def onRequestChangeGameState(value: String): Unit = {
@@ -242,7 +258,7 @@ object Main {
     System.exit(0)
   }
 
-  private def onStickExploded(): Unit = {
+  private def onAnecdoteTellerPicked(): Unit = {
     // todo: make anecdote max duration configurable
     val duration = 5.minutes
     val sink = Sink.foreach[ByteString](data => {

@@ -22,6 +22,8 @@
 #define CE_PIN 7
 #define CSN_PIN 8
 
+enum WebSocketState {CONNECTED, FAILED, CLOSED};
+
 enum GameMode { THEME,
                 EMOTION,
                 REQUESTED };
@@ -42,6 +44,7 @@ const String gameModeLabels[] = { "THEME", "EMOTION" };
 
 GameMode currentGameMode = THEME;
 GameState currentGameState = STOPPED;
+WebSocketState wsState = CLOSED;
 
 unsigned long currentTime = 0;
 unsigned long previousTimeButton = 0;
@@ -92,10 +95,12 @@ void startCheckupSequence();
 void askAudio(int time);
 void playShutdownSound();
 void onWebSocketStateChanged(String value);
+void onStickExploded();
 
 void setup() {
   Serial.begin(115200);
-  Serial.setTimeout(10);
+
+  delay(1000); // wait serial
 
   pinMode(MODE_SELECTION_PIN, INPUT);
   pinMode(PIN_BUTTON_START_GAME, INPUT);
@@ -134,22 +139,27 @@ void setup() {
   digitalWrite(EMOTION_MODE_LED, isGameModeEmotion ? HIGH : LOW);
   digitalWrite(THEME_MODE_LED, modeSelectionSwitch == THEME ? HIGH : LOW);
 
-  if (isGameModeEmotion) {
-    onButtonGameModeClick(EMOTION);  // No need to check GameMode.THEME because it's default mode
-  }
+  Serial.println("InitFinished=true");
 }
 
 void serialEvent() {
-  if (Serial.available() > 0) {
-    String serialData = Serial.readString();
-    serialData.trim();
+  while (Serial.available() > 0) {
+    static String buffer = "";
+    char character = (char) Serial.read();
 
-    int equalIndex = serialData.indexOf('=');
-    if (equalIndex != -1) {
-      String key = serialData.substring(0, equalIndex);
-      String value = serialData.substring(equalIndex + 1);
+    if (character != '\n') {
+      buffer += character;
+    } else {
+      buffer.trim();
 
-      onReceiveSerialData(key, value);
+      int equalIndex = buffer.indexOf('=');
+      if (equalIndex != -1) {
+        String key = buffer.substring(0, equalIndex);
+        String value = buffer.substring(equalIndex + 1);
+        onReceiveSerialData(key, value);
+      }
+
+      buffer = "";
     }
   }
 }
@@ -188,7 +198,7 @@ void loop() {
 
   processSerialInput();
 
-  if (currentTime - previousTimeModeSelection >= 100 && currentGameState == STOPPED) {
+  if (currentTime - previousTimeModeSelection >= 100 && (currentGameState == STOPPED || currentGameState == ROUND_STOPPED) && wsState == CONNECTED) {
     int modeSelectionSwitch = digitalRead(MODE_SELECTION_PIN);
 
     if (modeSelectionSwitch == EMOTION && currentGameMode == THEME) {
@@ -219,7 +229,6 @@ void loop() {
     if (startButtonPressedTime != -1) {
       // Short press
       if (currentTime - startButtonPressedTime >= BUTTON_SHORT_PRESS_DURATION && currentTime - startButtonPressedTime < BUTTON_LONG_PRESS_DURATION) {
-        Serial.println("debug: short press");
         if (currentGameState == STOPPED) {
           playButtonClickSound();
           setGameState(START);
@@ -234,7 +243,8 @@ void loop() {
   }
 
   if (currentTime - previousUltrasonicTime >= 200 && (currentGameState == ROUND_STOPPED || currentGameState == STARTED)) {
-    if (sr04.Distance() <= 10) {
+    long distance = sr04.Distance();
+    if (distance <= 10) {
       playButtonClickSound();
       Serial.println("HandDetected=true");
     }
@@ -315,7 +325,20 @@ void onReceiveSerialData(String key, String value) {
     askAudio(value.toInt());
   } else if (key == "WebSocketStateChanged") {
     onWebSocketStateChanged(value);
+  } else if (key == "StickExploded") {
+    onStickExploded();
   }
+}
+
+void onStickExploded(){
+  blinkStartLED(500, 0, 0, 255, 200);
+
+  playSound(1000, 150);
+  delay(400);
+  playSound(1000, 150);
+  delay(400);
+  
+  setGameStateLedColor(255);
 }
 
 void onGameModeChanged(GameMode gameMode) {
@@ -335,12 +358,20 @@ void onGameModeChanged(GameMode gameMode) {
 
 void onWebSocketStateChanged(String value){
   if(value == "CONNECTED"){
-    blinkStartLED(2, 0, 255, 0, 200);
+    blinkStartLED(2, 0, 255, 0, 300);
+    wsState = CONNECTED;
     return;
   }
 
-  if(value == "FAILED" || value == "CLOSED"){
-    blinkStartLED(2, 255, 0, 0, 200);
+  if(value == "FAILED"){
+    blinkStartLED(2, 255, 0, 0, 300);
+    wsState = FAILED;
+    return;
+  }
+
+  if(value == "CLOSED"){
+    blinkStartLED(2, 255, 0, 0, 300);
+    wsState = CLOSED;
   }
 }
 
@@ -437,13 +468,8 @@ void onGameStateChanged(GameState newGameState) {
 
   switch (newGameState) {
     case STARTED:
-      playSound(1000, 150);
+      playSound(1000, 300);
       delay(400);
-      playSound(1000, 150);
-      delay(400);
-      playSound(1000, 150);
-      delay(400);
-      playSound(800, 600);
 
       setGameStateLedColor(255);
 
@@ -454,14 +480,20 @@ void onGameStateChanged(GameState newGameState) {
       }
 
       break;
+    case ROUND_STARTED:
+    case VOTING:
+      setGameStateLedColor(255);
+      break;
+    case STICK_EXPLODED:
+      onStickExploded();
+      break;
     case STOPPED:
-      setGameStateLedColor(0);
+      playSound(800, 300);
+      delay(500);
+      playSound(800, 300);
+      delay(500);
 
-      playSound(800, 300);
-      delay(500);
-      playSound(800, 300);
-      delay(500);
-      playSound(800, 300);
+      setGameStateLedColor(0);
 
       break;
   }
