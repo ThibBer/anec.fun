@@ -55,16 +55,19 @@ object Main {
 
   private def onWebSocketConnectionClosed(): Unit = {
     println(s"WebSocket connection closed ${dateTimeString()}")
+    serial.send("WebSocketStateChanged=CLOSED")
     websocketConnectionExponentialRetry()
   }
 
   private def onConnectionFailed(status: StatusCode): Unit = {
     println(s"WebSocket connection failed: $status")
+    serial.send("WebSocketStateChanged=FAILED")
     websocketConnectionExponentialRetry()
   }
 
   private def onConnectedToWebSocket(statusCode: StatusCode): Unit = {
     exponentialRetryCount = 0
+    serial.send("WebSocketStateChanged=CONNECTED")
 
     println(s"WebSocket connection established ${dateTimeString()}")
     connectBoxToServer()
