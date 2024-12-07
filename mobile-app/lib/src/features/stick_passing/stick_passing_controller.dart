@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:nfc_manager/nfc_manager.dart';
 
@@ -27,7 +28,7 @@ class StickPassingController extends ChangeNotifier {
   }
 
   Future<bool> isNfcAvailable() async {
-    return await NfcManager.instance.isAvailable();
+    return !kIsWeb && await NfcManager.instance.isAvailable();
   }
 
   /// Starts the NFC scan and handles session logic

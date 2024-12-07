@@ -1,22 +1,25 @@
-import 'package:anecdotfun/src/features/telling_annectode/telling_anecdote_page.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 
 import 'features/connection/connection_page.dart';
-import 'settings/settings_controller.dart';
-import 'settings/settings_view.dart';
+import 'features/leaderboard/leaderboard_page.dart';
 import 'features/voting/vote_page.dart';
 import 'features/stick_passing/stick_passing_page.dart';
 import 'features/score/score_page.dart';
+import 'features/telling_annectode/telling_anecdote_page.dart';
+import 'settings/settings_controller.dart';
+import 'settings/settings_view.dart';
 
 class MyApp extends StatelessWidget {
   const MyApp({
     super.key,
     required this.settingsController,
+    required this.initialRoute,
   });
 
   final SettingsController settingsController;
+  final String initialRoute;
 
   @override
   Widget build(BuildContext context) {
@@ -39,6 +42,7 @@ class MyApp extends StatelessWidget {
           theme: ThemeData(),
           darkTheme: ThemeData.dark(),
           themeMode: settingsController.themeMode,
+          initialRoute: initialRoute,
           onGenerateRoute: (RouteSettings routeSettings) {
             return MaterialPageRoute<void>(
               settings: routeSettings,
@@ -56,6 +60,8 @@ class MyApp extends StatelessWidget {
                     return const PlayerScorePage();
                   case TellingAnecdotePage.routeName:
                     return const TellingAnecdotePage();
+                  case LeaderboardPage.routeName:
+                    return const LeaderboardPage();
                   default:
                     return const ConnectionPage();
                 }

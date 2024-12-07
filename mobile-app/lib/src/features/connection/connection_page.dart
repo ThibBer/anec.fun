@@ -78,60 +78,60 @@ class _ConnectionPageState extends State<ConnectionPage> {
   @override
   Widget build(BuildContext context) {
     return ListenableBuilder(
-        listenable: _controller.game,
-        builder: (context, _) {
-          if (_controller.game.isReconnecting) {
-            // Show a loading dialog or page while reconnecting
-            return Scaffold(
-              body: Center(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    const CircularProgressIndicator(),
-                    const SizedBox(height: 20),
-                    const Text('Reconnecting... Please wait'),
-                  ],
-                ),
-              ),
-            );
-          }
-          if (_controller.game.connected) {
-            WidgetsBinding.instance.addPostFrameCallback((_) {
-              Navigator.pushReplacementNamed(context, VotePage.routeName);
-            });
-          }
+      listenable: _controller.game,
+      builder: (context, _) {
+        if (_controller.game.isReconnecting) {
+          // Show a loading dialog or page while reconnecting
           return Scaffold(
-            appBar: AppBar(
-              title: const Text('Connect to Box'),
-              actions: [
-                IconButton(
-                  icon: const Icon(Icons.settings),
-                  onPressed: () {
-                    Navigator.restorablePushNamed(
-                        context, SettingsView.routeName);
-                  },
-                ),
-              ],
-            ),
-            body: Padding(
-              padding: const EdgeInsets.all(16.0),
+            body: Center(
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Expanded(
-                    child: AnimatedSwitcher(
-                        duration: const Duration(seconds: 1),
-                        transitionBuilder:
-                            (Widget child, Animation<double> animation) {
-                          return ScaleTransition(
-                              scale: animation, child: child);
-                        },
-                        child: _controller.game.isConnecting
-                            ? _buildLoadingWidget()
-                            : _buildFormWidget()),
-                  ),
+                  const CircularProgressIndicator(),
                   const SizedBox(height: 20),
-                  AnimatedBuilder(
+                  const Text('Reconnecting... Please wait'),
+                ],
+              ),
+            ),
+          );
+        }
+        if (_controller.game.connected) {
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            Navigator.pushReplacementNamed(context, VotePage.routeName);
+          });
+        }
+        return Scaffold(
+          appBar: AppBar(
+            title: const Text('Connect to Box'),
+            actions: [
+              IconButton(
+                icon: const Icon(Icons.settings),
+                onPressed: () {
+                  Navigator.restorablePushNamed(
+                      context, SettingsView.routeName);
+                },
+              ),
+            ],
+          ),
+          body: Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              mainAxisAlignment: MainAxisAlignment.spaceAround,
+              children: [
+                Flexible(
+                  flex: 8,
+                  child: Visibility(
+                    visible: !_controller.game.isConnecting,
+                    replacement:
+                        _buildLoadingWidget(), // Show loading widget while connecting
+                    child: _buildFormWidget(), // Show form when not connecting
+                  ),
+                ),
+                const SizedBox(height: 20),
+                Flexible(
+                  flex: 1,
+                  child: AnimatedBuilder(
                     animation: _controller.game,
                     builder: (context, child) {
                       if (_controller.game.error != null) {
@@ -145,36 +145,39 @@ class _ConnectionPageState extends State<ConnectionPage> {
                           style: const TextStyle(color: Colors.green),
                         );
                       }
-                      return const SizedBox
-                          .shrink(); // Display nothing if no messages
+                      return const SizedBox.shrink();
                     },
                   ),
-                ],
-              ),
+                ),
+              ],
             ),
-          );
-        });
+          ),
+        );
+      },
+    );
   }
 
   Widget _buildLoadingWidget() {
-    return Center(
-        child: Column(
-      children: [
-        ColorFiltered(
-          colorFilter: ColorFilter.mode(
-            Theme.of(context).colorScheme.primary,
-            BlendMode.modulate,
+    return Flexible(
+      child: Column(
+        children: [
+          ColorFiltered(
+            colorFilter: ColorFilter.mode(
+              Theme.of(context).colorScheme.primary,
+              BlendMode.modulate,
+            ),
+            child: Lottie.asset(
+              'assets/animations/loading.json',
+              repeat: true,
+              renderCache: RenderCache.raster,
+              fit: BoxFit.contain,
+            ),
           ),
-          child: Lottie.asset(
-            'assets/animations/loading.json',
-            repeat: true,
-            renderCache: RenderCache.raster,
-            fit: BoxFit.contain,
-          ),
-        ),
-        Text('Connecting... Please wait')
-      ],
-    ));
+          const SizedBox(height: 20),
+          const Text('Connecting... Please wait'),
+        ],
+      ),
+    );
   }
 
   Widget _buildFormWidget() {
@@ -184,75 +187,91 @@ class _ConnectionPageState extends State<ConnectionPage> {
       mainAxisAlignment: MainAxisAlignment.spaceAround,
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
-        if (!isKeyboardVisible) // Hide SVG and Lottie when the keyboard is visible
-          SvgPicture.asset(
-            'assets/images/logo_long.svg',
-            semanticsLabel: 'Dart Logo',
-            fit: BoxFit.contain, // Ensure it scales properly
+
+        Visibility(
+          visible: !isKeyboardVisible, // Show SVG only when keyboard is hidden
+          child: Flexible(
+            child: SvgPicture.asset(
+              'assets/images/logo_long.svg',
+              semanticsLabel: 'Dart Logo',
+              fit: BoxFit.contain, // Ensure it scales properly
+            ),
           ),
-
-        if (!isKeyboardVisible) // Hide SVG and Lottie when the keyboard is visible
-          Theme.of(context).brightness == Brightness.light
-              ? Lottie.asset(
-                  'assets/animations/welcome.json',
-                  repeat: true,
-                  renderCache: RenderCache.raster,
-                  fit: BoxFit.contain, // Ensure it scales properly
-                )
-              : Lottie.asset(
-                  'assets/animations/welcome_white.json',
-                  repeat: true,
-                  renderCache: RenderCache.raster,
-                  fit: BoxFit.contain, // Ensure it scales properly
-                ),
-
-        Form(
-          key: _controller.formKey,
-          child: Column(
-            children: [
-              TextFormField(
-                controller: _controller.nameController,
-                decoration: const InputDecoration(
-                  labelText: 'Your Name',
-                  hintText: 'Enter your name',
-                  border: OutlineInputBorder(),
-                ),
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Please enter your name';
-                  }
-                  return null;
-                },
-              ),
-              const SizedBox(height: 20),
-              TextFormField(
-                controller: _controller.boxIdController,
-                decoration: const InputDecoration(
-                  labelText: 'Box ID',
-                  hintText: 'Enter the box ID',
-                  border: OutlineInputBorder(),
-                ),
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Please enter your box ID';
-                  }
-                  return null;
-                },
-              ),
-            ],
+        ),
+        Visibility(
+          visible:
+              !isKeyboardVisible, // Show Lottie animation only when keyboard is hidden
+          child: Flexible(
+            child: Theme.of(context).brightness == Brightness.light
+                ? Lottie.asset(
+                    'assets/animations/welcome.json',
+                    repeat: true,
+                    renderCache: RenderCache.raster,
+                    fit: BoxFit.contain, // Ensure it scales properly
+                  )
+                : Lottie.asset(
+                    'assets/animations/welcome_white.json',
+                    repeat: true,
+                    renderCache: RenderCache.raster,
+                    fit: BoxFit.contain, // Ensure it scales properly
+                  ),
           ),
         ),
 
-        ElevatedButton(
-          onPressed: () {
-            _controller.submitForm();
-          },
-          child: const Text('Connect'),
+        Flexible(
+          child: Form(
+            key: _controller.formKey,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              mainAxisAlignment: MainAxisAlignment.spaceAround,
+              children: [
+                Flexible(
+                  child: TextFormField(
+                    controller: _controller.nameController,
+                    decoration: const InputDecoration(
+                      labelText: 'Your Name',
+                      hintText: 'Enter your name',
+                      border: OutlineInputBorder(),
+                    ),
+                    validator: (value) {
+                      if (value == null || value.isEmpty) {
+                        return 'Please enter your name';
+                      }
+                      return null;
+                    },
+                  ),
+                ),
+                const SizedBox(height: 20),
+                Flexible(
+                  child: TextFormField(
+                    controller: _controller.boxIdController,
+                    decoration: const InputDecoration(
+                      labelText: 'Box ID',
+                      hintText: 'Enter the box ID',
+                      border: OutlineInputBorder(),
+                    ),
+                    validator: (value) {
+                      if (value == null || value.isEmpty) {
+                        return 'Please enter your box ID';
+                      }
+                      return null;
+                    },
+                  ),
+                ),
+                const SizedBox(height: 20),
+                Flexible(
+                  child: ElevatedButton(
+                    onPressed: () {
+                      _controller.submitForm();
+                    },
+                    child: const Text('Connect'),
+                  ),
+                ),
+              ],
+            ),
+          ),
         ),
-
       ],
     );
-}
-
-
+  }
 }

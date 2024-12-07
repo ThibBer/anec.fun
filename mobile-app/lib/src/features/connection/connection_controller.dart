@@ -9,10 +9,12 @@ import 'package:flutter/material.dart';
 /// This class handles form validation, WebSocket initialization, and disposal of resources.
 class ConnectionController {
   late final Game game;
-  ConnectionController({required this.game});
+  ConnectionController({required this.game}) {
+    formKey = GlobalKey<FormState>();
+  }
 
   /// A key to identify the form and access its state.
-  final GlobalKey<FormState> formKey = GlobalKey<FormState>();
+  late GlobalKey<FormState> formKey;
 
   /// Controller for the box ID text field.
   final TextEditingController boxIdController = TextEditingController();
