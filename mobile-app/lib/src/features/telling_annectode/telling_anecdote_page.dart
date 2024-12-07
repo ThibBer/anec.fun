@@ -1,4 +1,6 @@
 import 'package:anecdotfun/src/core/models/game.dart';
+import 'package:anecdotfun/src/core/utils/constants.dart';
+import 'package:anecdotfun/src/features/voting/vote_page.dart';
 import 'package:flutter/material.dart';
 import 'package:lottie/lottie.dart';
 import 'telling_anecdote_controller.dart';

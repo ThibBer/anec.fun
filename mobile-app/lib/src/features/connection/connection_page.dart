@@ -1,5 +1,6 @@
 import 'package:anecdotfun/src/core/models/game.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/svg.dart';
 import '../../settings/settings_view.dart';
 import '../voting/vote_page.dart';
 import 'connection_controller.dart';
@@ -65,7 +66,6 @@ class _ConnectionPageState extends State<ConnectionPage> {
     );
   }
 
-
   @override
   Widget build(BuildContext context) {
     return ListenableBuilder(
@@ -109,6 +109,12 @@ class _ConnectionPageState extends State<ConnectionPage> {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
+                  // Logo
+                  SvgPicture.asset(
+                    'assets/images/logo_long.svg',
+                    semanticsLabel: 'Dart Logo',
+                  ),
+
                   Expanded(
                     child: Lottie.asset(
                       'assets/animations/welcome.json',
