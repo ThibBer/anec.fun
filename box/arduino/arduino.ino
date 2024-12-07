@@ -325,13 +325,13 @@ void onGameModeChanged(GameMode gameMode) {
   currentGameMode = gameMode;
 }
 
-void onWebSocketStateChanged(String value){
-  if(value == "CONNECTED"){
+void onWebSocketStateChanged(String value) {
+  if (value == "CONNECTED") {
     blinkStartLED(2, 0, 255, 0, 200);
     return;
   }
 
-  if(value == "FAILED" || value == "CLOSED"){
+  if (value == "FAILED" || value == "CLOSED") {
     blinkStartLED(2, 255, 0, 0, 200);
   }
 }
