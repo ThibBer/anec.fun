@@ -3,7 +3,6 @@ import 'package:anecdotfun/src/core/models/game.dart';
 
 class TellingAnecdoteController {
   final ValueNotifier<bool> isRecording = ValueNotifier<bool>(false);
-  final String theme = "Funny";
 
   final Game game;
 

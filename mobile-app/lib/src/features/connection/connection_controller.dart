@@ -27,12 +27,12 @@ class ConnectionController {
   /// [boxId]: The ID of the box to connect to.
   /// [onSuccess]: Callback to invoke upon successful connection.
   /// [onError]: Callback to invoke upon encountering an error.
-  void initializeWebSocket(String boxId, String username, {reconnect = false}) {
+  void initializeWebSocket(String boxId, String username, {String? uniqueId}) {
     _webSocketConnection = WebSocketConnection(
       boxId: int.parse(boxId),
       username: username,
     );
-    _webSocketConnection?.init(reconnect);
+    _webSocketConnection?.init(uniqueId);
   }
 
   /// Submits the form and attempts to establish a WebSocket connection.
@@ -54,27 +54,37 @@ class ConnectionController {
 
   void reconnect() async {
     final prefs = await SharedPreferences.getInstance();
-    var uniqueId, _ = prefs.getStringList('uniqueId');
-    initializeWebSocket(uniqueId, "", reconnect: true);
+    var connectionSettings = prefs.getStringList("connectionSettings");
+    if(connectionSettings == null || connectionSettings.length <= 2){
+      return;
+    }
+
+    var boxId = connectionSettings[0];
+    var uniqueId = connectionSettings[1];
+
+    print("Reconnect to box $boxId with uniqueId : $uniqueId");
+
+    initializeWebSocket(boxId, "", uniqueId: uniqueId);
     game.setReconnecting(true);
   }
 
   /// Disposes the controller, releasing any resources held.
   void disposeController() {
     boxIdController.dispose();
-    _webSocketConnection?.close();
+    //_webSocketConnection?.close();
   }
 
-  Future<bool> promptReconnect() async {
+  Future<bool> canBeReconnected() async {
     // Check if stored unique ID is available and not too old
     final prefs = await SharedPreferences.getInstance();
-    var _, timestamp = prefs.getStringList('uniqueId');
-    // check if timestamp is not older than 15 minutes
-    if (timestamp != null &&
-        DateTime.now().difference(DateTime.parse(timestamp[1])).inMinutes <
-            15) {
-      return true;
+    var connectionSettings = prefs.getStringList("connectionSettings");
+    if(connectionSettings == null || connectionSettings.length < 3){
+      return false;
     }
-    return false;
+
+    var timestamp = connectionSettings[2];
+
+    // check if timestamp is not older than 15 minutes
+    return DateTime.now().difference(DateTime.parse(timestamp)).inMinutes < 15;
   }
 }

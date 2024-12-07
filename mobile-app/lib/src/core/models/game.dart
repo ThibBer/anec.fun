@@ -45,7 +45,7 @@ class Game extends ChangeNotifier {
   GameState state = GameState.stopped;
 
   /// The theme of the game
-  String theme = "";
+  String subject = "not yet selected";
 
   /// The current players in the game.
   /// The key is the unique ID of the player, and the value is a map that contains
@@ -65,9 +65,9 @@ class Game extends ChangeNotifier {
     notifyListeners();
   }
 
-  /// Updates the theme of the game.
-  void updateTheme(String newTheme) {
-    theme = newTheme;
+  /// Updates the subject of the game.
+  void updateSubject(String newSubject) {
+    subject = newSubject;
     notifyListeners();
   }
 

@@ -29,7 +29,7 @@ class VotePageState extends State<VotePage> {
 
   @override
   void dispose() {
-    voteController.webSocketConnection.close();
+    //voteController.webSocketConnection.close();
     super.dispose();
   }
 
@@ -72,13 +72,7 @@ class VotePageState extends State<VotePage> {
                             "Mode : ${voteController.game.mode.name}",
                             style: Theme.of(context).textTheme.headlineSmall,
                             textAlign: TextAlign.center,
-                          ),
-                          if (voteController.game.mode.name == "THEME")
-                            Text(
-                              "Subject : ${voteController.game.theme}",
-                              style: Theme.of(context).textTheme.labelSmall,
-                              textAlign: TextAlign.center,
-                            )
+                          )
                         ],
                       ),
                     ),

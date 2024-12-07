@@ -28,7 +28,7 @@ class PlayerScorePageState extends State<PlayerScorePage> {
 
   @override
   void dispose() {
-    scoreController.webSocketConnection.close();
+    //scoreController.webSocketConnection.close();
     super.dispose();
   }
 

@@ -1,29 +1,28 @@
 package be.unamur.anecdotfun
 
-import scala.concurrent.duration.DurationInt
-import akka.actor.{ActorSystem, Cancellable}
+import akka.actor.ActorSystem
 import akka.http.scaladsl.model.{DateTime, StatusCode}
 import akka.stream.scaladsl.Sink
 import akka.util.ByteString
+import be.unamur.anecdotfun.CommandResponseJsonProtocol.commandResponseFormat
 import be.unamur.anecdotfun.GameState.{START, STOP}
 import com.typesafe.config.ConfigFactory
 import spray.json.*
-import be.unamur.anecdotfun.CommandResponseJsonProtocol.commandResponseFormat
+
+import scala.concurrent.duration.DurationInt
 import scala.sys.process.Process
 
 val config = ConfigFactory.load()
 implicit val system: ActorSystem = ActorSystem("box-anecdotfun", config)
 implicit val ec: scala.concurrent.ExecutionContext = scala.concurrent.ExecutionContext.global
 
-val boxId = Option(System.getenv(
-  "BOX_ID")).getOrElse(config.getString("akka.game.box.id")).toInt
-var webSocketClient = WebSocketClient(Option(System.getenv(
-  "BASE_URL")).getOrElse(config.getString("akka.game.server.base-url")) + boxId)
-val serial = SerialThread(Option(System.getenv(
-  "COMPORT")).getOrElse(config.getString("akka.game.arduino.com-port")))
-val mic = Microphone(serial)
-var uniqueId = ""
+var uniqueId = readSavedUniqueId()
 
+val boxId = Option(System.getenv("BOX_ID")).getOrElse(config.getString("akka.game.box.id")).toInt
+val baseUrl = Option(System.getenv("BASE_URL")).getOrElse(config.getString("akka.game.server.base-url")) + boxId
+var webSocketClient = WebSocketClient(if (uniqueId.isEmpty) baseUrl else baseUrl + "?uniqueId=" + uniqueId)
+val serial = SerialThread(Option(System.getenv("COMPORT")).getOrElse(config.getString("akka.game.arduino.com-port")))
+val mic = Microphone(serial)
 
 object Main {
   def main(args: Array[String]): Unit = {
@@ -93,7 +92,10 @@ object Main {
       commandResponse.commandType match {
         case CommandType.CONNECTION =>
           if (isCommandSuccessful) {
-            uniqueId = commandResponse.uniqueId
+            if(commandResponse.uniqueId != uniqueId){
+              uniqueId = commandResponse.uniqueId
+              saveUniqueId(uniqueId)
+            }
           }
         case CommandType.STATUS =>
           if (isCommandSuccessful) {
@@ -232,4 +234,28 @@ object Main {
   }
 
   private def twoDigitsNumber(data: Int): String = if (data <= 9) "0" + data else data.toString
+}
+
+def readSavedUniqueId(): String = {
+  val path = os.Path(System.getProperty("user.home") + "/uniqueId.iot")
+  if (!os.exists(path)){
+    println("File not exists")
+    return ""
+  }
+
+  try {
+    println(s"Read uniqueId file : $path")
+    os.read.lines(path).head
+  } catch {
+    case e: NoSuchElementException =>
+      println(s"UniqueId file exists but empty : $path")
+      os.remove(path)
+      ""
+  }
+}
+
+def saveUniqueId(id: String): Unit = {
+  val path = os.Path(System.getProperty("user.home") + "/uniqueId.iot")
+  println(s"Save uniqueId file : $path")
+  os.write.over(path, id)
 }
