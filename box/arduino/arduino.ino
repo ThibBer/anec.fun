@@ -77,7 +77,6 @@ GameMode stringToGameMode(String input);
 GameState stringToGameState(String input);
 void onGameModeChanged(GameMode gameMode);
 void onButtonGameModeClick(GameMode gameMode);
-void processSerialInput();
 void setGameState(GameState newGameState);
 void onGameStateChanged(GameState state);
 void onReceiveSerialData(String key, String value);
@@ -140,6 +139,21 @@ void setup() {
   }
 }
 
+void serialEvent() {
+  if (Serial.available() > 0) {
+    String serialData = Serial.readString();
+    serialData.trim();
+
+    int equalIndex = serialData.indexOf('=');
+    if (equalIndex != -1) {
+      String key = serialData.substring(0, equalIndex);
+      String value = serialData.substring(equalIndex + 1);
+
+      onReceiveSerialData(key, value);
+    }
+  }
+}
+
 void loop() {
   currentTime = millis();
 
@@ -171,8 +185,6 @@ void loop() {
     }
     return;
   }
-
-  processSerialInput();
 
   if (currentTime - previousTimeModeSelection >= 100 && currentGameState == STOPPED) {
     int modeSelectionSwitch = digitalRead(MODE_SELECTION_PIN);
@@ -288,21 +300,6 @@ void blinkStartLED(int count, int r, int g, int b, int timing) {
     delay(timing);
     setGameStateLedColor(0);
     delay(timing);
-  }
-}
-
-void processSerialInput() {
-  if (Serial.available() > 0) {
-    String serialData = Serial.readString();
-    serialData.trim();
-
-    int equalIndex = serialData.indexOf('=');
-    if (equalIndex != -1) {
-      String key = serialData.substring(0, equalIndex);
-      String value = serialData.substring(equalIndex + 1);
-
-      onReceiveSerialData(key, value);
-    }
   }
 }
 
