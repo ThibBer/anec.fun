@@ -173,7 +173,7 @@ class Game extends ChangeNotifier {
   }
 
   /// Resets the game to its initial state.
-  void delete() {
+  void reset() {
     // Reset game properties to their initial values
     boxId = -1;
     username = "";
