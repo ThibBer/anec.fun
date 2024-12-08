@@ -1,3 +1,4 @@
+import 'package:anecdotfun/src/core/utils/disconnection_overlay.dart';
 import 'package:anecdotfun/src/settings/settings_view.dart';
 import 'package:flutter/material.dart';
 import 'package:lottie/lottie.dart'; // Add this dependency to your pubspec.yaml
@@ -122,7 +123,7 @@ class LeaderboardPageState extends State<LeaderboardPage>
                   padding: EdgeInsets.symmetric(vertical: 16.0),
                     child: ElevatedButton(
                       onPressed: () {
-                        Navigator.pushReplacementNamed(context, '/');
+                        leaderboardController.disconnect();
                       },
                       child: Text('Go to connection page'),
                   ),
@@ -140,7 +141,9 @@ class LeaderboardPageState extends State<LeaderboardPage>
                 fit: BoxFit.fill,
               ),
             ),
+          disconnectionOverlay(leaderboardController),
         ],
+
       ),
     );
   }

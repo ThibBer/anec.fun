@@ -1,4 +1,6 @@
 import 'package:anecdotfun/src/core/models/player.dart';
+import 'package:anecdotfun/src/core/services/web_socket_connection.dart';
+import 'package:anecdotfun/src/core/utils/constants.dart';
 
 import '../../core/models/game.dart';
 
@@ -6,7 +8,7 @@ class LeaderboardController {
   final Game game;
 
   LeaderboardController({required this.game});
-
+  WebSocketConnection webSocketConnection = WebSocketConnection();
   /// Get sorted players by scores in descending order
   List<Player> get sortedPlayers {
     return game.players.value.values.toList()
@@ -29,5 +31,8 @@ class LeaderboardController {
     }
     return -1; // Player not found
   }
-
+  void disconnect() {
+    game.updateState(GameState.disconnecting);
+    webSocketConnection.disconnect();
+  }
 }
