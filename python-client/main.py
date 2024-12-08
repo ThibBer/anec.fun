@@ -2,7 +2,7 @@ import asyncio
 import websockets
 import json
 
-box_id = 120
+box_id = 1
 
 
 class WebSocketClient:
