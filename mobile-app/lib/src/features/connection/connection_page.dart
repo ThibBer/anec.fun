@@ -77,7 +77,9 @@ class _ConnectionPageState extends State<ConnectionPage> {
 
   @override
   Widget build(BuildContext context) {
-    return ListenableBuilder(
+    return PopScope(
+      canPop: false,
+      child: ListenableBuilder(
       listenable: _controller.game,
       builder: (context, _) {
         if (_controller.game.isReconnecting) {
@@ -103,6 +105,7 @@ class _ConnectionPageState extends State<ConnectionPage> {
         return Scaffold(
           appBar: AppBar(
             title: const Text('Connect to Box'),
+              automaticallyImplyLeading: false,
             actions: [
               IconButton(
                 icon: const Icon(Icons.settings),
@@ -154,6 +157,7 @@ class _ConnectionPageState extends State<ConnectionPage> {
           ),
         );
       },
+      ),
     );
   }
 

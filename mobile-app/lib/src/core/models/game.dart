@@ -125,6 +125,7 @@ class Game extends ChangeNotifier {
 
   void setConnected(bool connected) {
     this.connected = connected;
+    updateState(GameState.connected);
     notifyListeners();
   }
 
@@ -150,4 +151,21 @@ class Game extends ChangeNotifier {
     _isReconnecting = reconnecting;
     notifyListeners();
   }
+
+  /// Checks if the current player is the winner (highest score)
+  bool isWinner() {
+    if (!players.value.containsKey(uniqueId)) {
+      return false; // The player doesn't exist in the game
+    }
+    final int currentPlayerScore = players.value[uniqueId]!.score;
+
+    // Check if there is any player with a higher score
+    for (var player in players.value.values) {
+      if (player.score > currentPlayerScore) {
+        return false;
+      }
+    }
+    return true; // Current player has the highest score
+  }
+
 }

@@ -150,6 +150,8 @@ class WebSocketConnection {
         game.updateState(GameState.roundStarted);
       } else if (command.message == 'STICK_EXPLODED') {
         game.updateState(GameState.stickExploded);
+      } else if (command.message == 'STOPPED') {
+        game.updateState(GameState.stopped);
       }
     } else if (command is StickExploded) {
       game.stickExploded = true;

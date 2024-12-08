@@ -1,3 +1,4 @@
+import 'package:anecdotfun/src/core/services/page_routing.dart';
 import 'package:anecdotfun/src/core/utils/constants.dart';
 import 'package:anecdotfun/src/features/telling_annectode/telling_anecdote_page.dart';
 import 'package:flutter/material.dart';
@@ -38,15 +39,7 @@ class _StickPassingPageState extends State<StickPassingPage> {
     // Check NFC availability
     _checkNfcAvailability();
 
-    // Listen for game state changes
-    _controller.game.state.addListener(() {
-      if (_controller.game.state.value == GameState.stickExploded) {
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          Navigator.pushReplacementNamed(
-              context, TellingAnecdotePage.routeName);
-        });
-      }
-    });
+    GlobalNavigationService.listenToGameState(_controller.game.state);
   }
 
   Future<void> _checkNfcAvailability() async {
@@ -64,12 +57,15 @@ class _StickPassingPageState extends State<StickPassingPage> {
 
   @override
   Widget build(BuildContext context) {
-    return ListenableBuilder(
+    return PopScope(
+      canPop: false,
+      child: ListenableBuilder(
       listenable: _controller.game,
       builder: (context, _) {
         return Scaffold(
           appBar: AppBar(
             title: const Text('Stick Passing'),
+              automaticallyImplyLeading: false,
           ),
           body: Center(
             child: Column(
@@ -100,6 +96,7 @@ class _StickPassingPageState extends State<StickPassingPage> {
           ),
         );
       },
+      ),
     );
   }
 

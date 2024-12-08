@@ -1,4 +1,5 @@
 import 'package:anecdotfun/src/core/models/player.dart';
+import 'package:anecdotfun/src/core/services/page_routing.dart';
 import 'package:flutter/material.dart';
 import '../../core/services/web_socket_connection.dart';
 import '../../core/models/game.dart';
@@ -26,15 +27,7 @@ class PlayerScorePageState extends State<PlayerScorePage> {
       game: Game(),
     );
 
-    // Listen for game state changes
-    scoreController.game.state.addListener(() {
-      final gameState = scoreController.game.state.value;
-      if (gameState == GameState.roundStarted) {
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          Navigator.pushReplacementNamed(context, StickPassingPage.routeName);
-        });
-      }
-    });
+    GlobalNavigationService.listenToGameState(scoreController.game.state);
   }
 
   @override
@@ -45,7 +38,9 @@ class PlayerScorePageState extends State<PlayerScorePage> {
 
   @override
   Widget build(BuildContext context) {
-    return ListenableBuilder(
+    return PopScope(
+      canPop: false,
+      child: ListenableBuilder(
       listenable: scoreController.game,
       builder: (context, _) {
         return Scaffold(
@@ -54,6 +49,7 @@ class PlayerScorePageState extends State<PlayerScorePage> {
               "Box ${scoreController.game.boxId} - Scores",
               textAlign: TextAlign.center,
             ),
+              automaticallyImplyLeading: false,
             centerTitle: true,
           ),
           body: Padding(
@@ -120,6 +116,7 @@ class PlayerScorePageState extends State<PlayerScorePage> {
           ),
         );
       },
+      ),
     );
   }
 }

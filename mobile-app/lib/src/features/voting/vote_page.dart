@@ -1,4 +1,5 @@
 import 'package:anecdotfun/src/core/models/player.dart';
+import 'package:anecdotfun/src/core/services/page_routing.dart';
 import 'package:anecdotfun/src/features/score/score_page.dart';
 import 'package:anecdotfun/src/features/stick_passing/stick_passing_page.dart';
 import 'package:flutter/material.dart';
@@ -27,15 +28,7 @@ class VotePageState extends State<VotePage> {
       game: Game(),
     );
 
-    // Listen for game state changes
-    voteController.game.state.addListener(() {
-      final gameState = voteController.game.state.value;
-      if (gameState == GameState.roundStarted) {
-        Navigator.pushReplacementNamed(context, StickPassingPage.routeName);
-      } else if (gameState == GameState.scores) {
-        Navigator.pushReplacementNamed(context, PlayerScorePage.routeName);
-      }
-    });
+    GlobalNavigationService.listenToGameState(voteController.game.state);
   }
 
   @override
@@ -46,7 +39,9 @@ class VotePageState extends State<VotePage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    return PopScope(
+      canPop: false,
+      child: Scaffold(
       appBar: AppBar(
         title: ValueListenableBuilder<GameState>(
           valueListenable: voteController.game.state,
@@ -56,6 +51,7 @@ class VotePageState extends State<VotePage> {
             );
           },
         ),
+          automaticallyImplyLeading: false,
         centerTitle: true,
       ),
       body: Padding(
@@ -185,6 +181,7 @@ class VotePageState extends State<VotePage> {
             ),
           ],
         ),
+      ),
       ),
     );
   }
