@@ -1,4 +1,5 @@
 import 'package:anecdotfun/src/core/services/page_routing.dart';
+import 'package:anecdotfun/src/settings/settings_view.dart';
 import 'package:flutter/material.dart';
 import 'package:lottie/lottie.dart';
 import 'package:nfc_manager/nfc_manager.dart';
@@ -70,6 +71,15 @@ class _StickPassingPageState extends State<StickPassingPage> {
             appBar: AppBar(
               title: const Text('Stick Passing'),
               automaticallyImplyLeading: false,
+              actions: [
+                IconButton(
+                  icon: const Icon(Icons.settings),
+                  onPressed: () {
+                    Navigator.restorablePushNamed(
+                        context, SettingsView.routeName);
+                  },
+                ),
+              ],
             ),
             body: Center(
               child: Column(

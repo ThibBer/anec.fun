@@ -1,3 +1,6 @@
+import 'package:anecdotfun/src/core/models/game.dart';
+import 'package:anecdotfun/src/core/services/web_socket_connection.dart';
+import 'package:anecdotfun/src/core/utils/constants.dart';
 import 'package:flutter/material.dart';
 
 import 'settings_service.dart';
@@ -9,7 +12,8 @@ import 'settings_service.dart';
 /// uses the SettingsService to store and retrieve user settings.
 class SettingsController with ChangeNotifier {
   SettingsController(this._settingsService);
-
+  final WebSocketConnection webSocketConnection = WebSocketConnection();
+  final Game game = Game();
   // Make SettingsService a private variable so it is not used directly.
   final SettingsService _settingsService;
 
@@ -46,5 +50,10 @@ class SettingsController with ChangeNotifier {
     // Persist the changes to a local database or the internet using the
     // SettingService.
     await _settingsService.updateThemeMode(newThemeMode);
+  }
+
+  void disconnect() {
+    game.updateState(GameState.disconnecting);
+    webSocketConnection.disconnect();
   }
 }

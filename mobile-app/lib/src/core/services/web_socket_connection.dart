@@ -188,7 +188,7 @@ class WebSocketConnection {
     final status = response['status'];
     if (status == 'failed') {
       game.setError(response['message']);
-      game.setConnected(false);
+      game.updateState(GameState.disconnected);
       game.uniqueId = "";
       game.boxId = -1;
       close(
@@ -196,7 +196,7 @@ class WebSocketConnection {
     } else {
       if (response['senderUniqueId'] == game.uniqueId) {
         game.setSuccess("Remote connected");
-        game.setConnected(true);
+        game.updateState(GameState.connected);
         print("Remote connected");
         if (!votingPageReadyCompleter.isCompleted) {
           await votingPageReadyCompleter.future;
@@ -252,10 +252,25 @@ class WebSocketConnection {
   void _handleDisconnectResponse(Map<String, dynamic> response) async {
     final status = response['status'];
     if (status == 'success') {
-      game.removePlayer(game.uniqueId);
+      if (game.uniqueId == response['uniqueId']) {
+        game.updateState(GameState.disconnected);
+        cleanup();
+      } else {
+        game.removePlayer(game.uniqueId);
+      }
     } else {
       game.setError(response['message']);
     }
+  }
+
+  void cleanup() {
+    try {
+      close(1000); // Close the WebSocket connection with a normal closure code
+      _heartbeatTimer.cancel();
+    } catch (error) {
+      game.setError("Cleanup failed: $error");
+    }
+    game.reset();
   }
 
   void sendCommand(Map<String, dynamic> commandData) {
@@ -281,6 +296,7 @@ class WebSocketConnection {
       "uniqueId": game.uniqueId,
       "commandType": "DisconnectRemote",
     });
+    print("Disconnect command sent");
   }
 
   void vote(String vote, bool speaker) {

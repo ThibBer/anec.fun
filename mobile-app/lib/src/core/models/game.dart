@@ -142,14 +142,6 @@ class Game extends ChangeNotifier {
     notifyListeners();
   }
 
-  bool connected = false;
-
-  void setConnected(bool connected) {
-    this.connected = connected;
-    updateState(GameState.connected);
-    notifyListeners();
-  }
-
   /// Restores the game state from a saved state.
   void restoreGameState(Map<String, dynamic> state) {
     username = state['username'];
@@ -189,4 +181,36 @@ class Game extends ChangeNotifier {
     return true; // Current player has the highest score
   }
 
+  /// Resets the game to its initial state.
+  void reset() {
+    // Reset game properties to their initial values
+    boxId = -1;
+    username = "";
+    uniqueId = "";
+    annecdotTellerId = "";
+    stickExploded = false;
+    subject = "not yet selected";
+
+    // Reset mode and state to their initial values
+    mode.value = GameMode.theme;
+    state.value = GameState.stopped;
+
+    // Clear all players
+    for (var player in players.value.values) {
+      player.removeListener(_onPlayerChanged);
+    }
+    players.value.clear();
+    players.notifyListeners();
+
+    // Reset connection-related states
+    _isConnecting = false;
+    _isReconnecting = false;
+
+    // Clear error and success messages
+    error = null;
+    success = null;
+
+    // Notify listeners about the reset
+    notifyListeners();
+  }
 }

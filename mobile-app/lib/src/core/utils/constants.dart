@@ -7,7 +7,9 @@ enum GameState {
   voting,
   scores,
   stickExploded,
-  connected
+  connected,
+  disconnected,
+  disconnecting
 }
 
 enum GameMode {

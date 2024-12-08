@@ -2,6 +2,7 @@ import 'package:anecdotfun/src/core/models/game.dart';
 import 'package:anecdotfun/src/core/services/page_routing.dart';
 import 'package:anecdotfun/src/core/utils/constants.dart';
 import 'package:anecdotfun/src/features/voting/vote_page.dart';
+import 'package:anecdotfun/src/settings/settings_view.dart';
 import 'package:flutter/material.dart';
 import 'package:lottie/lottie.dart';
 import 'telling_anecdote_controller.dart';
@@ -44,6 +45,15 @@ class TellingAnecdotePageState extends State<TellingAnecdotePage> {
             title: const Text("Telling Anecdote"),
               automaticallyImplyLeading: false,
             centerTitle: true,
+              actions: [
+                IconButton(
+                  icon: const Icon(Icons.settings),
+                  onPressed: () {
+                    Navigator.restorablePushNamed(
+                        context, SettingsView.routeName);
+                  },
+                ),
+              ],
           ),
           body: Padding(
             padding: const EdgeInsets.all(16.0),

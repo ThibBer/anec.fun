@@ -1,5 +1,6 @@
 import 'package:anecdotfun/src/core/models/player.dart';
 import 'package:anecdotfun/src/core/services/page_routing.dart';
+import 'package:anecdotfun/src/settings/settings_view.dart';
 import 'package:flutter/material.dart';
 import 'vote_controller.dart';
 import '../../core/services/web_socket_connection.dart';
@@ -50,6 +51,14 @@ class VotePageState extends State<VotePage> {
           ),
           automaticallyImplyLeading: false,
           centerTitle: true,
+          actions: [
+            IconButton(
+              icon: const Icon(Icons.settings),
+              onPressed: () {
+                Navigator.restorablePushNamed(context, SettingsView.routeName);
+              },
+            ),
+          ],
         ),
         body: Padding(
           padding: const EdgeInsets.all(16.0),

@@ -1,3 +1,4 @@
+import 'package:anecdotfun/src/settings/settings_view.dart';
 import 'package:flutter/material.dart';
 import 'package:lottie/lottie.dart'; // Add this dependency to your pubspec.yaml
 import '../../core/models/game.dart';
@@ -38,6 +39,15 @@ class LeaderboardPageState extends State<LeaderboardPage>
             ),
               automaticallyImplyLeading: false,
             centerTitle: true,
+              actions: [
+                IconButton(
+                  icon: const Icon(Icons.settings),
+                  onPressed: () {
+                    Navigator.restorablePushNamed(
+                        context, SettingsView.routeName);
+                  },
+                ),
+              ],
           ),
           body: Padding(
             padding: const EdgeInsets.all(16.0),
