@@ -1,9 +1,9 @@
 import 'package:anecdotfun/src/core/models/game.dart';
+import 'package:anecdotfun/src/core/services/page_routing.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../settings/settings_view.dart';
-import '../voting/vote_page.dart';
 import 'connection_controller.dart';
 import 'package:lottie/lottie.dart';
 
@@ -24,6 +24,7 @@ class _ConnectionPageState extends State<ConnectionPage> {
     super.initState();
     _controller = ConnectionController(game: Game());
     _checkReconnection();
+    GlobalNavigationService.listenToGameState(_controller.game.state);
   }
 
   @override
@@ -96,12 +97,7 @@ class _ConnectionPageState extends State<ConnectionPage> {
               ),
             ),
           );
-        }
-        if (_controller.game.connected) {
-          WidgetsBinding.instance.addPostFrameCallback((_) {
-            Navigator.pushReplacementNamed(context, VotePage.routeName);
-          });
-        }
+          }
         return Scaffold(
           appBar: AppBar(
             title: const Text('Connect to Box'),
@@ -162,10 +158,10 @@ class _ConnectionPageState extends State<ConnectionPage> {
   }
 
   Widget _buildLoadingWidget() {
-    return Flexible(
-      child: Column(
+    return Column(
         children: [
-          ColorFiltered(
+        Flexible(
+          child: ColorFiltered(
             colorFilter: ColorFilter.mode(
               Theme.of(context).colorScheme.primary,
               BlendMode.modulate,
@@ -177,10 +173,10 @@ class _ConnectionPageState extends State<ConnectionPage> {
               fit: BoxFit.contain,
             ),
           ),
+          ),
           const SizedBox(height: 20),
           const Text('Connecting... Please wait'),
-        ],
-      ),
+      ],
     );
   }
 
