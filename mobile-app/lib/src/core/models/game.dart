@@ -85,7 +85,7 @@ class Game extends ChangeNotifier {
 
   void resetPlayersVote(){
     print("Reset player votes");
-    for(var uniqueId in tempPlayers.keys){
+    for(var uniqueId in players.value.keys){
       players.value[uniqueId]!.updateVote(null);
     }
   }
