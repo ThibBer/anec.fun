@@ -132,7 +132,9 @@ class LeaderboardPageState extends State<LeaderboardPage>
             ),
           ),
           ),
-          if (leaderboardController.game.isWinner())
+          if (leaderboardController
+                  .getPlayerRank(leaderboardController.game.uniqueId) ==
+              1)
             IgnorePointer(
               ignoring:
                   true, // Allow interactions with widgets under this overlay
