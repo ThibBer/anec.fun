@@ -2,6 +2,7 @@ import 'package:anecdotfun/src/core/utils/constants.dart';
 import 'package:anecdotfun/src/features/telling_annectode/telling_anecdote_page.dart';
 import 'package:flutter/material.dart';
 import 'package:lottie/lottie.dart';
+import 'package:nfc_manager/nfc_manager.dart';
 
 import '../../core/models/game.dart';
 import '../../core/services/web_socket_connection.dart';
@@ -41,12 +42,13 @@ class _StickPassingPageState extends State<StickPassingPage> {
   Future<void> _checkNfcAvailability() async {
     _isNfcAvailable = await _controller.isNfcAvailable();
     _isNfcChecked = true;
-    setState(() {}); // Trigger UI update
+    setState(() {});
   }
 
   @override
   void dispose() {
     _controller.dispose();
+    NfcManager.instance.stopSession();
     super.dispose();
   }
 

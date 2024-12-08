@@ -2,6 +2,8 @@ import asyncio
 import websockets
 import json
 
+box_id = 112
+
 
 class WebSocketClient:
     def __init__(self, box_id, commands):
@@ -11,7 +13,7 @@ class WebSocketClient:
         self.websocket = None  # Store the WebSocket connection
 
     async def connect(self):
-        uri = f"ws://localhost:8080/ws/{self.box_id}"
+        uri = f"wss://anecdotfun2.vsantele.dev/ws/{self.box_id}"
         async with websockets.connect(uri) as websocket:
             self.websocket = websocket
             await asyncio.gather(self.handle_connection(), self.send_heartbeat())
@@ -81,13 +83,13 @@ class WebSocketClient:
 async def main():
     # Box and remotes commands
     box_commands = [
-        {"boxId": 2, "uniqueId": "", "commandType": "ConnectBox"},
-        {"boxId": 2, "uniqueId": "", "commandType": "StartGameCommand"},
-        {"boxId": 2, "uniqueId": "", "commandType": "StartRoundCommand"},
+        {"boxId": box_id, "uniqueId": "", "commandType": "ConnectBox"},
+        {"boxId": box_id, "uniqueId": "", "commandType": "StartGameCommand"},
+        {"boxId": box_id, "uniqueId": "", "commandType": "StartRoundCommand"},
     ]
 
     # Create clients for the box
-    tasks = [WebSocketClient(2, box_commands).connect()]
+    tasks = [WebSocketClient(box_id, box_commands).connect()]
 
     await asyncio.gather(*tasks)
 

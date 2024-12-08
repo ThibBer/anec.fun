@@ -1,7 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:nfc_manager/nfc_manager.dart';
-
+import 'package:collection/collection.dart';
 import '../../core/models/game.dart';
 import '../../core/services/web_socket_connection.dart';
 
@@ -14,16 +14,16 @@ class StickPassingController extends ChangeNotifier {
   bool isExploded = false;
   BuildContext context;
 
-  StickPassingController({
-    required this.webSocketConnection,
-    required this.game,
+  StickPassingController(
+      {required this.webSocketConnection,
+      required this.game,
       required this.context}) {
     _initialize();
   }
 
   Future<void> _initialize() async {
     if (await isNfcAvailable()) {
-      isScanning = true;
+      startNfcScan();
     }
   }
 
@@ -36,7 +36,7 @@ class StickPassingController extends ChangeNotifier {
     isScanning = true;
     isSuccess = false;
     notifyListeners();
-
+    print("Starting NFC scan");
     NfcManager.instance.startSession(
       pollingOptions: {NfcPollingOption.iso14443},
       onDiscovered: (NfcTag tag) async {
@@ -48,23 +48,45 @@ class StickPassingController extends ChangeNotifier {
 
   /// Validates the NFC tag
   void validateTag(NfcTag tag) {
-    final payload = tag.data['payload'];
-    if (payload != null &&
-        String.fromCharCodes(payload.sublist(1 + payload[0])) == "stick") {
-      if (isStickExploded()) {
-        isScanning = false;
-        isExploded = true;
-        notifyListeners();
+    print("Tag discovered: ${tag.data}");
 
-        Future.delayed(const Duration(seconds: 2), onScanSuccessful);
+    // Navigate the nested structure to get the payload
+    final ndef = tag.data['ndef'];
+    if (ndef != null) {
+      final cachedMessage = ndef['cachedMessage'];
+      if (cachedMessage != null) {
+        final records = cachedMessage['records'];
+        if (records != null && records.isNotEmpty) {
+          final payload = records[0]['payload'];
+          if (payload != null) {
+            // Use ListEquality to compare lists
+            const listEquality = ListEquality();
+            if (listEquality
+                .equals(payload, [2, 101, 110, 115, 116, 105, 99, 107])) {
+              print("Stick scanned");
+              isScanning = false;
+              if (isStickExploded()) {
+                isExploded = true;
+              } else {
+                isSuccess = true;
+              }
+              notifyListeners();
+              Future.delayed(const Duration(seconds: 2), onScanSuccessful);
+            } else {
+              print("Invalid tag");
+            }
+          } else {
+            print("Payload is null");
+          }
+        } else {
+          print("No records found");
+        }
       } else {
-        isScanning = false;
-        isSuccess = true;
-        notifyListeners();
+        print("No cachedMessage found");
       }
+    } else {
+      print("No NDEF data found");
     }
-
-    NfcManager.instance.stopSession();
   }
 
   /// Validates the scan after timeout
@@ -91,11 +113,17 @@ class StickPassingController extends ChangeNotifier {
 
   /// Handles successful scan logic
   void onScanSuccessful() async {
+    print("Scan successful");
     webSocketConnection.sendStickScanned();
-    isExploded = false;
     isSuccess = false;
-    if (await isNfcAvailable()) {
+    bool nfcAvailable = await isNfcAvailable();
+    if (isStickExploded()) {
+      print("Stick exploded");
+    } else if (nfcAvailable) {
       isScanning = true;
+      isExploded = false;
+    } else {
+      isExploded = false;
     }
     notifyListeners();
   }
@@ -108,8 +136,4 @@ class StickPassingController extends ChangeNotifier {
     );
   }
 
-  @override
-  void dispose() {
-    super.dispose();
-  }
 }

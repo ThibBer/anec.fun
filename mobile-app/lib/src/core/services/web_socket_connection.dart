@@ -57,9 +57,9 @@ class WebSocketConnection {
     game.setConnecting(true);
 
     try {
-      var baseUrl = 'ws://localhost:8080/ws/${game.boxId}';
+      var baseUrl = 'wss://anecdotfun2.vsantele.dev/ws/${game.boxId}';
       var uri = Uri.parse(uniqueId == null ? baseUrl : "$baseUrl?uniqueId=$uniqueId");
-      print("WebSocket URI : " + uri.toString());
+      print("WebSocket URI : $uri");
 
       channel = WebSocketChannel.connect(uri);
       await channel.ready;
