@@ -100,7 +100,6 @@ class Game extends ChangeNotifier {
   }
 
   void resetPlayersVote(){
-    print("Reset player votes");
     for(var uniqueId in players.value.keys){
       players.value[uniqueId]!.updateVote(null);
     }
@@ -110,11 +109,8 @@ class Game extends ChangeNotifier {
 
   /// Updates the score of players
   void updateScores(int score, String speakerId) {
-    print("${players.value[speakerId]!.username} - ${players.value[speakerId]!.score} - ${players.value[speakerId]!.vote}");
     players.value[speakerId]!.setScore(score);
     players.notifyListeners();
-
-    print("${players.value[speakerId]!.username} - ${players.value[speakerId]!.score} - ${players.value[speakerId]!.vote}");
     updateState(GameState.scores);
   }
 
