@@ -10,7 +10,7 @@ import 'package:flutter/material.dart';
 class GlobalNavigationService {
   static final GlobalKey<NavigatorState> navigatorKey =
       GlobalKey<NavigatorState>();
-  static String? currentRoute;
+  static String currentRoute = ConnectionPage.routeName;
 
   // Current game state listener setup
   static void listenToGameState(ValueNotifier<GameState> gameStateNotifier) {
@@ -70,7 +70,7 @@ class GlobalNavigationService {
     // Reset the current route after popping
     final context = navigatorKey.currentContext;
     if (context != null) {
-      currentRoute = ModalRoute.of(context)?.settings.name;
+      currentRoute = ModalRoute.of(context)!.settings.name!;
     }
   }
 }

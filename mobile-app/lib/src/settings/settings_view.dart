@@ -1,4 +1,6 @@
+import 'package:anecdotfun/src/core/services/page_routing.dart';
 import 'package:anecdotfun/src/core/utils/constants.dart';
+import 'package:anecdotfun/src/features/connection/connection_page.dart';
 import 'package:flutter/material.dart';
 
 import 'settings_controller.dart';
@@ -68,28 +70,32 @@ class _SettingsViewState extends State<SettingsView> {
                     ],
                   ),
                 ),
-                const SizedBox(height: 24),
-                ElevatedButton.icon(
-                  onPressed: widget.controller.disconnect,
-                  icon: const Icon(
-                    Icons.logout,
-                    color: Colors.white,
-                  ),
-                  label: const Text(
-                    "Disconnect",
-                    style: TextStyle(fontSize: 16, color: Colors.white),
-                  ),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.redAccent,
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 24,
-                      vertical: 12,
+                if (GlobalNavigationService.currentRoute !=
+                    ConnectionPage.routeName)
+                  Column(children: [
+                    const SizedBox(height: 24),
+                    ElevatedButton.icon(
+                      onPressed: widget.controller.disconnect,
+                      icon: const Icon(
+                        Icons.logout,
+                        color: Colors.white,
+                      ),
+                      label: const Text(
+                        "Disconnect",
+                        style: TextStyle(fontSize: 16, color: Colors.white),
+                      ),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.redAccent,
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 24,
+                          vertical: 12,
+                        ),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                      ),
                     ),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                  ),
-                ),
+                  ]),
                 const Spacer(),
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.center,
