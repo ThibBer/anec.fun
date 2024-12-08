@@ -13,7 +13,7 @@ class WebSocketClient:
         self.websocket = None  # Store the WebSocket connection
 
     async def connect(self):
-        uri = f"wss://anecdotfun2.vsantele.dev/ws/{self.box_id}"
+        uri = f"ws://localhost:8080/ws/{self.box_id}"
         async with websockets.connect(uri) as websocket:
             self.websocket = websocket
             await asyncio.gather(self.handle_connection(), self.send_heartbeat())
@@ -39,7 +39,7 @@ class WebSocketClient:
         try:
             while True:
                 heartbeat_message = "heartbeat"
-                await self.send_message(heartbeat_message)
+                await self.send_message(heartbeat_message, msg_type="heartbeat")
                 await asyncio.sleep(5)
         except websockets.ConnectionClosed as e:
             print(f"Heartbeat stopped due to connection closure: {e}")
@@ -55,8 +55,11 @@ class WebSocketClient:
         else:
             print(f"Command succeeded: {response}")
 
-    async def send_message(self, message):
-        json_message = json.dumps(message)
+    async def send_message(self, message, msg_type="command"):
+        if msg_type == "command":
+            json_message = json.dumps(message)
+        else:
+            json_message = message
         try:
             await self.websocket.send(json_message)
             print(f"Sent: {json_message}")
