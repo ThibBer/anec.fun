@@ -83,13 +83,17 @@ class Game extends ChangeNotifier {
     }
   }
 
-  /// Updates the scores of players based on the result.
-  void updateScores(String result) {
-    players.value.forEach((uniqueId, player) {
-      if (player.vote == result) {
-        player.incrementScore();
-      }
-    });
+  void resetPlayersVote(){
+    print("Reset player votes");
+    for(var uniqueId in tempPlayers.keys){
+      players.value[uniqueId]!.updateVote(null);
+    }
+  }
+
+  /// Updates the score of players
+  void updateScores(int score, String speakerId) {
+    players.value[speakerId]!.setScore(score);
+
     updateState(GameState.scores);
   }
 

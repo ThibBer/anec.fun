@@ -7,6 +7,7 @@ import com.anecdot.Main.commandResponseFormat
 import com.anecdot.Main.gameStateSnapshotFormat
 import spray.json.DefaultJsonProtocol._
 import spray.json._
+import com.anecdot.CategoryJsonProtocol.categoryFormat
 
 import scala.collection.mutable
 import scala.concurrent.duration.DurationInt
@@ -37,7 +38,6 @@ object GameManager {
         val minPlayers: Int = 2
         var remoteWebSocketActors: Map[String, String] = Map()
         var boxActor: Option[ActorRef[Command]] = None
-        var voteNumber: Int = 0
         val votes = mutable.Map[String, String]()
         val scores = mutable.Map[String, Int]()
         var gameState = States.STOPPED
@@ -45,13 +45,14 @@ object GameManager {
         var isStickExplodedConfirmationReceived = false
         var gameMode = GameMode.THEME
         var subject: String = ""
-        implicit val system: ActorSystem[Nothing] =
-          ActorSystem(Behaviors.empty, "DebugSystem")
+        implicit val system: ActorSystem[Nothing] = ActorSystem(Behaviors.empty, "DebugSystem")
 
         val speechToText = SpeechToText()
 
         var speakerId: String = ""
         var voteResult: String = ""
+        var anecdoteSpeakerId: String = ""
+        var detectedIntent: Category = null
 
         /** Handles commands for managing the remote game session.
           *
@@ -300,13 +301,13 @@ object GameManager {
             gameState = States.ROUND_STOPPED
             broadcastGameState(webSocketClients, gameState, boxId)
 
-            voteNumber = 0
             votes.clear()
             isStickExploded = false
+            anecdoteSpeakerId = ""
 
             Behaviors.same
 
-          case VoteCommand(boxId, vote, uniqueId, isSpeaker) =>
+          case VoteCommand(boxId, vote, uniqueId) =>
             if (gameState != States.VOTING) {
               val response = CommandResponse(
                 uniqueId,
@@ -318,41 +319,57 @@ object GameManager {
                 response.toJson.compactPrint
               )
             } else {
-              broadcastVote(webSocketClients, boxId, vote, uniqueId)
-              voteNumber += 1
-
-              if (isSpeaker) {
-                speakerId = uniqueId
-                voteResult = vote
-              } else {
+              if(uniqueId == anecdoteSpeakerId){
+                val response = CommandResponse(
+                  uniqueId,
+                  "VoteCommand",
+                  ResponseState.FAILED,
+                  Some("Speaker can't judge his own anecdote")
+                )
+                webSocketClients(boxId)(uniqueId) ! TextMessage(
+                  response.toJson.compactPrint
+                )
+              }else{
+                broadcastVote(webSocketClients, boxId, vote, uniqueId)
                 votes(uniqueId) = vote
-              }
 
-              if (voteNumber == remoteWebSocketActors.size) {
-                logger.info("All remotes voted")
-                // update the score of each remote
-                if (votes.getOrElse(uniqueId, "") == voteResult) {
-                  scores(uniqueId) = scores.getOrElse(
-                    uniqueId,
-                    0
-                  ) + 1 // Every player can compute their own score, this is just for backup
+                if (votes.keys.size == (remoteWebSocketActors.size - 1)) {
+                  logger.info("All remotes voted")
+
+                  val trueVotesCount = votes.values.count(v => v == "true")
+                  logger.info(s"True votes count : $trueVotesCount/${remoteWebSocketActors.size - 1}")
+                  scores(anecdoteSpeakerId) = scores.getOrElse(anecdoteSpeakerId, 0) + trueVotesCount
+
+                  if(detectedIntent == null){
+                    logger.info(s"Detected intend null, ignoring result to compute score")
+                  }else{
+                    val intent = detectedIntent.value
+                    if (intent == subject) {
+                      scores(anecdoteSpeakerId) = scores(anecdoteSpeakerId) + 1
+                      logger.info(s"Detected intend ($intent) match with required subject ($subject), +1 to speaker score")
+                    } else {
+                      logger.info(s"Detected intend ($intent) mismatch with required subject ($subject)")
+                    }
+                  }
+
+                  logger.info(s"New speaker score : ${scores(anecdoteSpeakerId)}")
+
+                  // Send the vote result to all clients
+                  remoteWebSocketActors.foreach { case (userId, username) =>
+                    val response = CommandResponse(
+                      userId,
+                      "VoteResult",
+                      ResponseState.SUCCESS,
+                      Some(scores(anecdoteSpeakerId).toString),
+                      senderUniqueId = Some(anecdoteSpeakerId)
+                    )
+                    webSocketClients(boxId)(userId) ! TextMessage(
+                      response.toJson.compactPrint
+                    )
+                  }
+
+                  context.self ! StopRoundCommand(boxId)
                 }
-
-                // Send the vote result to all clients
-                remoteWebSocketActors.foreach { case (userId, username) =>
-                  val response = CommandResponse(
-                    userId,
-                    "VoteResult",
-                    ResponseState.SUCCESS,
-                    Some(voteResult),
-                    senderUniqueId = Some(speakerId)
-                  )
-                  webSocketClients(boxId)(userId) ! TextMessage(
-                    response.toJson.compactPrint
-                  )
-                }
-
-                context.self ! StopRoundCommand(boxId)
               }
             }
             Behaviors.same
@@ -398,8 +415,11 @@ object GameManager {
                     speechToText.detectIntent(getSubjectsFromGameMode(gameMode))
                   )
                   .runForeach(result => {
-                    // TODO: do something with the result
-                    print(s"Run: $result")
+                    print(s"Intent result: $result")
+
+                    val parsedJson = result.parseJson
+                    detectedIntent = parsedJson.convertTo[Category]
+
                     webSocketClients(boxId)(uniqueId) ! TextMessage(result)
                     gameState = States.VOTING
                     broadcastGameState(webSocketClients, gameState, boxId)
@@ -416,9 +436,12 @@ object GameManager {
             Behaviors.same
 
           case ScannedStickCommand(boxId, uniqueId) =>
+            broadcastStickScan(webSocketClients, boxId)
+
             if (isStickExploded) {
-              broadcastAnnecdotTeller(webSocketClients, boxId, uniqueId)
+              anecdoteSpeakerId = uniqueId
               broadcastGameState(webSocketClients, States.STICK_EXPLODED, boxId)
+              broadcastAnnecdotTeller(webSocketClients, boxId, uniqueId)
             }
             Behaviors.same
 
@@ -432,7 +455,7 @@ object GameManager {
               },
               playerScores = scores.toMap,
               stickExploded = isStickExploded,
-              annecdotTellerId = speakerId,
+              annecdotTellerId = anecdoteSpeakerId,
               state = gameState.toString
             )
 
@@ -561,6 +584,24 @@ object GameManager {
           ResponseState.SUCCESS,
           senderUniqueId = Some(senderUniqueId),
           message = Some(vote)
+        )
+      // Send the vote result to the client.
+      remote ! TextMessage(response.toJson.compactPrint)
+    }
+  }
+
+  private def broadcastStickScan(
+      webSocketClients: mutable.Map[Int, mutable.Map[String, ActorRef[
+        TextMessage
+      ]]],
+      boxId: Int
+  ): Unit = {
+    webSocketClients(boxId).foreach { case (uniqueId, remote) =>
+      val response =
+        CommandResponse(
+          uniqueId,
+          "StickScanned",
+          ResponseState.SUCCESS
         )
       // Send the vote result to the client.
       remote ! TextMessage(response.toJson.compactPrint)

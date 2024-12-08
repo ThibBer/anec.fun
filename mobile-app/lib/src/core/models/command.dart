@@ -40,6 +40,8 @@ abstract class Command {
         return ClientDisconnected(boxId, json["senderUniqueId"]);
       case 'SubjectChanged':
         return SubjectChanged(boxId, json["message"]);
+      case 'StickScanned':
+        return StickScanned(boxId, uniqueId!);
       default:
         throw UnsupportedError('Unknown command type: $commandType');
     }
@@ -120,5 +122,11 @@ class SubjectChanged extends Command {
   final String subject;
 
   SubjectChanged(super.boxId, this.subject);
+}
+
+class StickScanned extends Command {
+  final String uniqueId;
+
+  StickScanned(super.boxId, this.uniqueId);
 }
 

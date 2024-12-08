@@ -1,6 +1,4 @@
 import 'package:anecdotfun/src/core/services/page_routing.dart';
-import 'package:anecdotfun/src/core/utils/constants.dart';
-import 'package:anecdotfun/src/features/telling_annectode/telling_anecdote_page.dart';
 import 'package:flutter/material.dart';
 import 'package:lottie/lottie.dart';
 import 'package:nfc_manager/nfc_manager.dart';
@@ -51,7 +49,15 @@ class _StickPassingPageState extends State<StickPassingPage> {
   @override
   void dispose() {
     _controller.dispose();
-    NfcManager.instance.stopSession();
+
+    _controller.isNfcAvailable().then((isAvailable) {
+      if (isAvailable) {
+        NfcManager.instance.stopSession();
+      }
+    });
+
+    _controller.game.state.removeListener(_onGameStateChanged);
+
     super.dispose();
   }
 
@@ -60,42 +66,43 @@ class _StickPassingPageState extends State<StickPassingPage> {
     return PopScope(
       canPop: false,
       child: ListenableBuilder(
-      listenable: _controller.game,
-      builder: (context, _) {
-        return Scaffold(
-          appBar: AppBar(
-            title: const Text('Stick Passing'),
+        listenable: _controller.game,
+        builder: (context, _) {
+          return Scaffold(
+            appBar: AppBar(
+              title: const Text('Stick Passing'),
               automaticallyImplyLeading: false,
-          ),
-          body: Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                if (_controller.isScanning) ...[
-                  Lottie.asset(
-                    'assets/animations/scanner.json',
-                  ),
-                  const Text('Scanning for the stick...'),
-                ] else if (_controller.isSuccess) ...[
-                  Lottie.asset(
-                    'assets/animations/success.json',
-                  ),
-                  const Text('Stick successfully passed!'),
-                ] else if (_controller.isExploded) ...[
-                  Expanded(
-                    child: Lottie.asset(
-                      'assets/animations/explosion.json',
-                      fit: BoxFit.contain,
-                    ),
-                  ),
-                  const Text('Stick exploded! Your turn to tell an anecdote!'),
-                ] else
-                  ..._displayManualScan(),
-              ],
             ),
-          ),
-        );
-      },
+            body: Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  if (_controller.isScanning) ...[
+                    Lottie.asset(
+                      'assets/animations/scanner.json',
+                    ),
+                    const Text('Scanning for the stick...'),
+                  ] else if (_controller.isSuccess) ...[
+                    Lottie.asset(
+                      'assets/animations/success.json',
+                    ),
+                    const Text('Stick successfully passed!'),
+                  ] else if (_controller.isExploded) ...[
+                    Expanded(
+                      child: Lottie.asset(
+                        'assets/animations/explosion.json',
+                        fit: BoxFit.contain,
+                      ),
+                    ),
+                    const Text(
+                        'Stick exploded! Your turn to tell an anecdote!'),
+                  ] else
+                    ..._displayManualScan(),
+                ],
+              ),
+            ),
+          );
+        },
       ),
     );
   }

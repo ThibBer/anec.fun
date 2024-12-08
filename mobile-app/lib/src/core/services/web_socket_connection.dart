@@ -58,7 +58,8 @@ class WebSocketConnection {
 
     try {
       var baseUrl = 'wss://anecdotfun2.vsantele.dev/ws/${game.boxId}';
-      var uri = Uri.parse(uniqueId == null ? baseUrl : "$baseUrl?uniqueId=$uniqueId");
+      var uri =
+          Uri.parse(uniqueId == null ? baseUrl : "$baseUrl?uniqueId=$uniqueId");
       print("WebSocket URI : $uri");
 
       channel = WebSocketChannel.connect(uri);
@@ -128,6 +129,7 @@ class WebSocketConnection {
   /// parsed JSON. It then delegates the handling of the command to the
   /// appropriate method.
   void _handleMessage(String message) async {
+    print("Received : $message");
     final json = jsonDecode(message);
     final command = Command.fromJson(json, game.boxId);
 
@@ -152,11 +154,14 @@ class WebSocketConnection {
         game.updateState(GameState.stickExploded);
       } else if (command.message == 'STOPPED') {
         game.updateState(GameState.stopped);
+      } else if (command.message == 'ROUND_STOPPED') {
+        game.resetPlayersVote();
+        game.updateState(GameState.roundStopped);
       }
     } else if (command is StickExploded) {
       game.stickExploded = true;
     } else if (command is VoteResult) {
-      game.updateScores(json['message']);
+      game.updateScores(int.parse(json['message']), json['senderUniqueId']);
     } else if (command is AnnecdotTeller) {
       game.annecdotTellerId = json['senderUniqueId'];
     } else if (command is RetrieveStateCommand) {
@@ -186,7 +191,8 @@ class WebSocketConnection {
       game.setConnected(false);
       game.uniqueId = "";
       game.boxId = -1;
-      close(1000); // close connection with code 1000, it's a normal behavior to close websocket connection if connect response is failed
+      close(
+          1000); // close connection with code 1000, it's a normal behavior to close websocket connection if connect response is failed
     } else {
       if (response['senderUniqueId'] == game.uniqueId) {
         game.setSuccess("Remote connected");
@@ -197,7 +203,11 @@ class WebSocketConnection {
         }
         // Save our unique ID and timestamp on disk
         final prefs = await SharedPreferences.getInstance();
-        var connectionSettings = [game.boxId.toString(), game.uniqueId, DateTime.now().toString()];
+        var connectionSettings = [
+          game.boxId.toString(),
+          game.uniqueId,
+          DateTime.now().toString()
+        ];
         await prefs.setStringList("connectionSettings", connectionSettings);
 
         print("Save uniqueId to SharedPreferences : $connectionSettings");
@@ -311,9 +321,9 @@ class WebSocketConnection {
 
   void close(int? code) {
     try {
-      if(code != null){
+      if (code != null) {
         channel.sink.close(code);
-      }else{
+      } else {
         channel.sink.close();
       }
 
