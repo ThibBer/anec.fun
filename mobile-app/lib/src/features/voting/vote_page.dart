@@ -31,7 +31,6 @@ class VotePageState extends State<VotePage> {
   @override
   void dispose() {
     //voteController.webSocketConnection.close();
-    voteController.game.state.removeListener(_onGameStateChanged);
     super.dispose();
   }
 

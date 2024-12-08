@@ -56,8 +56,6 @@ class _StickPassingPageState extends State<StickPassingPage> {
       }
     });
 
-    _controller.game.state.removeListener(_onGameStateChanged);
-
     super.dispose();
   }
 
