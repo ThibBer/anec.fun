@@ -171,6 +171,8 @@ class WebSocketConnection {
       game.removePlayer(command.disconnectedUserId);
     } else if (command is SubjectChanged) {
       game.updateSubject(command.subject);
+    } else if (command is StickScanned) {
+      // no action required when stick is scanned
     } else {
       game.setError("Unknown command received: $command");
     }
