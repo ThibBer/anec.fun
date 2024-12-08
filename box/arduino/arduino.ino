@@ -228,7 +228,7 @@ void loop() {
         if (currentGameState == STOPPED) {
           playButtonClickSound();
           setGameState(START);
-        } else if (currentGameState == STARTED || currentGameState == PAUSED || currentGameState == ROUND_STOPPED) {
+        } else {
           playButtonClickSound();
           setGameState(STOP);
         }
