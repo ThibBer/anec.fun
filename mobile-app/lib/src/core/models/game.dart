@@ -63,12 +63,26 @@ class Game extends ChangeNotifier {
 
   /// Adds a player to the game.
   void addPlayer(String uniqueId, String username) {
-    players.value[uniqueId] = Player(username: username);
+    var player = Player(username: username);
+    player.addListener(_onPlayerChanged);
+    players.value[uniqueId] = player;
+    players.notifyListeners();
+  }
+
+  void _onPlayerChanged(){
+    players.notifyListeners();
   }
 
   /// Removes a player from the game.
   void removePlayer(String uniqueId) {
+    var player = players.value[uniqueId];
+    if(player == null){
+      return;
+    }
+
+    player.removeListener(_onPlayerChanged);
     players.value.remove(uniqueId);
+    players.notifyListeners();
   }
 
   /// Updates the vote status of a player.
@@ -80,6 +94,8 @@ class Game extends ChangeNotifier {
       if (!isFromServer) {
         _webSocketConnection.vote(vote, true);
       }
+
+      players.notifyListeners();
     }
   }
 
@@ -88,12 +104,17 @@ class Game extends ChangeNotifier {
     for(var uniqueId in players.value.keys){
       players.value[uniqueId]!.updateVote(null);
     }
+
+    players.notifyListeners();
   }
 
   /// Updates the score of players
   void updateScores(int score, String speakerId) {
+    print("${players.value[speakerId]!.username} - ${players.value[speakerId]!.score} - ${players.value[speakerId]!.vote}");
     players.value[speakerId]!.setScore(score);
+    players.notifyListeners();
 
+    print("${players.value[speakerId]!.username} - ${players.value[speakerId]!.score} - ${players.value[speakerId]!.vote}");
     updateState(GameState.scores);
   }
 

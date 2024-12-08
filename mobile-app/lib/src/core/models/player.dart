@@ -1,4 +1,6 @@
-class Player {
+import 'package:flutter/material.dart';
+
+class Player extends ChangeNotifier {
   String username;
   String? vote;
   int score;
@@ -12,11 +14,13 @@ class Player {
   /// Updates the vote for the player
   void updateVote(String? newVote) {
     vote = newVote;
+    notifyListeners();
   }
 
-  void setScore(int score){
-    print("Set score $score");
-    score = score;
+  void setScore(int newScore){
+    print("Set score $newScore");
+    score = newScore;
+    notifyListeners();
   }
 
   /// Serializes the player into a Map for persistence
