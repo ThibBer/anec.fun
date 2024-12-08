@@ -28,19 +28,23 @@ class VotePageState extends State<VotePage> {
     );
 
     // Listen for game state changes
-    voteController.game.state.addListener(() {
-      final gameState = voteController.game.state.value;
-      if (gameState == GameState.roundStarted) {
-        Navigator.pushReplacementNamed(context, StickPassingPage.routeName);
-      } else if (gameState == GameState.scores) {
-        Navigator.pushReplacementNamed(context, PlayerScorePage.routeName);
-      }
-    });
+    voteController.game.state.addListener(_onGameStateChanged);
+  }
+
+  void _onGameStateChanged(){
+    final gameState = voteController.game.state.value;
+    print("VotePageState _onGameStateChanged $gameState");
+    if (gameState == GameState.roundStarted) {
+      Navigator.pushReplacementNamed(context, StickPassingPage.routeName);
+    } else if (gameState == GameState.scores) {
+      Navigator.pushReplacementNamed(context, PlayerScorePage.routeName);
+    }
   }
 
   @override
   void dispose() {
     //voteController.webSocketConnection.close();
+    voteController.game.state.removeListener(_onGameStateChanged);
     super.dispose();
   }
 
@@ -52,7 +56,7 @@ class VotePageState extends State<VotePage> {
           valueListenable: voteController.game.state,
           builder: (context, gameState, child) {
             return Text(
-              "Box ${voteController.game.boxId} - ${voteController.game.state.toString().split('.').last} phase",
+              "Box ${voteController.game.boxId} - ${voteController.game.state.value.toString().split('.').last} phase",
             );
           },
         ),
@@ -117,7 +121,7 @@ class VotePageState extends State<VotePage> {
                   return Text(
                     voteController.game.uniqueId ==
                             voteController.game.annecdotTellerId
-                        ? "you are the speaker, is the anecdote true or false?"
+                        ? "you are the speaker, wait other players vote"
                         : "you are the listener, vote true or false",
                     textAlign: TextAlign.center,
                   );
@@ -130,7 +134,9 @@ class VotePageState extends State<VotePage> {
               valueListenable: voteController.game.state,
               builder: (context, gameState, child) {
                 // Check if the current game state is 'voting'
-                if (gameState == GameState.voting) {
+                if (gameState == GameState.voting &&
+                    voteController.game.annecdotTellerId != voteController.game.uniqueId
+                ) {
                   return Padding(
                     padding: const EdgeInsets.symmetric(vertical: 16.0),
                     child: Row(

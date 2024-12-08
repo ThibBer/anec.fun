@@ -120,8 +120,8 @@ class CommandRouter {
             case StopGameCommand(boxId, uniqueId) =>
               manager ! StopGameCommand(boxId, wsUniqueId)
 
-            case VoteCommand(boxId, vote, uniqueId, isSpeaker) =>
-              manager ! VoteCommand(boxId, vote, wsUniqueId, isSpeaker)
+            case VoteCommand(boxId, vote, uniqueId) =>
+              manager ! VoteCommand(boxId, vote, wsUniqueId)
 
             case ConnectRemote(boxId, uniqueId, username) =>
               manager ! ConnectRemote(boxId, Some(wsUniqueId), username)

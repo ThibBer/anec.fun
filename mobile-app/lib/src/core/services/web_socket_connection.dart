@@ -128,6 +128,7 @@ class WebSocketConnection {
   /// parsed JSON. It then delegates the handling of the command to the
   /// appropriate method.
   void _handleMessage(String message) async {
+    print("Received : $message");
     final json = jsonDecode(message);
     final command = Command.fromJson(json, game.boxId);
 
@@ -150,11 +151,14 @@ class WebSocketConnection {
         game.updateState(GameState.roundStarted);
       } else if (command.message == 'STICK_EXPLODED') {
         game.updateState(GameState.stickExploded);
+      } else if (command.message == 'ROUND_STOPPED') {
+        game.resetPlayersVote();
+        game.updateState(GameState.roundStopped);
       }
     } else if (command is StickExploded) {
       game.stickExploded = true;
     } else if (command is VoteResult) {
-      game.updateScores(json['message']);
+      game.updateScores(int.parse(json['message']), json['senderUniqueId']);
     } else if (command is AnnecdotTeller) {
       game.annecdotTellerId = json['senderUniqueId'];
     } else if (command is RetrieveStateCommand) {

@@ -179,6 +179,10 @@ object Main {
               case None =>
             }
           }
+        case CommandType.STICK_SCANNED =>
+          if (isCommandSuccessful) {
+            onStickScanned();
+          }
         case _ => println(s"Unmanaged response command type (${commandResponse.commandType})")
       }
     } catch {
@@ -200,6 +204,10 @@ object Main {
 
   private def onStickExploded(): Unit = {
     serial.send(MessageKey.StickExploded + "=true")
+  }
+
+  private def onStickScanned(): Unit = {
+    serial.send(MessageKey.StickScanned + "=true")
   }
 
   private def onRequestChangeGameState(value: String): Unit = {
@@ -259,6 +267,15 @@ object Main {
   }
 
   private def onAnecdoteTellerPicked(): Unit = {
+    webSocketClient.send(JsObject(
+      "boxId" -> JsNumber(boxId),
+      "uniqueId" -> JsString(uniqueId),
+      "commandType" -> JsString(CommandType.VOICE_FLOW),
+      "payload" -> JsNull
+    ))
+
+    return
+
     // todo: make anecdote max duration configurable
     val duration = 5.minutes
     val sink = Sink.foreach[ByteString](data => {

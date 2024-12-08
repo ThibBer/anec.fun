@@ -39,14 +39,18 @@ class _StickPassingPageState extends State<StickPassingPage> {
     _checkNfcAvailability();
 
     // Listen for game state changes
-    _controller.game.state.addListener(() {
-      if (_controller.game.state.value == GameState.stickExploded) {
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          Navigator.pushReplacementNamed(
-              context, TellingAnecdotePage.routeName);
-        });
-      }
-    });
+    _controller.game.state.addListener(_onGameStateChanged);
+  }
+
+  void _onGameStateChanged(){
+    var gameState = _controller.game.state.value;
+    print("VotePageState _onGameStateChanged $gameState");
+
+    if (gameState == GameState.stickExploded) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        Navigator.pushReplacementNamed(context, TellingAnecdotePage.routeName);
+      });
+    }
   }
 
   Future<void> _checkNfcAvailability() async {
@@ -64,6 +68,8 @@ class _StickPassingPageState extends State<StickPassingPage> {
         NfcManager.instance.stopSession();
       }
     });
+
+    _controller.game.state.removeListener(_onGameStateChanged);
 
     super.dispose();
   }

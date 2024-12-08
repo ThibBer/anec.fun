@@ -7,7 +7,7 @@ trait JsonCommandSupport extends SprayJsonSupport with DefaultJsonProtocol {
   implicit val startGameFormat: RootJsonFormat[StartGameCommand] = jsonFormat2(StartGameCommand.apply)
   implicit val startRoundFormat: RootJsonFormat[StartRoundCommand] = jsonFormat2(StartRoundCommand.apply)
   implicit val stopGameFormat: RootJsonFormat[StopGameCommand] = jsonFormat2(StopGameCommand.apply)
-  implicit val voteFormat: RootJsonFormat[VoteCommand] = jsonFormat4(VoteCommand.apply)
+  implicit val voteFormat: RootJsonFormat[VoteCommand] = jsonFormat3(VoteCommand.apply)
   implicit val connectRemoteFormat: RootJsonFormat[ConnectRemote] = jsonFormat3(ConnectRemote.apply)
   implicit val disconnectRemoteFormat: RootJsonFormat[DisconnectRemote] = jsonFormat2(DisconnectRemote.apply)
   implicit val connectBoxFormat: RootJsonFormat[ConnectBox] = jsonFormat2(ConnectBox.apply)

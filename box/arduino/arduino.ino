@@ -96,6 +96,8 @@ void askAudio(int time);
 void playShutdownSound();
 void onWebSocketStateChanged(String value);
 void onStickExploded();
+void onStickScanned();
+bool strContains(String value, String contentToCheckIn);
 
 void setup() {
   Serial.begin(115200);
@@ -192,7 +194,7 @@ void loop() {
     return;
   }
 
-    if (currentTime - previousTimeModeSelection >= 100 && (currentGameState == STOPPED || currentGameState == ROUND_STOPPED) && wsState == CONNECTED) {
+  if (currentTime - previousTimeModeSelection >= 100 && (currentGameState == STOPPED || currentGameState == ROUND_STOPPED) && wsState == CONNECTED) {
     int modeSelectionSwitch = digitalRead(MODE_SELECTION_PIN);
 
     if (modeSelectionSwitch == EMOTION && currentGameMode == THEME) {
@@ -309,21 +311,31 @@ void blinkStartLED(int count, int r, int g, int b, int timing) {
 }
 
 void onReceiveSerialData(String key, String value) {
-  if (key == "GameStateChanged") {
+  Serial.print("debug | onReceiveSerialData - ");
+  Serial.print(key);
+  Serial.print(" ");
+  Serial.println(value);
+
+  if (strContains(key, "GameStateChanged")) {
     onGameStateChanged(stringToGameState(value));
-  } else if (key == "GameModeChanged") {
+  } else if (strContains(key, "GameModeChanged")) {
     onGameModeChanged(stringToGameMode(value));
-  } else if (key == "VoiceFlowStart") {
+  } else if (strContains(key, "VoiceFlowStart")) {
     askAudio(value.toInt());
-  } else if (key == "WebSocketStateChanged") {
+  } else if (strContains(key, "WebSocketStateChanged")) {
     onWebSocketStateChanged(value);
-  } else if (key == "StickExploded") {
-    onStickExploded();
+  } else if (strContains(key, "StickScanned")) {
+    onStickScanned();
   }
 }
 
+void onStickScanned(){
+  playSound(1000, 150);
+  delay(400);
+}
+
 void onStickExploded(){
-  blinkStartLED(500, 0, 0, 255, 200);
+  blinkStartLED(5, 0, 0, 255, 200);
 
   playSound(1000, 150);
   delay(400);
@@ -471,6 +483,12 @@ void onGameStateChanged(GameState newGameState) {
         currentGameState = STOPPED;
       }
 
+      status = IDLE;
+
+      break;
+    case ROUND_STOPPED:
+      status = IDLE;
+      setGameStateLedColor(255);
       break;
     case ROUND_STARTED:
     case VOTING:
@@ -486,6 +504,7 @@ void onGameStateChanged(GameState newGameState) {
       delay(500);
 
       setGameStateLedColor(0);
+      status = IDLE;
 
       break;
   }
@@ -516,4 +535,8 @@ void askAudio(int time) {
   radio.startListening();
   status = RECEIVED;
   maxTimeAudio = millis() + (unsigned long)(time * 1000);
+}
+
+bool strContains(String value, String contentToCheckIn){
+  return value.indexOf(contentToCheckIn) != -1;
 }
