@@ -63,10 +63,11 @@ class ConnectionController {
 
     var boxId = connectionSettings[0];
     var uniqueId = connectionSettings[1];
+    var username = connectionSettings[2];
 
     print("Reconnect to box $boxId with uniqueId : $uniqueId");
 
-    initializeWebSocket(boxId, "", uniqueId: uniqueId);
+    initializeWebSocket(boxId, username, uniqueId: uniqueId);
     game.setReconnecting(true);
   }
 
@@ -80,11 +81,11 @@ class ConnectionController {
     // Check if stored unique ID is available and not too old
     final prefs = await SharedPreferences.getInstance();
     var connectionSettings = prefs.getStringList("connectionSettings");
-    if(connectionSettings == null || connectionSettings.length < 3){
+    if(connectionSettings == null || connectionSettings.length < 4){
       return false;
     }
 
-    var timestamp = connectionSettings[2];
+    var timestamp = connectionSettings[3];
 
     // check if timestamp is not older than 15 minutes
     return DateTime.now().difference(DateTime.parse(timestamp)).inMinutes < 15;

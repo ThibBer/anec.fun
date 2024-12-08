@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:io';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
 import 'dart:convert';
@@ -155,7 +154,7 @@ class WebSocketConnection {
       } else if (command.message == 'STOPPED') {
         game.updateState(GameState.stopped);
       } else if (command.message == 'ROUND_STOPPED') {
-        game.resetPlayersVote();
+        game.stopRound();
         game.updateState(GameState.roundStopped);
       }
     } else if (command is StickExploded) {
@@ -206,6 +205,7 @@ class WebSocketConnection {
         var connectionSettings = [
           game.boxId.toString(),
           game.uniqueId,
+          game.username,
           DateTime.now().toString()
         ];
         await prefs.setStringList("connectionSettings", connectionSettings);
@@ -326,13 +326,11 @@ class WebSocketConnection {
   }
 
   void retrieveState() {
-    print("retrieveState disabled because server is not ready yet");
-
-/*    sendCommand({
+    sendCommand({
       "boxId": game.boxId,
       "uniqueId": game.uniqueId,
       "commandType": "RetrieveStateCommand",
-    });*/
+    });
   }
 
   void close(int? code) {

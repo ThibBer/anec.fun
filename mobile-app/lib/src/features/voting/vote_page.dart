@@ -93,7 +93,9 @@ class VotePageState extends State<VotePage> {
                         final player = players.values
                             .elementAt(index); // Access Player object
                         final voteStatus = player.vote == null
-                            ? 'No vote yet'
+                            ? voteController.game.annecdotTellerId == player.uniqueId
+                              ? "Speaker can't vote"
+                              : "No vote yet"
                             : player.vote == "true"
                                 ? 'Voted: True'
                                 : 'Voted: False';

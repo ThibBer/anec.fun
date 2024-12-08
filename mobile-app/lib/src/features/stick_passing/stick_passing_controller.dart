@@ -89,7 +89,7 @@ class StickPassingController extends ChangeNotifier {
     }
   }
 
-  /// Validates the scan after timeout
+  /// Validates the scan
   void validateScanByTap() {
     if (isStickExploded()) {
       isExploded = true;
@@ -102,9 +102,7 @@ class StickPassingController extends ChangeNotifier {
     isScanning = false;
     notifyListeners();
 
-    Future.delayed(const Duration(seconds: 2), () {
-      onScanSuccessful();
-    });
+    onScanSuccessful();
   }
 
   bool isStickExploded() {
@@ -115,17 +113,20 @@ class StickPassingController extends ChangeNotifier {
   void onScanSuccessful() async {
     print("Scan successful");
     webSocketConnection.sendStickScanned();
-    isSuccess = false;
-    bool nfcAvailable = await isNfcAvailable();
-    if (isStickExploded()) {
-      print("Stick exploded");
-    } else if (nfcAvailable) {
-      isScanning = true;
-      isExploded = false;
-    } else {
-      isExploded = false;
-    }
-    notifyListeners();
+
+    Future.delayed(const Duration(seconds: 2), () async {
+      isSuccess = false;
+      bool nfcAvailable = await isNfcAvailable();
+      if (isStickExploded()) {
+        print("Stick exploded");
+      } else if (nfcAvailable) {
+        isScanning = true;
+        isExploded = false;
+      } else {
+        isExploded = false;
+      }
+      notifyListeners();
+    });
   }
 
   /// Displays a toast message
