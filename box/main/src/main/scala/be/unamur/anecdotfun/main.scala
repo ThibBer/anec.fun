@@ -267,14 +267,15 @@ object Main {
   }
 
   private def onAnecdoteTellerPicked(): Unit = {
-    webSocketClient.send(JsObject(
-      "boxId" -> JsNumber(boxId),
-      "uniqueId" -> JsString(uniqueId),
-      "commandType" -> JsString(CommandType.VOICE_FLOW),
-      "payload" -> JsNull
-    ))
-
-    return
+    // MOCK
+    //    webSocketClient.send(JsObject(
+    //      "boxId" -> JsNumber(boxId),
+    //      "uniqueId" -> JsString(uniqueId),
+    //      "commandType" -> JsString(CommandType.VOICE_FLOW),
+    //      "payload" -> JsNull
+    //    ))
+    //
+    //    return
 
     // todo: make anecdote max duration configurable
     val duration = 5.minutes
