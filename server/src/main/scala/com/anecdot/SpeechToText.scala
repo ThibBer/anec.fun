@@ -160,7 +160,7 @@ class SpeechToText(implicit
   def detectIntent(intents: Array[String]): Flow[String, String, ?] = {
     val intentsList = intents.mkString(", ")
     val systemPrompt = new ChatRequestSystemMessage(
-      s"Tu es un assistant qui classe des histoires suivant plusieurs catégories: $intentsList. Tu vas répondre en json la catégorie qui correspond le mieux à l'histoire avec le format {\"category\": \"nom\"}"
+      s"Tu es un assistant qui classe des histoires suivant plusieurs catégories: $intentsList et \"autre\". Tu vas répondre en json la catégorie qui correspond le mieux à l'histoire avec le format {\"category\": \"nom\"}"
     )
     Flow[String].mapAsync(1) { text =>
       {

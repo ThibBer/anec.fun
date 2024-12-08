@@ -1,3 +1,5 @@
+import 'package:anecdotfun/src/core/models/player.dart';
+import 'package:anecdotfun/src/core/services/page_routing.dart';
 import 'package:flutter/material.dart';
 import '../../core/services/web_socket_connection.dart';
 import '../../core/models/game.dart';
@@ -24,6 +26,8 @@ class PlayerScorePageState extends State<PlayerScorePage> {
       webSocketConnection: WebSocketConnection(),
       game: Game(),
     );
+
+    GlobalNavigationService.listenToGameState(scoreController.game.state);
   }
 
   @override
@@ -34,21 +38,18 @@ class PlayerScorePageState extends State<PlayerScorePage> {
 
   @override
   Widget build(BuildContext context) {
-    return ListenableBuilder(
+    return PopScope(
+      canPop: false,
+      child: ListenableBuilder(
       listenable: scoreController.game,
       builder: (context, _) {
-        if (scoreController.game.state == GameState.roundStarted) {
-          // Schedule navigation after the build completes
-          WidgetsBinding.instance.addPostFrameCallback((_) {
-            Navigator.pushReplacementNamed(context, StickPassingPage.routeName);
-          });
-        }
         return Scaffold(
           appBar: AppBar(
             title: Text(
               "Box ${scoreController.game.boxId} - Scores",
               textAlign: TextAlign.center,
             ),
+              automaticallyImplyLeading: false,
             centerTitle: true,
           ),
           body: Padding(
@@ -69,31 +70,39 @@ class PlayerScorePageState extends State<PlayerScorePage> {
                   ),
                 ),
                 // List of players and their scores
-                Expanded(
-                  child: ListView.builder(
-                    itemCount: scoreController.game.players.length,
-                    itemBuilder: (context, index) {
-                      String uniqueId =
-                          scoreController.game.players.keys.elementAt(index);
-                      int score =
-                          scoreController.game.playerScores[uniqueId] ?? 0;
-                      return Card(
-                        margin: const EdgeInsets.symmetric(vertical: 8),
-                        child: ListTile(
-                          leading: CircleAvatar(
-                            backgroundColor: Colors.blue,
-                            child: Text(
-                              (index + 1).toString(),
-                              style: const TextStyle(color: Colors.white),
+                ValueListenableBuilder<Map<String, Player>>(
+                  valueListenable: scoreController
+                      .game.players, // Using players map directly
+                  builder: (context, players, child) {
+                    final sortedPlayers = players.values.toList()
+                      ..sort((a, b) =>
+                          b.score.compareTo(a.score)); // Sort players by score
+
+                    return Expanded(
+                      child: ListView.builder(
+                        itemCount: sortedPlayers.length,
+                        itemBuilder: (context, index) {
+                          final player = sortedPlayers[index];
+                          return Card(
+                            margin: const EdgeInsets.symmetric(vertical: 8),
+                            child: ListTile(
+                              leading: CircleAvatar(
+                                backgroundColor: Colors.blue,
+                                child: Text(
+                                  (index + 1).toString(),
+                                  style: const TextStyle(color: Colors.white),
+                                ),
+                              ),
+                              title: Text('Player: ${player.username}'),
+                              subtitle: Text('Score: ${player.score} pts'),
                             ),
-                          ),
-                          title: Text('Player: $uniqueId'),
-                          subtitle: Text('Score: $score pts'),
-                        ),
-                      );
-                    },
-                  ),
+                          );
+                        },
+                      ),
+                    );
+                  },
                 ),
+
                 // Footer or actions if required
                 const Padding(
                   padding: EdgeInsets.symmetric(vertical: 16.0),
@@ -107,6 +116,7 @@ class PlayerScorePageState extends State<PlayerScorePage> {
           ),
         );
       },
+      ),
     );
   }
 }

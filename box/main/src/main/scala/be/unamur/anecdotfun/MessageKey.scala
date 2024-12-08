@@ -11,3 +11,4 @@ object MessageKey:
   val RequestShutdown = "RequestShutdown"
   val GameModeChanged = "GameModeChanged"
   val StickExploded = "StickExploded"
+  val StickScanned = "StickScanned"

@@ -74,6 +74,7 @@ class SerialThread(portDescriptor: String) extends Thread {
   }
 
   def send(message: String): Unit = {
+    println(s"Send to serial : $message")
     val msgBytes = (message + "\n").getBytes
     val nbBytesWrote = comPort.writeBytes(msgBytes, msgBytes.length)
     println(s"Nb bytes wrote : $nbBytesWrote")

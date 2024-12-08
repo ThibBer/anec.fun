@@ -1,3 +1,4 @@
+import 'package:anecdotfun/src/core/services/page_routing.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
@@ -43,6 +44,7 @@ class MyApp extends StatelessWidget {
           darkTheme: ThemeData.dark(),
           themeMode: settingsController.themeMode,
           initialRoute: initialRoute,
+          navigatorKey: GlobalNavigationService.navigatorKey,
           onGenerateRoute: (RouteSettings routeSettings) {
             return MaterialPageRoute<void>(
               settings: routeSettings,

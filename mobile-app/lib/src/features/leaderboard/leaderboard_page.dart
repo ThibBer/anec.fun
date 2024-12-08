@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:lottie/lottie.dart'; // Add this dependency to your pubspec.yaml
 import '../../core/models/game.dart';
 import 'leaderboard_controller.dart';
 
@@ -11,63 +12,79 @@ class LeaderboardPage extends StatefulWidget {
   LeaderboardPageState createState() => LeaderboardPageState();
 }
 
-class LeaderboardPageState extends State<LeaderboardPage> {
+class LeaderboardPageState extends State<LeaderboardPage>
+    with SingleTickerProviderStateMixin {
   late final LeaderboardController leaderboardController;
 
   @override
   void initState() {
     super.initState();
-    // Initialize the leaderboard controller with a Game instance
     leaderboardController = LeaderboardController(game: Game());
   }
 
   @override
-  void dispose() {
-    // Dispose any resources if necessary
-    super.dispose();
-  }
-
-  @override
   Widget build(BuildContext context) {
-    return ListenableBuilder(
-      listenable: leaderboardController.game,
-      builder: (context, _) {
-        // Get the sorted players from the controller
-        final sortedPlayers = leaderboardController.sortedPlayers;
-
-        return Scaffold(
+    return PopScope(
+      canPop: false,
+      child: Stack(
+        fit: StackFit.expand,
+        alignment: Alignment.center,
+        children: [
+          Scaffold(
           appBar: AppBar(
             title: const Text(
               'Leaderboard',
               textAlign: TextAlign.center,
             ),
+              automaticallyImplyLeading: false,
             centerTitle: true,
           ),
           body: Padding(
             padding: const EdgeInsets.all(16.0),
             child: Column(
-              children: [
-                // Header card for leaderboard
+                crossAxisAlignment: CrossAxisAlignment.center,
+                mainAxisAlignment: MainAxisAlignment.spaceAround,
+                children: [
                 Card(
                   elevation: 4,
                   margin: const EdgeInsets.only(bottom: 20),
                   child: Padding(
                     padding: const EdgeInsets.all(16.0),
-                    child: Text(
-                      "Game Leaderboard",
-                      style: Theme.of(context).textTheme.headlineSmall,
-                      textAlign: TextAlign.center,
+                      child: Builder(
+                        builder: (context) {
+                          final rank = leaderboardController.getPlayerRank(
+                              leaderboardController.game.uniqueId);
+                          String message;
+                          if (rank == 1) {
+                            message =
+                                "Congratulations ${leaderboardController.game.username}! You're the winner!";
+                          } else if (rank == 2) {
+                            message =
+                                "Well done ${leaderboardController.game.username}! You finished in second place!";
+                          } else if (rank == 3) {
+                            message =
+                                "Good job ${leaderboardController.game.username}! You secured third place!";
+                          } else if (rank > 3) {
+                            message =
+                                "Keep trying ${leaderboardController.game.username}! You finished in position $rank.";
+                          } else {
+                            message =
+                                "Oops! Something went wrong. Your rank couldn't be determined.";
+                          }
+                          return Text(
+                            message,
+                            style: Theme.of(context).textTheme.headlineSmall,
+                            textAlign: TextAlign.center,
+                          );
+                        },
                     ),
                   ),
-                ),
-                // List of players ranked by scores
+                  ),
                 Expanded(
                   child: ListView.builder(
-                    itemCount: sortedPlayers.length,
-                    itemBuilder: (context, index) {
-                      String uniqueId = sortedPlayers[index].key;
-                      int score =
-                          leaderboardController.getPlayerScore(uniqueId);
+                    itemCount: leaderboardController.sortedPlayers.length,
+                      itemBuilder: (context, index) {
+                      final player = leaderboardController.sortedPlayers[index];
                       return Card(
                         margin: const EdgeInsets.symmetric(vertical: 8),
                         child: ListTile(
@@ -78,12 +95,12 @@ class LeaderboardPageState extends State<LeaderboardPage> {
                               style: const TextStyle(color: Colors.white),
                             ),
                           ),
-                          title: Text('Player: $uniqueId'),
-                          subtitle: Text('Score: $score pts'),
+                          title: Text('Player: ${player.username}'),
+                          subtitle: Text('Score: ${player.score} pts'),
                           trailing: Icon(
-                            index == 0
-                                ? Icons.emoji_events
-                                : Icons.star_border, // Trophy for top player
+                              index == 0
+                                  ? Icons.emoji_events
+                                  : Icons.star_border,
                             color: index == 0 ? Colors.yellow : Colors.grey,
                           ),
                         ),
@@ -91,19 +108,30 @@ class LeaderboardPageState extends State<LeaderboardPage> {
                     },
                   ),
                 ),
-                // Footer or additional information
-                const Padding(
+                  Padding(
                   padding: EdgeInsets.symmetric(vertical: 16.0),
-                  child: Text(
-                    'The top player wins the round!',
-                    style: TextStyle(color: Colors.grey),
+                    child: ElevatedButton(
+                      onPressed: () {
+                        Navigator.pushReplacementNamed(context, '/');
+                      },
+                      child: Text('Go to connection page'),
                   ),
                 ),
               ],
             ),
           ),
-        );
-      },
+          ),
+          if (leaderboardController.game.isWinner())
+            IgnorePointer(
+              ignoring:
+                  true, // Allow interactions with widgets under this overlay
+              child: Lottie.asset(
+                'assets/animations/confetti.json',
+                fit: BoxFit.fill,
+              ),
+            ),
+        ],
+      ),
     );
   }
 }

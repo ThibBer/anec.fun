@@ -1,4 +1,5 @@
 import 'package:anecdotfun/src/core/models/game.dart';
+import 'package:anecdotfun/src/core/services/page_routing.dart';
 import 'package:anecdotfun/src/core/utils/constants.dart';
 import 'package:anecdotfun/src/features/voting/vote_page.dart';
 import 'package:flutter/material.dart';
@@ -21,6 +22,8 @@ class TellingAnecdotePageState extends State<TellingAnecdotePage> {
   void initState() {
     super.initState();
     _controller = TellingAnecdoteController(game: Game());
+
+    GlobalNavigationService.listenToGameState(_controller.game.state);
   }
 
   @override
@@ -31,17 +34,15 @@ class TellingAnecdotePageState extends State<TellingAnecdotePage> {
 
   @override
   Widget build(BuildContext context) {
-    return ValueListenableBuilder<bool>(
+    return PopScope(
+      canPop: false,
+      child: ValueListenableBuilder<bool>(
       valueListenable: _controller.isRecording,
       builder: (context, isRecording, child) {
-        if (_controller.game.state == GameState.voting) {
-          WidgetsBinding.instance.addPostFrameCallback((_) {
-            Navigator.pushReplacementNamed(context, VotePage.routeName);
-          });
-        }
         return Scaffold(
           appBar: AppBar(
             title: const Text("Telling Anecdote"),
+              automaticallyImplyLeading: false,
             centerTitle: true,
           ),
           body: Padding(
@@ -60,6 +61,7 @@ class TellingAnecdotePageState extends State<TellingAnecdotePage> {
           ),
         );
       },
+      ),
     );
   }
 
@@ -68,22 +70,21 @@ class TellingAnecdotePageState extends State<TellingAnecdotePage> {
       elevation: 4,
       margin: const EdgeInsets.only(bottom: 20),
       child: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          children: [
-            Text(
-              "Mode : ${_controller.game.mode.name}",
-              style: Theme.of(context).textTheme.headlineSmall,
-              textAlign: TextAlign.center,
-            ),
-            Text(
-              "Subject : ${_controller.game.subject}",
-              style: Theme.of(context).textTheme.labelSmall,
-              textAlign: TextAlign.center,
-            )
-          ],
-        )
-      ),
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            children: [
+              Text(
+                "Mode : ${_controller.game.mode.value.name}",
+                style: Theme.of(context).textTheme.headlineSmall,
+                textAlign: TextAlign.center,
+              ),
+              Text(
+                "Subject : ${_controller.game.subject}",
+                style: Theme.of(context).textTheme.labelSmall,
+                textAlign: TextAlign.center,
+              )
+            ],
+          )),
     );
   }
 

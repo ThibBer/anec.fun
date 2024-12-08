@@ -1,3 +1,5 @@
+import 'package:anecdotfun/src/core/models/player.dart';
+
 import '../../core/models/game.dart';
 
 class LeaderboardController {
@@ -5,15 +7,27 @@ class LeaderboardController {
 
   LeaderboardController({required this.game});
 
-  // Get sorted players by scores in descending order
-  List<MapEntry<String, Map<String, dynamic>>> get sortedPlayers {
-    return game.players.entries.toList()
-      ..sort((a, b) => (game.playerScores[b.key] ?? 0)
-          .compareTo(game.playerScores[a.key] ?? 0));
+  /// Get sorted players by scores in descending order
+  List<Player> get sortedPlayers {
+    return game.players.value.values.toList()
+      ..sort((a, b) => b.score.compareTo(a.score));
   }
 
-  // Get a player's score by their unique ID
+  /// Get a player's score by their unique ID
   int getPlayerScore(String uniqueId) {
-    return game.playerScores[uniqueId] ?? 0;
+    return game.players.value[uniqueId]?.score ?? 0;
   }
+
+  int getPlayerRank(String uniqueId) {
+    final sortedPlayers = game.players.value.entries.toList()
+      ..sort((a, b) =>
+          b.value.score.compareTo(a.value.score)); // Sort by score descending
+    for (int i = 0; i < sortedPlayers.length; i++) {
+      if (sortedPlayers[i].key == uniqueId) {
+        return i + 1; // Rank is 1-based
+      }
+    }
+    return -1; // Player not found
+  }
+
 }
