@@ -1,12 +1,14 @@
 import 'package:flutter/material.dart';
 
 class Player extends ChangeNotifier {
+  String uniqueId;
   String username;
   String? vote;
   int score;
 
   Player({
     required this.username,
+    required this.uniqueId,
     this.vote,
     this.score = 0,
   });
@@ -33,8 +35,9 @@ class Player extends ChangeNotifier {
   }
 
   /// Creates a Player instance from a Map
-  factory Player.fromMap(Map<String, dynamic> map) {
+  factory Player.fromMap(String uniqueId, Map<String, dynamic> map) {
     return Player(
+      uniqueId: uniqueId,
       username: map['username'],
       vote: map['vote'],
       score: map['score'],

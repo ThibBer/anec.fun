@@ -63,7 +63,7 @@ class Game extends ChangeNotifier {
 
   /// Adds a player to the game.
   void addPlayer(String uniqueId, String username) {
-    var player = Player(username: username);
+    var player = Player(uniqueId: uniqueId, username: username);
     player.addListener(_onPlayerChanged);
     players.value[uniqueId] = player;
     players.notifyListeners();
@@ -97,6 +97,13 @@ class Game extends ChangeNotifier {
 
       players.notifyListeners();
     }
+  }
+
+  void stopRound(){
+    resetPlayersVote();
+    stickExploded = false;
+    annecdotTellerId = "";
+    subject = "not yet selected";
   }
 
   void resetPlayersVote(){
@@ -155,7 +162,7 @@ class Game extends ChangeNotifier {
     username = state['username'];
     players.value.clear();
     state['players'].forEach((key, value) {
-      players.value[key] = Player.fromMap(value);
+      players.value[key] = Player.fromMap(uniqueId, value);
     });
     stickExploded = state['stickExploded'] as bool;
     annecdotTellerId = state['annecdotTellerId'] as String;
