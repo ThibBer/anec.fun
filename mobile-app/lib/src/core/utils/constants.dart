@@ -9,7 +9,8 @@ enum GameState {
   stickExploded,
   connected,
   disconnected,
-  disconnecting
+  disconnecting,
+  stickPassingDone
 }
 
 enum GameMode {

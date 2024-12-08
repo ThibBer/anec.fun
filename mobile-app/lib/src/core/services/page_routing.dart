@@ -34,7 +34,7 @@ class GlobalNavigationService {
         case GameState.voting:
           navigateTo(VotePage.routeName);
           break;
-        case GameState.stickExploded:
+        case GameState.stickPassingDone:
           navigateTo(TellingAnecdotePage.routeName);
           break;
         case GameState.stopped:

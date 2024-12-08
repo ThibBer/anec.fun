@@ -1,3 +1,4 @@
+import 'package:anecdotfun/src/core/utils/constants.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:nfc_manager/nfc_manager.dart';
@@ -22,10 +23,37 @@ class StickPassingController extends ChangeNotifier {
   }
 
   Future<void> _initialize() async {
+    // Listen to game state changes
+    game.state.addListener(_onGameStateChanged);
+
     if (await isNfcAvailable()) {
       startNfcScan();
     }
   }
+
+  bool animationIsPlaying() {
+    return isScanning || isSuccess || isExploded;
+  }
+
+  void _onGameStateChanged() {
+    if (game.state.value == GameState.stickExploded) {
+      if (!isExploded) {
+        game.updateState(GameState.stickPassingDone);
+      } else {
+        _waitForAnimationToEnd().then((_) {
+          game.updateState(GameState.stickPassingDone);
+        });
+      }
+    }
+  }
+
+  Future<void> _waitForAnimationToEnd() async {
+    if (animationIsPlaying()) {
+      await Future.delayed(const Duration(seconds: 1));
+      await _waitForAnimationToEnd(); // Recursively call until animations finish
+    }
+  }
+
 
   Future<bool> isNfcAvailable() async {
     return !kIsWeb && await NfcManager.instance.isAvailable();
@@ -118,6 +146,9 @@ class StickPassingController extends ChangeNotifier {
       isSuccess = false;
       bool nfcAvailable = await isNfcAvailable();
       if (isStickExploded()) {
+        isExploded = false;
+        isScanning = false;
+        isSuccess = false;
         print("Stick exploded");
       } else if (nfcAvailable) {
         isScanning = true;
@@ -125,6 +156,7 @@ class StickPassingController extends ChangeNotifier {
       } else {
         isExploded = false;
       }
+
       notifyListeners();
     });
   }
