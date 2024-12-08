@@ -88,14 +88,14 @@ object Main {
   }
 
   private def websocketConnectionExponentialRetry(): Unit = {
-    if(exponentialRetryCount >= exponentialRetryMaxCount){
+    if (exponentialRetryCount >= exponentialRetryMaxCount) {
       println(s"Cancel websocket exponential retry after $exponentialRetryCount try")
       exponentialRetryCount = 0
       return
     }
 
     after(math.pow(2, exponentialRetryCount).seconds, using = system.scheduler) {
-      Future{
+      Future {
         exponentialRetryCount = exponentialRetryCount + 1
         println(s"Websocket exponential retry $exponentialRetryCount/$exponentialRetryMaxCount")
         connectToWebsocket()
@@ -147,7 +147,7 @@ object Main {
       commandResponse.commandType match {
         case CommandType.CONNECTION =>
           if (isCommandSuccessful) {
-            if(commandResponse.uniqueId != uniqueId){
+            if (commandResponse.uniqueId != uniqueId) {
               uniqueId = commandResponse.uniqueId
               saveUniqueId(uniqueId)
             }
@@ -181,7 +181,7 @@ object Main {
           }
         case CommandType.STICK_SCANNED =>
           if (isCommandSuccessful) {
-            onStickScanned();
+            onStickScanned()
           }
         case _ => println(s"Unmanaged response command type (${commandResponse.commandType})")
       }
@@ -323,7 +323,7 @@ object Main {
 
 def readSavedUniqueId(): String = {
   val path = os.Path(System.getProperty("user.home") + "/uniqueId.iot")
-  if (!os.exists(path)){
+  if (!os.exists(path)) {
     println("File not exists")
     return ""
   }
@@ -340,7 +340,7 @@ def readSavedUniqueId(): String = {
         os.remove(path)
         ""
       case Some(dt) =>
-        if((DateTime.now.clicks - dt.clicks) / 60000 > uniqueIdValidDuration)
+        if ((DateTime.now.clicks - dt.clicks) / 60000 > uniqueIdValidDuration)
           os.remove(path)
           ""
         else
