@@ -28,7 +28,6 @@ Input/Microphone: Analog pin A0 on all boards
 #define PIN_LED 5
 
 const uint64_t addresses[2] = { 0xABCDABCD71LL, 0x544d52687CLL };
-const byte endOfSequence[] = { -128, 127, -128, 127, -128, 127, -128, 127, -128, 127, -128, 127, -128, 127, -128, 127, -128, 127, -128, 127, -128, 127, -128, 127, -128, 127, -128, 127, -128, 127, -128, 127 };
 
 RF24 radio(2, 3);             // Set radio up using pins 2 (CE) 3 (CS)
 RF24Audio rfAudio(radio, 0);  // Set up the audio using the radio, and set to radio number 0
@@ -71,19 +70,20 @@ void setup() {
   // rfAudio.begin();              // Start up the radio and audio libararies
   radio.openWritingPipe(addresses[1]);     // Set up reading and writing pipes.
   radio.openReadingPipe(1, addresses[0]);  // All of the radios listen by default to the same multicast pipe
-  radio.startListening();                  // put radio in RX mode
+  // radio.startListening();                  // put radio in RX mode
   // radio.stopListening();                  // put radio in TX mode
   // rfAudio.broadcast(255);
   // rfAudio.transmit();
-  printf_begin();  // needed only once for printing details
 
+  toggleMode(false);
+  printf_begin();  // needed only once for printing details
   radio.printPrettyDetails();
-  toggleMode(true);
 }
 
 uint32_t printTimer = 0;
 bool isTransmit = false;
 unsigned long maxTime = 0;
+unsigned long currentTime = 0;
 
 byte audioData[32];  // Set up a buffer for the received data
 byte command[32];
@@ -95,18 +95,19 @@ void toggleMode(bool mode) {
     radio.stopListening();
     digitalWrite(PIN_LED, HIGH);
   } else {
-    sendEoS();
+    digitalWrite(PIN_LED, LOW);
+    delay(200);
     Serial.println("Stop transmitting");
     radio.startListening();
-    digitalWrite(PIN_LED, LOW);
     
   }
 }
 
 
 void loop() {
+  currentTime = millis();
   if (isTransmit) {
-    if (millis() > maxTime || digitalRead(PIN_BUTTON) == LOW) {
+    if (currentTime > maxTime || digitalRead(PIN_BUTTON) == LOW) {
       toggleMode(false);
       return;
     }
@@ -117,14 +118,9 @@ void loop() {
     }
   } else {
     if (radio.available()) {
-      Serial.print("Message received: ");
       radio.read(&command, 32);
-      Serial.print(command[0]);
-      Serial.print(" | ");
-      Serial.println(command[1]);
-
       if (command[0] == 1) {
-        maxTime = millis() + (unsigned long)(command[1] * 1000);
+        maxTime = currentTime + ((unsigned long)command[1] * 1000);
         toggleMode(true);
       }
     }
@@ -138,9 +134,6 @@ void makePayload() {
   }
 }
 
-void sendEoS() {
-  radio.write(&endOfSequence, 32);
-}
 
 void blinkLED(int count) {
   blinkLED(count, 200);
