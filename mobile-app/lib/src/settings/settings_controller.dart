@@ -53,7 +53,7 @@ class SettingsController with ChangeNotifier {
   }
 
   void disconnect() {
-    game.updateState(GameState.disconnecting);
     webSocketConnection.disconnect();
+    game.updateState(GameState.disconnecting);
   }
 }

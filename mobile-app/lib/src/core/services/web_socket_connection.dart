@@ -272,7 +272,7 @@ class WebSocketConnection {
     } catch (error) {
       game.setError("Cleanup failed: $error");
     }
-    game.reset();
+    game.delete();
   }
 
   void sendCommand(Map<String, dynamic> commandData) {
