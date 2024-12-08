@@ -1,5 +1,6 @@
 import 'package:anecdotfun/src/core/utils/constants.dart';
 import 'package:anecdotfun/src/features/connection/connection_page.dart';
+import 'package:anecdotfun/src/features/leaderboard/leaderboard_page.dart';
 import 'package:anecdotfun/src/features/score/score_page.dart';
 import 'package:anecdotfun/src/features/stick_passing/stick_passing_page.dart';
 import 'package:anecdotfun/src/features/telling_annectode/telling_anecdote_page.dart';
@@ -35,6 +36,9 @@ class GlobalNavigationService {
           break;
         case GameState.stickExploded:
           navigateTo(TellingAnecdotePage.routeName);
+          break;
+        case GameState.stopped:
+          navigateTo(LeaderboardPage.routeName);
           break;
         default:
           // Handle other states if needed
