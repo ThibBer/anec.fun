@@ -3,11 +3,10 @@ enum GameState {
   roundStarted,
   roundStopped,
   stopped,
-  paused,
+  idle,
   voting,
   scores,
   stickExploded,
-  connected,
   disconnected,
   disconnecting,
   stickPassingDone

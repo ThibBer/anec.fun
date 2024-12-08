@@ -88,7 +88,7 @@ object Main extends JsonCommandSupport {
       )
 
     val incoming = Sink.foreach[Message] {
-      case TextMessage.Strict("heartbeat") => // Keep connection alive
+      case TextMessage.Strict("heartbeat") => commandRouter ! Heartbeat(boxId, uniqueId)
       case TextMessage.Strict(text @ jsonRegex()) =>
         logger.info(s"Received message: $text")
 
@@ -115,7 +115,7 @@ object Main extends JsonCommandSupport {
       .watchTermination() { (_, termination) =>
         termination.onComplete { _ =>
           logger.info(s"WebSocket connection closed for $uniqueId.")
-          commandRouter ! NewCommand(ClientDisconnected(boxId, uniqueId), uniqueId)
+          commandRouter ! ClientLostConnection(boxId, uniqueId)
         }(system.executionContext)
       }
   }

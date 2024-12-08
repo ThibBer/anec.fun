@@ -6,7 +6,7 @@ import akka.pattern.after
 import akka.stream.scaladsl.Sink
 import akka.util.ByteString
 import be.unamur.anecdotfun.CommandResponseJsonProtocol.commandResponseFormat
-import be.unamur.anecdotfun.GameState.{START, STOP}
+import be.unamur.anecdotfun.GameState.{START, STOP, IDLE}
 import com.typesafe.config.ConfigFactory
 import spray.json.*
 
@@ -218,14 +218,17 @@ object Main {
     state match {
       case START => command = CommandType.START_GAME
       case STOP => command = CommandType.STOP_GAME
+      case IDLE => command = CommandType.IDLE_GAME
       case _ =>
     }
 
-    webSocketClient.send(JsObject(
-      "boxId" -> JsNumber(boxId),
-      "uniqueId" -> JsString(uniqueId),
-      "commandType" -> JsString(command)
-    ))
+    if(command != ""){
+      webSocketClient.send(JsObject(
+        "boxId" -> JsNumber(boxId),
+        "uniqueId" -> JsString(uniqueId),
+        "commandType" -> JsString(command)
+      ))
+    }
   }
 
   private def onRequestChangeGameMode(value: String): Unit = {
