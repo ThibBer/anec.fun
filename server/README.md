@@ -35,6 +35,7 @@ Welcome to the Anecdotfun Server project! This README will guide you through the
       - [6. **Game Stopping or Pausing**](#6-game-stopping-or-pausing)
       - [7. **Results and Cleanup**](#7-results-and-cleanup)
     - [Summary of Game Lifecycle Commands](#summary-of-game-lifecycle-commands)
+    - [State Diagram](#state-diagram)
 
 ## Introduction
 
@@ -333,3 +334,20 @@ This method broadcasts each vote to all connected clients, allowing them to trac
        +----------------+
        | STOPPED/PAUSED |
        +----------------+
+
+### State Diagram
+
+  ```mermaid
+  stateDiagram
+    [*] --> IDLE
+    IDLE --> STARTED
+    STARTED --> ROUND_STARTED
+    ROUND_STARTED --> ANECDOTE_TELLER
+    ANECDOTE_TELLER --> VOTING
+    VOTING --> ROUND_ENDED
+    ROUND_ENDED --> STOPPED
+    ROUND_ENDED --> ROUND_STARTED
+    STOPPED --> IDLE
+    STOPPED --> [*]
+
+```
