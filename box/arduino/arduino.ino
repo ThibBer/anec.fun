@@ -35,15 +35,15 @@ enum GameState { START,
                  VOTING,
                  ROUND_STOPPED,
                  STOPPED,
-                 PAUSED,
+                 IDLE,
                  ERROR,
                  SHUTDOWN };
 
-const String gameStateLabels[] = { "START", "STOP", "STARTED", "ROUND_STARTED", "STICK_EXPLODED", "VOTING", "ROUND_STOPPED", "STOPPED", "PAUSED", "ERROR" };
+const String gameStateLabels[] = { "START", "STOP", "STARTED", "ROUND_STARTED", "STICK_EXPLODED", "VOTING", "ROUND_STOPPED", "STOPPED", "IDLE", "ERROR", "SHUTDOWN" };
 const String gameModeLabels[] = { "THEME", "EMOTION" };
 
 GameMode currentGameMode = THEME;
-GameState currentGameState = STOPPED;
+GameState currentGameState = IDLE;
 WebSocketState wsState = CLOSED;
 
 unsigned long currentTime = 0;
@@ -63,11 +63,11 @@ const unsigned long MAX_DELAY_AUDIO = 2000;
 
 const uint64_t addresses[2] = { 0xABCDABCD71LL, 0x544d52687CLL };
 enum Status {
-  IDLE,
+  MIC_IDLE,
   RECEIVED
 };
 
-Status status = IDLE;
+Status status = MIC_IDLE;
 unsigned long maxTimeAudio = 0;
 byte audioData[32];  // Set up a buffer for the received data
 
@@ -177,7 +177,7 @@ void loop() {
       }
     }
     if (isEndOfSequenceReceived) {
-      status = IDLE;
+      status = MIC_IDLE;
       latestAudioDataReceived = -1;
       isEndOfSequenceReceived = false;
       Serial.write('\n');
@@ -194,7 +194,7 @@ void loop() {
     return;
   }
 
-  if (currentTime - previousTimeModeSelection >= 100 && (currentGameState == STOPPED || currentGameState == ROUND_STOPPED) && wsState == CONNECTED) {
+  if (currentTime - previousTimeModeSelection >= 100 && (currentGameState == STOPPED || currentGameState == ROUND_STOPPED || currentGameState == IDLE) && wsState == CONNECTED) {
     int modeSelectionSwitch = digitalRead(MODE_SELECTION_PIN);
 
     if (modeSelectionSwitch == EMOTION && currentGameMode == THEME) {
@@ -225,10 +225,13 @@ void loop() {
     if (startButtonPressedTime != -1) {
       // Short press
       if (currentTime - startButtonPressedTime >= BUTTON_SHORT_PRESS_DURATION && currentTime - startButtonPressedTime < BUTTON_LONG_PRESS_DURATION) {
-        if (currentGameState == STOPPED) {
+        if (currentGameState == IDLE) {
           playButtonClickSound();
           setGameState(START);
-        } else {
+        } else if(currentGameState == STOPPED) {
+          playButtonClickSound();
+          setGameState(IDLE);
+        }else{
           playButtonClickSound();
           setGameState(STOP);
         }
@@ -443,8 +446,8 @@ GameState stringToGameState(String input) {
     return ROUND_STOPPED;
   }
 
-  if (input == "PAUSED") {
-    return PAUSED;
+  if (input == "IDLE") {
+    return IDLE;
   }
 
   if (input == "ERROR") {
@@ -478,16 +481,19 @@ void onGameStateChanged(GameState newGameState) {
       setGameStateLedColor(255);
 
       break;
+    case IDLE:
+      setGameStateLedColor(0);
+      break;
     case ERROR:
       if (currentGameState == START || currentGameState == STOP) {
         currentGameState = STOPPED;
       }
 
-      status = IDLE;
+      status = MIC_IDLE;
 
       break;
     case ROUND_STOPPED:
-      status = IDLE;
+      status = MIC_IDLE;
       setGameStateLedColor(255);
       break;
     case ROUND_STARTED:
@@ -504,7 +510,7 @@ void onGameStateChanged(GameState newGameState) {
       delay(500);
 
       setGameStateLedColor(0);
-      status = IDLE;
+      status = MIC_IDLE;
 
       break;
   }

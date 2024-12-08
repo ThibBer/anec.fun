@@ -17,7 +17,7 @@ class GlobalNavigationService {
     gameStateNotifier.addListener(() {
       final gameState = gameStateNotifier.value;
       switch (gameState) {
-        case GameState.connected:
+        case GameState.idle:
           print("navigate to vote page");
           navigateTo(VotePage.routeName);
           break;

@@ -149,6 +149,8 @@ class WebSocketConnection {
         game.updateState(GameState.voting);
       } else if (command.message == 'ROUND_STARTED') {
         game.updateState(GameState.roundStarted);
+      } else if (command.message == 'IDLE') {
+        game.updateState(GameState.idle);
       } else if (command.message == 'STICK_EXPLODED') {
         game.updateState(GameState.stickExploded);
       } else if (command.message == 'STOPPED') {
@@ -197,7 +199,7 @@ class WebSocketConnection {
     } else {
       if (response['senderUniqueId'] == game.uniqueId) {
         game.setSuccess("Remote connected");
-        game.updateState(GameState.connected);
+        game.updateState(GameState.idle);
         print("Remote connected");
         if (!votingPageReadyCompleter.isCompleted) {
           await votingPageReadyCompleter.future;
@@ -272,7 +274,7 @@ class WebSocketConnection {
     } catch (error) {
       game.setError("Cleanup failed: $error");
     }
-    game.reset();
+    game.delete();
   }
 
   void sendCommand(Map<String, dynamic> commandData) {

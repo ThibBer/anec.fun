@@ -144,6 +144,9 @@ class CommandRouter {
 
             case SetGameModeCommand(boxId, uniqueId, gameMode) =>
               manager ! SetGameModeCommand(boxId, uniqueId, gameMode)
+              
+            case IdleGameCommand(boxId) =>
+              manager ! IdleGameCommand(boxId)
 
             case _ =>
               context.log.info(s"Unknown command: $command")

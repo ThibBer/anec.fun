@@ -36,7 +36,7 @@ class Game extends ChangeNotifier {
   ValueNotifier<GameMode> mode = ValueNotifier(GameMode.theme);
 
   /// The current state of the game.
-  ValueNotifier<GameState> state = ValueNotifier(GameState.stopped);
+  ValueNotifier<GameState> state = ValueNotifier(GameState.disconnected);
 
   /// The theme of the game
   String subject = "not yet selected";
@@ -184,7 +184,7 @@ class Game extends ChangeNotifier {
 
     // Reset mode and state to their initial values
     mode.value = GameMode.theme;
-    state.value = GameState.stopped;
+    state.value = GameState.disconnected;
 
     // Clear all players
     for (var player in players.value.values) {
