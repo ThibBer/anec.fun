@@ -10,13 +10,13 @@ class Player {
   });
 
   /// Updates the vote for the player
-  void updateVote(String newVote) {
+  void updateVote(String? newVote) {
     vote = newVote;
   }
 
-  /// Increments the player's score
-  void incrementScore() {
-    score++;
+  void setScore(int score){
+    print("Set score $score");
+    score = score;
   }
 
   /// Serializes the player into a Map for persistence
