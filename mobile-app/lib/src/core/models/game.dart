@@ -1,10 +1,9 @@
+import 'package:anecdotfun/src/core/models/player.dart';
 import 'package:flutter/material.dart';
 
 import '../utils/constants.dart';
 import '../services/web_socket_connection.dart';
 
-/// A single instance of the game state that is used throughout the app.
-/// Manages the game state and communicates with the WebSocket connection.
 class Game extends ChangeNotifier {
   /// Private constructor to enforce singleton pattern.
   Game._internal();
@@ -12,9 +11,7 @@ class Game extends ChangeNotifier {
   /// The shared instance of the game state.
   static final Game _instance = Game._internal();
 
-  factory Game() {
-    return _instance;
-  }
+  factory Game() => _instance;
 
   /// The WebSocket connection for the game.
   late final WebSocketConnection _webSocketConnection;
@@ -24,45 +21,38 @@ class Game extends ChangeNotifier {
     _webSocketConnection = connection;
   }
 
-  // Maintain score of each player
-  final Map<String, int> playerScores = {};
-
   /// The ID of the box.
   int boxId = -1;
 
   String username = "";
 
-  bool stickExploded = false; // Means player is speaker this round
+  bool stickExploded = false; // Means player is the speaker this round
 
   /// The unique ID of the player.
   String uniqueId = "";
 
   String annecdotTellerId = "";
 
-  GameMode mode = GameMode.theme;
+  ValueNotifier<GameMode> mode = ValueNotifier(GameMode.theme);
 
   /// The current state of the game.
-  GameState state = GameState.stopped;
+  ValueNotifier<GameState> state = ValueNotifier(GameState.stopped);
 
   /// The theme of the game
   String subject = "not yet selected";
 
   /// The current players in the game.
-  /// The key is the unique ID of the player, and the value is a map that contains
-  /// the vote status of the player.
-  final Map<String, Map<String, dynamic>> players = {};
+  /// Key: Player's unique ID, Value: Player object
+  final ValueNotifier<Map<String, Player>> players = ValueNotifier({});
 
   /// Updates the current state of the game.
   void updateState(GameState newState) {
-    state = newState;
-    notifyListeners();
+    state.value = newState;
   }
-
 
   /// Updates the current mode of the game.
   void updateMode(GameMode newMode) {
-    mode = newMode;
-    notifyListeners();
+    mode.value = newMode;
   }
 
   /// Updates the subject of the game.
@@ -73,41 +63,34 @@ class Game extends ChangeNotifier {
 
   /// Adds a player to the game.
   void addPlayer(String uniqueId, String username) {
-    players[uniqueId] = {
-      "username": username,
-      "vote": null
-    }; // Initially, no vote
-    notifyListeners();
+    players.value[uniqueId] = Player(username: username);
   }
 
   /// Removes a player from the game.
   void removePlayer(String uniqueId) {
-    players.remove(uniqueId);
-    notifyListeners();
+    players.value.remove(uniqueId);
   }
 
   /// Updates the vote status of a player.
   /// If the vote is from the server, it won't be sent back to the server.
   void updateVote(String uniqueId, String vote, {bool isFromServer = false}) {
-    if (players.containsKey(uniqueId)) {
-      players[uniqueId]!["vote"] = vote;
+    if (players.value.containsKey(uniqueId)) {
+      players.value[uniqueId]!.updateVote(vote);
       // Only send to WebSocket if the vote originates from the app
       if (!isFromServer) {
         _webSocketConnection.vote(vote, true);
       }
-      notifyListeners();
     }
   }
 
+  /// Updates the scores of players based on the result.
   void updateScores(String result) {
-    // Update each player's score based on the result and his vote
-    players.forEach((uniqueId, playerData) {
-      if (playerData["vote"] == result) {
-        playerScores[uniqueId] = (playerScores[uniqueId] ?? 0) + 1;
+    players.value.forEach((uniqueId, player) {
+      if (player.vote == result) {
+        player.incrementScore();
       }
     });
     updateState(GameState.scores);
-    notifyListeners();
   }
 
   /// Error message to be displayed across the app.
@@ -145,19 +128,16 @@ class Game extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// Restores the game state from a saved state.
   void restoreGameState(Map<String, dynamic> state) {
     username = state['username'];
-    players.clear();
+    players.value.clear();
     state['players'].forEach((key, value) {
-      players[key] = Map<String, dynamic>.from(value);
-    });
-    playerScores.clear();
-    state['playerScores'].forEach((key, value) {
-      playerScores[key] = value as int;
+      players.value[key] = Player.fromMap(value);
     });
     stickExploded = state['stickExploded'] as bool;
     annecdotTellerId = state['annecdotTellerId'] as String;
-    state = state['state'];
+    this.state.value = state['state'];
     notifyListeners();
   }
 

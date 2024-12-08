@@ -1,3 +1,4 @@
+import 'package:anecdotfun/src/core/models/player.dart';
 import 'package:flutter/material.dart';
 import '../../core/services/web_socket_connection.dart';
 import '../../core/models/game.dart';
@@ -24,6 +25,16 @@ class PlayerScorePageState extends State<PlayerScorePage> {
       webSocketConnection: WebSocketConnection(),
       game: Game(),
     );
+
+    // Listen for game state changes
+    scoreController.game.state.addListener(() {
+      final gameState = scoreController.game.state.value;
+      if (gameState == GameState.roundStarted) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          Navigator.pushReplacementNamed(context, StickPassingPage.routeName);
+        });
+      }
+    });
   }
 
   @override
@@ -37,12 +48,6 @@ class PlayerScorePageState extends State<PlayerScorePage> {
     return ListenableBuilder(
       listenable: scoreController.game,
       builder: (context, _) {
-        if (scoreController.game.state == GameState.roundStarted) {
-          // Schedule navigation after the build completes
-          WidgetsBinding.instance.addPostFrameCallback((_) {
-            Navigator.pushReplacementNamed(context, StickPassingPage.routeName);
-          });
-        }
         return Scaffold(
           appBar: AppBar(
             title: Text(
@@ -69,31 +74,39 @@ class PlayerScorePageState extends State<PlayerScorePage> {
                   ),
                 ),
                 // List of players and their scores
-                Expanded(
-                  child: ListView.builder(
-                    itemCount: scoreController.game.players.length,
-                    itemBuilder: (context, index) {
-                      String uniqueId =
-                          scoreController.game.players.keys.elementAt(index);
-                      int score =
-                          scoreController.game.playerScores[uniqueId] ?? 0;
-                      return Card(
-                        margin: const EdgeInsets.symmetric(vertical: 8),
-                        child: ListTile(
-                          leading: CircleAvatar(
-                            backgroundColor: Colors.blue,
-                            child: Text(
-                              (index + 1).toString(),
-                              style: const TextStyle(color: Colors.white),
+                ValueListenableBuilder<Map<String, Player>>(
+                  valueListenable: scoreController
+                      .game.players, // Using players map directly
+                  builder: (context, players, child) {
+                    final sortedPlayers = players.values.toList()
+                      ..sort((a, b) =>
+                          b.score.compareTo(a.score)); // Sort players by score
+
+                    return Expanded(
+                      child: ListView.builder(
+                        itemCount: sortedPlayers.length,
+                        itemBuilder: (context, index) {
+                          final player = sortedPlayers[index];
+                          return Card(
+                            margin: const EdgeInsets.symmetric(vertical: 8),
+                            child: ListTile(
+                              leading: CircleAvatar(
+                                backgroundColor: Colors.blue,
+                                child: Text(
+                                  (index + 1).toString(),
+                                  style: const TextStyle(color: Colors.white),
+                                ),
+                              ),
+                              title: Text('Player: ${player.username}'),
+                              subtitle: Text('Score: ${player.score} pts'),
                             ),
-                          ),
-                          title: Text('Player: $uniqueId'),
-                          subtitle: Text('Score: $score pts'),
-                        ),
-                      );
-                    },
-                  ),
+                          );
+                        },
+                      ),
+                    );
+                  },
                 ),
+
                 // Footer or actions if required
                 const Padding(
                   padding: EdgeInsets.symmetric(vertical: 16.0),

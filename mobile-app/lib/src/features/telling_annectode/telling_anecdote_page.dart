@@ -21,6 +21,16 @@ class TellingAnecdotePageState extends State<TellingAnecdotePage> {
   void initState() {
     super.initState();
     _controller = TellingAnecdoteController(game: Game());
+
+    // Listen for game state changes
+    _controller.game.state.addListener(() {
+      final gameState = _controller.game.state.value;
+      if (gameState == GameState.voting) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          Navigator.pushReplacementNamed(context, VotePage.routeName);
+        });
+      }
+    });
   }
 
   @override
@@ -34,11 +44,6 @@ class TellingAnecdotePageState extends State<TellingAnecdotePage> {
     return ValueListenableBuilder<bool>(
       valueListenable: _controller.isRecording,
       builder: (context, isRecording, child) {
-        if (_controller.game.state == GameState.voting) {
-          WidgetsBinding.instance.addPostFrameCallback((_) {
-            Navigator.pushReplacementNamed(context, VotePage.routeName);
-          });
-        }
         return Scaffold(
           appBar: AppBar(
             title: const Text("Telling Anecdote"),
@@ -68,22 +73,21 @@ class TellingAnecdotePageState extends State<TellingAnecdotePage> {
       elevation: 4,
       margin: const EdgeInsets.only(bottom: 20),
       child: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          children: [
-            Text(
-              "Mode : ${_controller.game.mode.name}",
-              style: Theme.of(context).textTheme.headlineSmall,
-              textAlign: TextAlign.center,
-            ),
-            Text(
-              "Subject : ${_controller.game.subject}",
-              style: Theme.of(context).textTheme.labelSmall,
-              textAlign: TextAlign.center,
-            )
-          ],
-        )
-      ),
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            children: [
+              Text(
+                "Mode : ${_controller.game.mode.value.name}",
+                style: Theme.of(context).textTheme.headlineSmall,
+                textAlign: TextAlign.center,
+              ),
+              Text(
+                "Subject : ${_controller.game.subject}",
+                style: Theme.of(context).textTheme.labelSmall,
+                textAlign: TextAlign.center,
+              )
+            ],
+          )),
     );
   }
 

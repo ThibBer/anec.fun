@@ -37,6 +37,16 @@ class _StickPassingPageState extends State<StickPassingPage> {
     });
     // Check NFC availability
     _checkNfcAvailability();
+
+    // Listen for game state changes
+    _controller.game.state.addListener(() {
+      if (_controller.game.state.value == GameState.stickExploded) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          Navigator.pushReplacementNamed(
+              context, TellingAnecdotePage.routeName);
+        });
+      }
+    });
   }
 
   Future<void> _checkNfcAvailability() async {
@@ -57,16 +67,9 @@ class _StickPassingPageState extends State<StickPassingPage> {
     return ListenableBuilder(
       listenable: _controller.game,
       builder: (context, _) {
-        if (_controller.game.state == GameState.stickExploded) {
-          WidgetsBinding.instance.addPostFrameCallback((_) {
-            Navigator.pushReplacementNamed(
-                context, TellingAnecdotePage.routeName);
-          });
-        }
         return Scaffold(
           appBar: AppBar(
-            title: const Text(
-                'Stick Passing'),
+            title: const Text('Stick Passing'),
           ),
           body: Center(
             child: Column(

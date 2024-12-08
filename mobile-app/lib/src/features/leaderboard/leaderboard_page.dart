@@ -32,9 +32,6 @@ class LeaderboardPageState extends State<LeaderboardPage> {
     return ListenableBuilder(
       listenable: leaderboardController.game,
       builder: (context, _) {
-        // Get the sorted players from the controller
-        final sortedPlayers = leaderboardController.sortedPlayers;
-
         return Scaffold(
           appBar: AppBar(
             title: const Text(
@@ -63,11 +60,10 @@ class LeaderboardPageState extends State<LeaderboardPage> {
                 // List of players ranked by scores
                 Expanded(
                   child: ListView.builder(
-                    itemCount: sortedPlayers.length,
+                    itemCount: leaderboardController.sortedPlayers.length,
                     itemBuilder: (context, index) {
-                      String uniqueId = sortedPlayers[index].key;
-                      int score =
-                          leaderboardController.getPlayerScore(uniqueId);
+                      // Access the sorted Player object
+                      final player = leaderboardController.sortedPlayers[index];
                       return Card(
                         margin: const EdgeInsets.symmetric(vertical: 8),
                         child: ListTile(
@@ -78,8 +74,8 @@ class LeaderboardPageState extends State<LeaderboardPage> {
                               style: const TextStyle(color: Colors.white),
                             ),
                           ),
-                          title: Text('Player: $uniqueId'),
-                          subtitle: Text('Score: $score pts'),
+                          title: Text('Player: ${player.username}'),
+                          subtitle: Text('Score: ${player.score} pts'),
                           trailing: Icon(
                             index == 0
                                 ? Icons.emoji_events
@@ -91,6 +87,7 @@ class LeaderboardPageState extends State<LeaderboardPage> {
                     },
                   ),
                 ),
+
                 // Footer or additional information
                 const Padding(
                   padding: EdgeInsets.symmetric(vertical: 16.0),
