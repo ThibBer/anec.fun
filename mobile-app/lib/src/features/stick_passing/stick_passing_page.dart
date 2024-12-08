@@ -48,13 +48,13 @@ class _StickPassingPageState extends State<StickPassingPage> {
 
   @override
   void dispose() {
-    _controller.dispose();
-
     _controller.isNfcAvailable().then((isAvailable) {
       if (isAvailable) {
         NfcManager.instance.stopSession();
       }
     });
+
+    _controller.dispose();
 
     super.dispose();
   }
