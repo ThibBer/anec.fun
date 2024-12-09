@@ -7,7 +7,7 @@ import akka.pattern.after
 import akka.stream.scaladsl.Sink
 import akka.util.ByteString
 import be.unamur.anecdotfun.CommandResponseJsonProtocol.commandResponseFormat
-import be.unamur.anecdotfun.GameState.{START, STOP, IDLE}
+import be.unamur.anecdotfun.GameState.{IDLE, START, STOP}
 import com.typesafe.config.ConfigFactory
 import spray.json.*
 
@@ -194,7 +194,6 @@ object Main {
 
   private def onArduinoInitFinished(state: String): Unit = {
     println("ArduinoBox init completed")
-
     println("Try to connect to websocket ...")
     connectToWebsocket()
   }
@@ -223,7 +222,7 @@ object Main {
       case _ =>
     }
 
-    if(command != ""){
+    if (command != "") {
       webSocketClient.send(JsObject(
         "boxId" -> JsNumber(boxId),
         "uniqueId" -> JsString(uniqueId),
