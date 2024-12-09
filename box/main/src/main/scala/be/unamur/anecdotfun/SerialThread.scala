@@ -78,13 +78,13 @@ class SerialThread(portDescriptor: String) extends Thread {
 
   def send(message: String): Unit = {
     println(s"Send to serial : $message")
-    val msgBytes = (message + "\n").getBytes
+    val msgBytes = (message ++ "\n").getBytes
     val nbBytesWrote = comPort.writeBytes(msgBytes, msgBytes.length)
     println(s"Nb bytes wrote : $nbBytesWrote")
   }
 
   def startVoiceFlow(time: FiniteDuration): Unit = {
-    send(s"${MessageKey.VoiceFlowStart}=${time.toSeconds}")
+    send(s"${MessageKey.VoiceFlowStart}=${time.toSeconds + 1}s")
     mode = SerialMode.VoiceFlow
   }
 
