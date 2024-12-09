@@ -118,16 +118,7 @@ class LeaderboardPageState extends State<LeaderboardPage>
                       );
                     },
                   ),
-                ),
-                  Padding(
-                  padding: EdgeInsets.symmetric(vertical: 16.0),
-                    child: ElevatedButton(
-                      onPressed: () {
-                        leaderboardController.disconnect();
-                      },
-                      child: Text('Go to connection page'),
-                  ),
-                ),
+                )
               ],
             ),
           ),
