@@ -31,7 +31,7 @@ class Game extends ChangeNotifier {
   /// The unique ID of the player.
   String uniqueId = "";
 
-  String annecdotTellerId = "";
+  ValueNotifier<String> annecdotTellerId = ValueNotifier("");
 
   ValueNotifier<GameMode> mode = ValueNotifier(GameMode.theme);
 
@@ -102,7 +102,7 @@ class Game extends ChangeNotifier {
   void stopRound(){
     resetPlayersVote();
     stickExploded = false;
-    annecdotTellerId = "";
+    annecdotTellerId.value = "";
     subject = "not yet selected";
   }
 
@@ -157,7 +157,7 @@ class Game extends ChangeNotifier {
       players.value[key] = Player.fromMap(uniqueId, value);
     });
     stickExploded = state['stickExploded'] as bool;
-    annecdotTellerId = state['annecdotTellerId'] as String;
+    annecdotTellerId.value = state['annecdotTellerId'] as String;
     this.state.value = state['state'];
     notifyListeners();
   }
@@ -178,7 +178,7 @@ class Game extends ChangeNotifier {
     boxId = -1;
     username = "";
     uniqueId = "";
-    annecdotTellerId = "";
+    annecdotTellerId.value = "";
     stickExploded = false;
     subject = "not yet selected";
 

@@ -1,7 +1,5 @@
 import 'package:anecdotfun/src/core/models/game.dart';
 import 'package:anecdotfun/src/core/services/page_routing.dart';
-import 'package:anecdotfun/src/core/utils/constants.dart';
-import 'package:anecdotfun/src/features/voting/vote_page.dart';
 import 'package:anecdotfun/src/settings/settings_view.dart';
 import 'package:flutter/material.dart';
 import 'package:lottie/lottie.dart';
@@ -38,13 +36,13 @@ class TellingAnecdotePageState extends State<TellingAnecdotePage> {
     return PopScope(
       canPop: false,
       child: ValueListenableBuilder<bool>(
-      valueListenable: _controller.isRecording,
-      builder: (context, isRecording, child) {
-        return Scaffold(
-          appBar: AppBar(
-            title: const Text("Telling Anecdote"),
+        valueListenable: _controller.isRecording,
+        builder: (context, isRecording, child) {
+          return Scaffold(
+            appBar: AppBar(
+              title: const Text("Telling Anecdote"),
               automaticallyImplyLeading: false,
-            centerTitle: true,
+              centerTitle: true,
               actions: [
                 IconButton(
                   icon: const Icon(Icons.settings),
@@ -54,23 +52,23 @@ class TellingAnecdotePageState extends State<TellingAnecdotePage> {
                   },
                 ),
               ],
-          ),
-          body: Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: Column(
-              children: [
-                // Display anecdote theme
-                _buildThemeCard(context),
-                // Recording animation
-                _buildRecordingAnimation(),
-                // Recording status text
-                _buildStatusText(context),
-                const SizedBox(height: 20),
-              ],
             ),
-          ),
-        );
-      },
+            body: Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: Column(
+                children: [
+                  // Display anecdote theme
+                  _buildThemeCard(context),
+                  // Recording animation
+                  _buildRecordingAnimation(),
+                  // Recording status text
+                  _buildStatusText(context),
+                  const SizedBox(height: 20),
+                ],
+              ),
+            ),
+          );
+        },
       ),
     );
   }
@@ -116,13 +114,18 @@ class TellingAnecdotePageState extends State<TellingAnecdotePage> {
   }
 
   Widget _buildStatusText(BuildContext context) {
-    final isTellingOwnAnecdote = _controller.isTellingOwnAnecdote;
-    return Text(
-      isTellingOwnAnecdote
-          ? "Recording your anecdote..."
-          : "${_controller.currentTellerUsername} is telling an anecdote...",
-      style: Theme.of(context).textTheme.bodyLarge,
-      textAlign: TextAlign.center,
+    return ValueListenableBuilder<String>(
+      valueListenable: _controller.game.annecdotTellerId,
+      builder: (context, players, child) {
+        final isTellingOwnAnecdote = _controller.isTellingOwnAnecdote;
+        return Text(
+          isTellingOwnAnecdote
+              ? "Recording your anecdote..."
+              : "${_controller.currentTellerUsername} is telling an anecdote...",
+          style: Theme.of(context).textTheme.bodyLarge,
+          textAlign: TextAlign.center,
+        );
+      },
     );
   }
 }

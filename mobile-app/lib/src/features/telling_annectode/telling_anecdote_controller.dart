@@ -9,11 +9,11 @@ class TellingAnecdoteController {
   TellingAnecdoteController({required this.game});
 
   /// Check if the current player is telling their own anecdote
-  bool get isTellingOwnAnecdote => game.uniqueId == game.annecdotTellerId;
+  bool get isTellingOwnAnecdote => game.uniqueId == game.annecdotTellerId.value;
 
   /// Get the username of the current anecdote teller
   String get currentTellerUsername {
-    final teller = game.players.value[game.annecdotTellerId];
+    final teller = game.players.value[game.annecdotTellerId.value];
     return teller?.username ?? "Unknown";
   }
 

@@ -5,8 +5,6 @@ import 'package:flutter/material.dart';
 import '../../core/services/web_socket_connection.dart';
 import '../../core/models/game.dart';
 import 'score_controller.dart';
-import 'package:anecdotfun/src/features/stick_passing/stick_passing_page.dart';
-import '../../core/utils/constants.dart';
 
 class PlayerScorePage extends StatefulWidget {
   static const routeName = '/player-scores';
