@@ -282,7 +282,7 @@ object Main {
     //    return
 
     // todo: make anecdote max duration configurable
-    val duration = 5.minutes
+    val duration = 2.minutes
     val sink = Sink.foreach[ByteString](data => {
       val base64Encoded = Base64.getEncoder.encodeToString(data.toArray)
       webSocketClient.send(JsObject(
