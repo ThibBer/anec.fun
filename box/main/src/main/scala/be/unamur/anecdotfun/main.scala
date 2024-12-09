@@ -203,7 +203,7 @@ object Main {
   }
 
   private def onStickExploded(): Unit = {
-    serial.send(MessageKey.StickExploded + "=true")
+//    serial.send(MessageKey.StickExploded + "=true")
   }
 
   private def onStickScanned(): Unit = {
