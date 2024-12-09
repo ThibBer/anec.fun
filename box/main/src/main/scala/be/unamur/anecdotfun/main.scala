@@ -35,7 +35,7 @@ val exponentialRetryMaxCount = 5
 object Main {
   def main(args: Array[String]): Unit = {
     serial.onReceiveSerialData = onReceiveSerialData
-    serial.onConnected = onSerialConnected()
+    serial.onConnected = onSerialConnected
 
     serial.start()
   }
