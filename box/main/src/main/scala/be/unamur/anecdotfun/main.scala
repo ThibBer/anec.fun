@@ -2,12 +2,14 @@ package be.unamur.anecdotfun
 
 import akka.actor.ActorSystem
 import akka.http.scaladsl.model.{DateTime, StatusCode}
+
 import java.util.Base64
 import akka.pattern.after
 import akka.stream.scaladsl.Sink
 import akka.util.ByteString
 import be.unamur.anecdotfun.CommandResponseJsonProtocol.commandResponseFormat
 import be.unamur.anecdotfun.GameState.{IDLE, START, STOP}
+import be.unamur.anecdotfun.WebSocketState.{CONNECTED, DISCONNECTED}
 import com.typesafe.config.ConfigFactory
 import spray.json.*
 
@@ -31,6 +33,7 @@ val serial = SerialThread(comPort)
 val mic = Microphone(serial)
 var exponentialRetryCount = 0
 val exponentialRetryMaxCount = 5
+var webSocketState = DISCONNECTED
 
 object Main {
   def main(args: Array[String]): Unit = {
@@ -46,31 +49,43 @@ object Main {
     MessageKey.GameMode -> onRequestChangeGameMode,
     MessageKey.HandDetected -> onHandDetected,
     MessageKey.RequestShutdown -> onRequestShutdown,
+    MessageKey.RequestWsConn -> onRequestWebsocketConnecting,
   )
 
   private def onSerialConnected(): Unit = {
     println(s"Port opened, reading serial on $comPort")
 
     Runtime.getRuntime.addShutdownHook(Thread(() => {
-      serial.send("WebSocketStateChanged=CLOSED")
-      serial.send("GameStateChanged=STOPPED")
+      if(webSocketState == CONNECTED){
+        serial.send("WebSocketStateChanged=CLOSED")
+      }
+
+      webSocketState = DISCONNECTED
     }))
   }
 
   private def onWebSocketConnectionClosed(): Unit = {
     println(s"WebSocket connection closed ${dateTimeString()}")
-    serial.send("WebSocketStateChanged=CLOSED")
-    serial.send("GameStateChanged=STOPPED")
+
+    if(webSocketState == CONNECTED){
+      serial.send("WebSocketStateChanged=CLOSED")
+      webSocketState = DISCONNECTED
+    }
+
     websocketConnectionExponentialRetry()
   }
 
   private def onConnectionFailed(status: StatusCode): Unit = {
     println(s"WebSocket connection failed: $status")
-    serial.send("WebSocketStateChanged=FAILED")
+    if(webSocketState == CONNECTED){
+      serial.send("WebSocketStateChanged=FAILED")
+      webSocketState = DISCONNECTED
+    }
     websocketConnectionExponentialRetry()
   }
 
   private def onConnectedToWebSocket(statusCode: StatusCode): Unit = {
+    webSocketState = CONNECTED
     exponentialRetryCount = 0
     serial.send("WebSocketStateChanged=CONNECTED")
 
@@ -267,6 +282,11 @@ object Main {
 
     Process("shutdown -h now")
     System.exit(0)
+  }
+
+  private def onRequestWebsocketConnecting(value: String): Unit = {
+    println("Try to connect to websocket after button push ...")
+    connectToWebsocket()
   }
 
   private def onAnecdoteTellerPicked(): Unit = {
