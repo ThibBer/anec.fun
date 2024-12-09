@@ -2,6 +2,7 @@ package be.unamur.anecdotfun
 
 import akka.actor.ActorSystem
 import akka.http.scaladsl.model.{DateTime, StatusCode}
+import java.util.Base64
 import akka.pattern.after
 import akka.stream.scaladsl.Sink
 import akka.util.ByteString
@@ -283,11 +284,12 @@ object Main {
     // todo: make anecdote max duration configurable
     val duration = 5.minutes
     val sink = Sink.foreach[ByteString](data => {
+      val base64Encoded = Base64.getEncoder.encodeToString(data.toArray)
       webSocketClient.send(JsObject(
         "boxId" -> JsNumber(boxId),
         "uniqueId" -> JsString(uniqueId),
         "commandType" -> JsString(CommandType.VOICE_FLOW),
-        "payload" -> JsArray(data.map(a => JsNumber(a)).toVector)
+        "payload" -> JsString(base64Encoded)
       ))
     })
     mic.startListening(sink, duration) match {

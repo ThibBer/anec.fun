@@ -20,6 +20,21 @@ trait JsonCommandSupport extends SprayJsonSupport with DefaultJsonProtocol {
   implicit val setGameModeFormat: RootJsonFormat[SetGameModeCommand] = jsonFormat3(SetGameModeCommand.apply)
   implicit val idleGameFormat: RootJsonFormat[IdleGameCommand] = jsonFormat1(IdleGameCommand.apply)
 
+  private val commandTypeMap: Map[String, JsValue => Command] = Map(
+    "StartGameCommand" -> (_.convertTo[StartGameCommand]),
+    "StartRoundCommand" -> (_.convertTo[StartRoundCommand]),
+    "StopGameCommand" -> (_.convertTo[StopGameCommand]),
+    "VoteCommand" -> (_.convertTo[VoteCommand]),
+    "ConnectRemote" -> (_.convertTo[ConnectRemote]),
+    "DisconnectRemote" -> (_.convertTo[DisconnectRemote]),
+    "ConnectBox" -> (_.convertTo[ConnectBox]),
+    "StartVoting" -> (_.convertTo[StartVoting]),
+    "VoiceFlow" -> (_.convertTo[VoiceFlow]),
+    "ScannedStickCommand" -> (_.convertTo[ScannedStickCommand]),
+    "SetGameModeCommand" -> (_.convertTo[SetGameModeCommand]),
+    "IdleGameCommand" -> (_.convertTo[IdleGameCommand])
+  )
+
   implicit object CommandJsonFormat extends RootJsonFormat[Command] {
     def write(command: Command): JsValue = command match {
       case cmd: StartGameCommand                           => cmd.toJson
@@ -42,20 +57,14 @@ trait JsonCommandSupport extends SprayJsonSupport with DefaultJsonProtocol {
 
     def read(json: JsValue): Command = {
       val fields = json.asJsObject.fields
-
       fields.get("commandType") match {
-        case Some(JsString("StartGameCommand")) => json.convertTo[StartGameCommand]
-        case Some(JsString("StartRoundCommand")) => json.convertTo[StartRoundCommand]
-        case Some(JsString("StopGameCommand")) => json.convertTo[StopGameCommand]
-        case Some(JsString("VoteCommand")) => json.convertTo[VoteCommand]
-        case Some(JsString("ConnectRemote")) => json.convertTo[ConnectRemote]
-        case Some(JsString("DisconnectRemote")) => json.convertTo[DisconnectRemote]
-        case Some(JsString("ConnectBox")) => json.convertTo[ConnectBox]
-        case Some(JsString("StartVoting")) => json.convertTo[StartVoting]
-        case Some(JsString("VoiceFlow")) => json.convertTo[VoiceFlow]
-        case Some(JsString("ScannedStickCommand")) => json.convertTo[ScannedStickCommand]
-        case Some(JsString("SetGameModeCommand")) => json.convertTo[SetGameModeCommand]
-        case Some(JsString("IdleGameCommand")) => json.convertTo[IdleGameCommand]
+        case Some(JsString(commandType)) =>
+          commandTypeMap.get(commandType) match {
+            case Some(deserializer) => deserializer(json)
+            case None =>
+              logger.error(s"Invalid command: $json")
+              throw DeserializationException("Unknown command type")
+          }
         case _ =>
           logger.error(s"Invalid command: $json")
           throw DeserializationException("Unknown command type")

@@ -25,13 +25,14 @@ import com.azure.ai.openai.models.ChatRequestMessage
 import com.azure.ai.openai.models.ChatRequestSystemMessage
 import com.azure.ai.openai.models.ChatRequestUserMessage
 import com.azure.core.credential.AzureKeyCredential
-import spray.json.DefaultJsonProtocol._
-import spray.json._
+import spray.json.DefaultJsonProtocol.*
+import spray.json.*
 
 import java.io.ByteArrayInputStream
 import java.util
+import java.util.Base64
 import scala.collection.immutable
-import scala.compat.java8.FutureConverters._
+import scala.compat.java8.FutureConverters.*
 import scala.concurrent.ExecutionContextExecutor
 import scala.concurrent.Future
 
@@ -91,8 +92,10 @@ class SpeechToText(implicit
 
   private var accumulatedPayloads = ByteString.empty
 
-  def addPayload(payload: Array[Byte]): Unit = {
-    accumulatedPayloads ++= ByteString(payload)
+  def addPayload(payload: String): Unit = {
+    val decodedBytes = Base64.getDecoder.decode(payload)
+
+    accumulatedPayloads ++= ByteString(decodedBytes)
   }
 
   def recognize(
@@ -160,10 +163,11 @@ class SpeechToText(implicit
   def detectIntent(intents: Array[String]): Flow[String, String, ?] = {
     val intentsList = intents.mkString(", ")
     val systemPrompt = new ChatRequestSystemMessage(
-      s"Tu es un assistant qui classe des histoires suivant plusieurs catégories: $intentsList et \"autre\". Tu vas répondre en json la catégorie qui correspond le mieux à l'histoire avec le format {\"category\": \"nom\"}"
+      s"Tu es un assistant qui classe des histoires suivant plusieurs catégories: $intentsList et \"autre\". Tu vas répondre en json la catégorie qui correspond le mieux à l'histoire avec le format {\"value\": \"nom\"}"
     )
     Flow[String].mapAsync(1) { text =>
       {
+        println("text= " + text)
         val userMessage = new ChatRequestUserMessage(text)
 
         val messages = util.ArrayList[ChatRequestMessage]()
@@ -178,7 +182,7 @@ class SpeechToText(implicit
           )
           .map(chatCompletion => {
             val intent = chatCompletion.getChoices.get(0).getMessage.getContent
-            println(intent)
+            println("intent detected= " + intent)
             intent
           })
           .toFuture

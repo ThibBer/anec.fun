@@ -39,7 +39,7 @@ case class GameStateSnapshot(
   state: String
 )
 
-case class VoiceFlow(boxId: Int, uniqueId: String, payload: Option[Array[Byte]] ) extends Command
+case class VoiceFlow(boxId: Int, uniqueId: String, payload: Option[String] ) extends Command
 
 case class VoteSubmittedNotification(vote: String, uniqueId: String) extends Command {
   def boxId: Int = -1
