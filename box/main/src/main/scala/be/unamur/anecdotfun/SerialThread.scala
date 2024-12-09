@@ -15,15 +15,18 @@ class SerialThread(portDescriptor: String) extends Thread {
   private var mode = SerialMode.Standard
 
 
-  var onConnected: Unit = {}
+  var onConnected: () => Unit = () => {}
   var onReceiveSerialData: String => Unit = _ => {}
   var onReceiveVoiceSerialData: Array[Byte] => Unit = _ => {}
 
   override def start(): Unit = {
     super.start()
-
-    comPort.openPort(1000)
-    comPort.setBaudRate(115200)
+    if(comPort.openPort(1000)) {
+      onConnected()
+      comPort.setBaudRate(115200)
+    } else {
+      println(s"Failed to open port $portDescriptor")
+    }
   }
 
   override def run(): Unit = {
