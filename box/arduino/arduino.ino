@@ -22,7 +22,9 @@
 #define CE_PIN 7
 #define CSN_PIN 8
 
-enum WebSocketState {CONNECTED, FAILED, CLOSED};
+enum WebSocketState { CONNECTED,
+                      FAILED,
+                      CLOSED };
 
 enum GameMode { THEME,
                 EMOTION,
@@ -102,7 +104,7 @@ bool strContains(String value, String contentToCheckIn);
 void setup() {
   Serial.begin(115200);
 
-  delay(1000); // wait serial
+  delay(1000);  // wait serial
 
   pinMode(MODE_SELECTION_PIN, INPUT);
   pinMode(PIN_BUTTON_START_GAME, INPUT);
@@ -155,6 +157,8 @@ void serialEvent() {
       buffer.trim();
 
       int equalIndex = buffer.indexOf('=');
+      // Serial.print("debug: ");
+      // Serial.println(buffer);
       if (equalIndex != -1) {
         String key = buffer.substring(0, equalIndex);
         String value = buffer.substring(equalIndex + 1);
@@ -314,10 +318,10 @@ void blinkStartLED(int count, int r, int g, int b, int timing) {
 }
 
 void onReceiveSerialData(String key, String value) {
-  Serial.print("debug | onReceiveSerialData - ");
-  Serial.print(key);
-  Serial.print(" ");
-  Serial.println(value);
+  // Serial.print("debug | onReceiveSerialData - ");
+  // Serial.print(key);
+  // Serial.print(" ");
+  // Serial.println(value);
 
   if (strContains(key, "GameStateChanged")) {
     onGameStateChanged(stringToGameState(value));
@@ -332,12 +336,12 @@ void onReceiveSerialData(String key, String value) {
   }
 }
 
-void onStickScanned(){
+void onStickScanned() {
   playSound(1000, 150);
   delay(400);
 }
 
-void onStickExploded(){
+void onStickExploded() {
   blinkStartLED(5, 0, 0, 255, 200);
 
   playSound(1000, 150);
@@ -543,6 +547,6 @@ void askAudio(int time) {
   maxTimeAudio = millis() + (unsigned long)(time * 1000);
 }
 
-bool strContains(String value, String contentToCheckIn){
+bool strContains(String value, String contentToCheckIn) {
   return value.indexOf(contentToCheckIn) != -1;
 }
