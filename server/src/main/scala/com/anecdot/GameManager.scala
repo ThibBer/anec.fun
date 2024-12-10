@@ -713,13 +713,10 @@ object GameManager {
     * represented by the `newState` parameter, which can be one of the
     * predefined `States`.
     *
-    * @param webSocketClients
-    *   The map of all connected clients, organized by box ID and unique client
-    *   ID.
+    * @param players
+    *   The map of all connected clients
     * @param newState
     *   The new state of the game to be broadcasted to clients.
-    * @param boxId
-    *   The ID of the box for which the game state is being broadcasted.
     */
   private def broadcastGameState(
       players: mutable.Map[String, Player],
@@ -802,10 +799,8 @@ object GameManager {
     * to the server, ensuring that they have the latest information about the
     * remote players.
     *
-    * @param webSocketClients
+    * @param players
     *   The map of all connected clients.
-    * @param boxId
-    *   The ID of the box.
     * @param senderUniqueId
     *   The unique ID of the sender.
     */

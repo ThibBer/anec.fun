@@ -72,11 +72,11 @@ class CommandRouter {
           val manager = remoteManagers.getOrElseUpdate(
             boxId, {
               context.log.info(
-                s"Creating new RemoteManager for boxId: ${boxId}"
+                s"Creating new RemoteManager for boxId: $boxId"
               )
               context.spawn(
                 GameManager(boxId, context.self),
-                s"remote-manager-${boxId}"
+                s"remote-manager-$boxId"
               )
             }
           )
