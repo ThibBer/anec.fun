@@ -1,5 +1,8 @@
 package com.anecdot
 
+import akka.actor.typed.ActorRef
+import akka.http.scaladsl.model.ws.TextMessage
+
 sealed trait Command {
   def boxId: Int
 }
@@ -8,9 +11,9 @@ case class StartGameCommand(boxId: Int, uniqueId: String) extends Command
 case class StartRoundCommand(boxId: Int, uniqueId: String) extends Command
 case class StopGameCommand(boxId: Int, uniqueId: String) extends Command
 case class VoteCommand(boxId: Int, vote: String, uniqueId: String) extends Command
-case class ConnectRemote(boxId: Int, uniqueId: Option[String], username: String) extends Command
+case class ConnectRemote(boxId: Int, uniqueId: String, username: String) extends Command
 case class DisconnectRemote(boxId: Int, uniqueId: String) extends Command
-case class ConnectBox(boxId: Int, uniqueId: Option[String]) extends Command
+case class ConnectBox(boxId: Int, uniqueId: String) extends Command
 case class StartVoting(boxId: Int, uniqueId: String) extends Command
 case class StickExploded(boxId: Int) extends Command
 case class ScannedStickCommand(boxId: Int, uniqueId: String, exploded : Boolean) extends Command
@@ -23,8 +26,11 @@ case class IdleGameCommand(boxId: Int) extends Command
 
 case class RetrieveStateCommand(boxId: Int, uniqueId: String) extends Command
 
-case class ClientDisconnected(boxId: Int, uniqueId: String) extends Command
+enum DisconnectReason:
+  case ClientDisconnected, LostConnection
 
+case class ClientDisconnected(boxId: Int, uniqueId: String, reason: DisconnectReason ) extends Command
+case class HeartbeatClient(boxId: Int, uniqueId: String) extends Command
 case class CommandResponse(
     uniqueId: String,
     commandType: String,
@@ -49,5 +55,11 @@ case class VoteSubmittedNotification(vote: String, uniqueId: String) extends Com
 }
 
 case class GameStateChangedNotification(newState: States, uniqueId: String) extends Command {
+  def boxId: Int = -1
+}
+
+case class AddClient(boxId: Int, uniqueId: String, ref: ActorRef[TextMessage]) extends Command
+case class CheckInactiveClients() extends Command {
+  // This is a special command that is not associated with a boxId because it is not sent from a client
   def boxId: Int = -1
 }

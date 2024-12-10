@@ -1,13 +1,15 @@
 package com.anecdot
 
-import akka.actor.typed._
-import akka.actor.typed.scaladsl._
+import akka.actor.typed.*
+import akka.actor.typed.scaladsl.*
 import akka.http.scaladsl.model.ws.TextMessage
 import com.anecdot.CategoryJsonProtocol.categoryFormat
 import com.anecdot.Main.commandResponseFormat
 import com.anecdot.Main.gameStateSnapshotFormat
-import spray.json.DefaultJsonProtocol._
-import spray.json._
+import com.anecdot.PlayerStatus.{Active, Connected}
+import com.anecdot.PlayerType.{Box, Remote, Unknown}
+import spray.json.DefaultJsonProtocol.*
+import spray.json.*
 
 import scala.collection.mutable
 import scala.concurrent.duration.DurationInt
@@ -31,17 +33,22 @@ object GameManager {
   }
 
   def apply(
-      webSocketClients: mutable.Map[Int, mutable.Map[String, ActorRef[
-        TextMessage
-      ]]]
+      boxId: Int,
+      commandRouter: ActorRef[CommandRouterTrait]
   ): Behavior[Command] =
     Behaviors.withTimers { timers =>
+
+      timers.startTimerWithFixedDelay(
+        "CheckInactiveClients",
+        CheckInactiveClients(),
+        30.seconds
+      )
+
       Behaviors.setup { context =>
         val minPlayers: Int = 2
-        var remoteWebSocketActors: Map[String, String] = Map()
+        val players = mutable.Map[String, Player]()
         var boxActor: Option[ActorRef[Command]] = None
         val votes = mutable.Map[String, String]()
-        val scores = mutable.Map[String, Int]()
         var gameState = States.IDLE
         var isStickExploded = false
         var isStickExplodedConfirmationReceived = false
@@ -86,23 +93,57 @@ object GameManager {
           *   The behavior for processing subsequent messages.
           */
         Behaviors.receiveMessage {
+          case AddClient(boxId, uniqueId, ref) =>
+            val player = players.get(uniqueId)
+            // update ref and status of player
+            if (player.isDefined) {
+              players.update(
+                uniqueId,
+                player.get.copy(
+                  status = Active,
+                  actorRef = ref,
+                  heartbeat = System.currentTimeMillis()
+                )
+              )
+            } else {
+              // add new player
+              players += (uniqueId -> Player(
+                uniqueId,
+                "",
+                0,
+                ref,
+                System.currentTimeMillis(),
+                Unknown,
+                Connected
+              ))
+            }
+            Behaviors.same
           case ConnectBox(boxId, uniqueId) =>
             boxActor match {
               case None =>
                 boxActor = Some(context.self)
-
-                webSocketClients(boxId)(uniqueId.getOrElse("")) ! TextMessage(
+                players.update(
+                  uniqueId,
+                  players(uniqueId)
+                    .copy(playerType = Box, status = Active, username = "Box")
+                )
+                players(uniqueId).actorRef ! TextMessage(
                   CommandResponse(
-                    uniqueId.getOrElse(""),
+                    uniqueId,
                     "ConnectBox",
                     ResponseState.SUCCESS
                   ).toJson.compactPrint
                 )
+                Behaviors.same
               case Some(_) =>
-                val client = webSocketClients(boxId)(uniqueId.getOrElse(""))
-                client ! TextMessage(
+                val client = players(uniqueId)
+                players(uniqueId) = client.copy(
+                  status = Active,
+                  heartbeat = System.currentTimeMillis()
+                )
+                client.actorRef ! TextMessage(
                   CommandResponse(
-                    uniqueId.getOrElse(""),
+                    uniqueId,
                     "ConnectBox",
                     ResponseState.SUCCESS,
                     Some(s"Box $boxId successfully reconnected")
@@ -110,19 +151,16 @@ object GameManager {
                 )
 
                 sendGameStateToClient(
-                  uniqueId.getOrElse(""),
-                  client,
-                  gameState,
-                  boxId
+                  uniqueId,
+                  client.actorRef,
+                  gameState
                 )
                 sendGameModeToClient(
-                  uniqueId.getOrElse(""),
-                  client,
-                  gameMode,
-                  boxId
+                  uniqueId,
+                  client.actorRef,
+                  gameMode
                 )
             }
-
             Behaviors.same
 
           case StartGameCommand(boxId, uniqueId) =>
@@ -133,7 +171,7 @@ object GameManager {
                 ResponseState.FAILED,
                 Some("Game is already started")
               )
-              webSocketClients(boxId)(uniqueId) ! TextMessage(
+              players(uniqueId).actorRef ! TextMessage(
                 response.toJson.compactPrint
               )
             } else if (boxActor.isEmpty) {
@@ -143,17 +181,17 @@ object GameManager {
                 ResponseState.FAILED,
                 Some("box is not connected")
               )
-              webSocketClients(boxId)(uniqueId) ! TextMessage(
+              players(uniqueId).actorRef ! TextMessage(
                 response.toJson.compactPrint
               )
-            } else if (remoteWebSocketActors.size < minPlayers) {
+            } else if (players.count(p => p._2.status == Active) < minPlayers) {
               val response = CommandResponse(
                 uniqueId,
                 "StartGameCommand",
                 ResponseState.FAILED,
                 Some("not enough players")
               )
-              webSocketClients(boxId)(uniqueId) ! TextMessage(
+              players(uniqueId).actorRef ! TextMessage(
                 response.toJson.compactPrint
               )
             } else {
@@ -162,12 +200,12 @@ object GameManager {
                 "StartGameCommand",
                 ResponseState.SUCCESS
               )
-              webSocketClients(boxId)(uniqueId) ! TextMessage(
+              players(uniqueId).actorRef ! TextMessage(
                 response.toJson.compactPrint
               )
 
               gameState = States.STARTED
-              broadcastGameState(webSocketClients, gameState, boxId)
+              broadcastGameState(players, gameState)
             }
 
             Behaviors.same
@@ -182,7 +220,7 @@ object GameManager {
                 ResponseState.FAILED,
                 Some("Round is already started")
               )
-              webSocketClients(boxId)(uniqueId) ! TextMessage(
+              players(uniqueId).actorRef ! TextMessage(
                 response.toJson.compactPrint
               )
             } else if (
@@ -194,21 +232,21 @@ object GameManager {
                 ResponseState.FAILED,
                 Some("Game is not started")
               )
-              webSocketClients(boxId)(uniqueId) ! TextMessage(
+              players(uniqueId).actorRef ! TextMessage(
                 response.toJson.compactPrint
               )
             } else {
               val response =
                 CommandResponse(uniqueId, commandName, ResponseState.SUCCESS)
-              webSocketClients(boxId)(uniqueId) ! TextMessage(
+              players(uniqueId).actorRef ! TextMessage(
                 response.toJson.compactPrint
               )
 
               subject = getRandomSubjectForGameMode(gameMode)
               println(s"Random picked subject for mode ($gameMode) : $subject")
-              broadcastSubject(webSocketClients, boxId, subject)
+              broadcastSubject(players, subject)
               gameState = States.ROUND_STARTED
-              broadcastGameState(webSocketClients, gameState, boxId)
+              broadcastGameState(players, gameState)
               timers.startSingleTimer(
                 StickExploded(boxId),
                 Random
@@ -222,7 +260,7 @@ object GameManager {
           case StartVoting(boxId, uniqueId) =>
             if (gameState == States.ROUND_STARTED) {
               gameState = States.VOTING
-              broadcastGameState(webSocketClients, States.VOTING, boxId)
+              broadcastGameState(players, States.VOTING)
             }
 
             Behaviors.same
@@ -235,7 +273,7 @@ object GameManager {
                 ResponseState.FAILED,
                 Some("Game is already stopped")
               )
-              webSocketClients(boxId)(uniqueId) ! TextMessage(
+              players(uniqueId).actorRef ! TextMessage(
                 response.toJson.compactPrint
               )
             } else {
@@ -243,9 +281,11 @@ object GameManager {
                 context.self ! StopRoundCommand(boxId)
               }
 
-              scores.clear()
+              players.foreach { case (uniqueId, player) =>
+                players.update(uniqueId, player.copy(score = 0))
+              }
               gameState = States.STOPPED
-              broadcastGameState(webSocketClients, gameState, boxId)
+              broadcastGameState(players, gameState)
             }
 
             Behaviors.same
@@ -254,90 +294,114 @@ object GameManager {
             boxActor match {
               case None =>
                 val response = CommandResponse(
-                  uniqueId.getOrElse(""),
+                  uniqueId,
                   "ConnectRemote",
                   ResponseState.FAILED,
                   Some(s"Box $boxId is not connected")
                 )
-                webSocketClients(boxId)(uniqueId.getOrElse("")) ! TextMessage(
+                players(uniqueId).actorRef ! TextMessage(
                   response.toJson.compactPrint
                 )
               case Some(_) =>
-                // Check that the username is not already taken
-                if (remoteWebSocketActors.exists(_._2 == username)) {
-                  val response = CommandResponse(
-                    uniqueId.getOrElse(""),
-                    "ConnectRemote",
-                    ResponseState.FAILED,
-                    Some("Username is already taken")
-                  )
-                  webSocketClients(boxId)(
-                    uniqueId.getOrElse("")
-                  ) ! TextMessage(
-                    response.toJson.compactPrint
-                  )
-                } else {
-                  // Send the list of connected remotes to the new remote
-                  remoteWebSocketActors.foreach {
-                    case (remoteUniqueId, username) =>
+                players.get(uniqueId) match {
+                  case None =>
+                    context.log.warn("Remote not found in players")
+                  case Some(p) =>
+                    if (p.status == Active) {
                       val response = CommandResponse(
-                        uniqueId.getOrElse(""),
+                        uniqueId,
                         "ConnectRemote",
-                        "success",
-                        senderUniqueId = Some(remoteUniqueId),
-                        message = Some(username)
+                        ResponseState.FAILED,
+                        Some("Remote is already connected")
                       )
-                      webSocketClients(boxId)(
-                        uniqueId.getOrElse("")
-                      ) ! TextMessage(
+                      players(uniqueId).actorRef ! TextMessage(
                         response.toJson.compactPrint
                       )
-                  }
+                    } else {
+                      val isUsernameExist = players.exists { case (_, player) =>
+                        player.username == username
+                      }
+                      if (isUsernameExist) {
+                        val response = CommandResponse(
+                          uniqueId,
+                          "ConnectRemote",
+                          ResponseState.FAILED,
+                          Some("Username is already taken")
+                        )
+                        players(uniqueId).actorRef ! TextMessage(
+                          response.toJson.compactPrint
+                        )
+                        players -= uniqueId
+                      } else {
+                        players.update(
+                          uniqueId,
+                          p.copy(
+                            status = Active,
+                            playerType = Remote,
+                            username = username,
+                            heartbeat = System.currentTimeMillis()
+                          )
+                        )
+                        // send players to the new remote
+                        players
+                          .filter(p =>
+                            p._2.status == Active && p._2.playerType == Remote
+                          )
+                          .foreach { case (remoteUniqueId, player) =>
+                            println(
+                              s"Broadcasting remote connection $remoteUniqueId -> ${player.status}"
+                            )
+                            players(uniqueId).actorRef ! TextMessage(
+                              CommandResponse(
+                                uniqueId,
+                                "ConnectRemote",
+                                ResponseState.SUCCESS,
+                                senderUniqueId = Some(remoteUniqueId),
+                                message = Some(player.username)
+                              ).toJson.compactPrint
+                            )
+                          }
+                        // Send the new remote to all connected remotes
+                        broadcastRemoteConnection(
+                          players,
+                          uniqueId,
+                          username
+                        )
 
-                  remoteWebSocketActors += (uniqueId.getOrElse("") -> username)
+                        sendGameModeToClient(
+                          uniqueId,
+                          players(uniqueId).actorRef,
+                          gameMode
+                        )
 
-                  // Send the new remote to all connected remotes
-                  broadcastRemoteConnection(
-                    webSocketClients,
-                    boxId,
-                    uniqueId.getOrElse(""),
-                    username
-                  )
+                        if (anecdoteSpeakerId != "") {
+                          sendAnnecdotTellerToClient(
+                            uniqueId,
+                            players(uniqueId).actorRef,
+                            anecdoteSpeakerId
+                          )
+                        }
 
-                  sendGameModeToClient(
-                    uniqueId.getOrElse(""),
-                    webSocketClients(boxId)(uniqueId.getOrElse("")),
-                    gameMode,
-                    boxId
-                  )
+                        if (isStickExploded) {
+                          sendStickExplodedToClient(
+                            uniqueId,
+                            players(uniqueId).actorRef
+                          )
+                        }
 
-                  if (anecdoteSpeakerId != "") {
-                    sendAnnecdotTellerToClient(
-                      uniqueId.getOrElse(""),
-                      webSocketClients(boxId)(uniqueId.getOrElse("")),
-                      anecdoteSpeakerId
-                    )
-                  }
-
-                  if (isStickExploded) {
-                    sendStickExplodedToClient(
-                      uniqueId.getOrElse(""),
-                      webSocketClients(boxId)(uniqueId.getOrElse(""))
-                    )
-                  }
-
-                  context.log.info(
-                    "remote connected and broadcasted to all remotes"
-                  )
+                        context.log.info(
+                          "remote connected and broadcasted to all remotes"
+                        )
+                      }
+                    }
                 }
 
             }
-
             Behaviors.same
 
           case StopRoundCommand(boxId) =>
             gameState = States.ROUND_STOPPED
-            broadcastGameState(webSocketClients, gameState, boxId)
+            broadcastGameState(players, gameState)
 
             votes.clear()
             isStickExploded = false
@@ -353,7 +417,7 @@ object GameManager {
                 ResponseState.FAILED,
                 Some("Game is not in VOTING state, vote not registered")
               )
-              webSocketClients(boxId)(uniqueId) ! TextMessage(
+              players(uniqueId).actorRef ! TextMessage(
                 response.toJson.compactPrint
               )
             } else {
@@ -364,31 +428,39 @@ object GameManager {
                   ResponseState.FAILED,
                   Some("Speaker can't judge his own anecdote")
                 )
-                webSocketClients(boxId)(uniqueId) ! TextMessage(
+                players(uniqueId).actorRef ! TextMessage(
                   response.toJson.compactPrint
                 )
               } else {
-                broadcastVote(webSocketClients, boxId, vote, uniqueId)
+                broadcastVote(players, vote, uniqueId)
                 votes(uniqueId) = vote
 
-                if (votes.keys.size == (remoteWebSocketActors.size - 1)) {
+                if (
+                  votes.keys.size == (players
+                    .count(p => p._2.status == Active) - 1)
+                ) {
                   logger.info("All remotes voted")
 
                   val trueVotesCount = votes.values.count(v => v == "true")
                   logger.info(
-                    s"True votes count : $trueVotesCount/${remoteWebSocketActors.size - 1}"
+                    s"True votes count : $trueVotesCount/${players
+                        .count(p => p._2.status == Active) - 1}"
                   )
-                  scores(anecdoteSpeakerId) =
-                    scores.getOrElse(anecdoteSpeakerId, 0) + trueVotesCount
+                  players(anecdoteSpeakerId) = players(anecdoteSpeakerId).copy(
+                    score = players(anecdoteSpeakerId).score + trueVotesCount
+                  )
 
-                  if (Option(detectedIntent).isEmpty) {
+                  if (detectedIntent.isEmpty) {
                     logger.info(
                       "Detected intend null, ignoring result to compute score"
                     )
                   } else {
                     val intent = detectedIntent.getOrElse("")
                     if (intent == subject) {
-                      scores(anecdoteSpeakerId) = scores(anecdoteSpeakerId) + 1
+                      players(anecdoteSpeakerId) =
+                        players(anecdoteSpeakerId).copy(
+                          score = players(anecdoteSpeakerId).score + 1
+                        )
                       logger.info(
                         s"Detected intend ($intent) match with required subject ($subject), +1 to speaker score"
                       )
@@ -400,19 +472,19 @@ object GameManager {
                   }
 
                   logger.info(
-                    s"New speaker score : ${scores(anecdoteSpeakerId)}"
+                    s"New speaker score : ${players(anecdoteSpeakerId).score}"
                   )
 
                   // Send the vote result to all clients
-                  remoteWebSocketActors.foreach { case (userId, username) =>
+                  players.foreach { case (userId, player) =>
                     val response = CommandResponse(
                       userId,
                       "VoteResult",
                       ResponseState.SUCCESS,
-                      Some(scores(anecdoteSpeakerId).toString),
+                      Some(players(anecdoteSpeakerId).score.toString),
                       senderUniqueId = Some(anecdoteSpeakerId)
                     )
-                    webSocketClients(boxId)(userId) ! TextMessage(
+                    player.actorRef ! TextMessage(
                       response.toJson.compactPrint
                     )
                   }
@@ -424,9 +496,12 @@ object GameManager {
             Behaviors.same
 
           case DisconnectRemote(boxId, uniqueId) =>
+            // this command will remove the remote from the game forever, it's not possible to reconnect
             var responseCommand: Option[CommandResponse] = None
 
-            if (!remoteWebSocketActors.contains(uniqueId)) {
+            if (
+              !players.contains(uniqueId) || players(uniqueId).status != Active
+            ) {
               responseCommand = Some(
                 CommandResponse(
                   uniqueId,
@@ -436,8 +511,6 @@ object GameManager {
                 )
               )
             } else {
-              remoteWebSocketActors -= uniqueId
-              gameState = States.STARTED
               responseCommand = Some(
                 CommandResponse(
                   uniqueId,
@@ -448,9 +521,14 @@ object GameManager {
               )
             }
 
-            webSocketClients(boxId)(uniqueId) ! TextMessage(
+            players(uniqueId).actorRef ! TextMessage(
               responseCommand.toJson.compactPrint
             )
+            if (players.contains(uniqueId)) {
+              players -= uniqueId
+              broadcastClientDisconnected(players, uniqueId)
+            }
+
             Behaviors.same
 
           case VoiceFlow(boxId, uniqueId, payload) =>
@@ -469,14 +547,13 @@ object GameManager {
                     speechToText.detectIntent(getSubjectsFromGameMode(gameMode))
                   )
                   .runForeach(result => {
-                    print(s"Intent result: $result")
+                    println(s"Intent result: $result")
 
                     val parsedJson = result.parseJson
                     detectedIntent = Some(parsedJson.convertTo[Category])
 
-                    webSocketClients(boxId)(uniqueId) ! TextMessage(result)
                     gameState = States.VOTING
-                    broadcastGameState(webSocketClients, gameState, boxId)
+                    broadcastGameState(players, gameState)
                   })
               case Some(payload) =>
                 speechToText.addPayload(payload)
@@ -485,42 +562,44 @@ object GameManager {
 
           case StickExploded(boxId) =>
             logger.info("Stick exploded")
-            broadcastStickExploded(webSocketClients, boxId)
+            broadcastStickExploded(players)
             isStickExploded = true
             Behaviors.same
 
           case ScannedStickCommand(boxId, uniqueId, exploded) =>
             if (exploded && anecdoteSpeakerId == "") {
-              var responseCommand =
+              val responseCommand =
                 CommandResponse(
                   uniqueId,
                   "PlayStickExploded",
                   ResponseState.SUCCESS
                 )
-              webSocketClients(boxId)(uniqueId) ! TextMessage(
+              players(uniqueId).actorRef ! TextMessage(
                 responseCommand.toJson.compactPrint
               )
               logger.info("sent PlayStickExploded")
               anecdoteSpeakerId = uniqueId
             } else if (!exploded) {
-              broadcastStickScan(webSocketClients, boxId)
+              broadcastStickScan(players, boxId)
             }
             Behaviors.same
 
           case ExplodedAnimationPlayed(boxId) =>
-            broadcastGameState(webSocketClients, States.STICK_EXPLODED, boxId)
-            broadcastAnnecdotTeller(webSocketClients, boxId, anecdoteSpeakerId)
+            broadcastGameState(players, States.STICK_EXPLODED)
+            broadcastAnnecdotTeller(players, anecdoteSpeakerId)
             Behaviors.same
 
           case RetrieveStateCommand(boxId, uniqueId) =>
             val snapshot = GameStateSnapshot(
-              players = remoteWebSocketActors.map { case (id, username) =>
+              players = players.map { case (id, player) =>
                 id -> Map(
-                  "username" -> username,
+                  "username" -> player.username,
                   "vote" -> votes.getOrElse(id, "")
                 )
-              },
-              playerScores = scores.toMap,
+              }.toMap,
+              playerScores = players.map { case (id, player) =>
+                id -> player.score
+              }.toMap,
               stickExploded = isStickExploded,
               annecdotTellerId = anecdoteSpeakerId,
               state = gameState.toString
@@ -532,16 +611,25 @@ object GameManager {
               ResponseState.SUCCESS,
               message = Some(snapshot.toJson.compactPrint)
             )
-            webSocketClients(boxId)(uniqueId) ! TextMessage(
+            players(uniqueId).actorRef ! TextMessage(
               response.toJson.compactPrint
             )
             Behaviors.same
 
-          case ClientDisconnected(boxId, uniqueId) =>
+          case ClientDisconnected(boxId, uniqueId, reason) =>
             logger.debug(
               s"$uniqueId in game $boxId disconnected from websocket"
             )
-            broadcastClientDisconnected(webSocketClients, boxId, uniqueId)
+            reason match {
+              case DisconnectReason.ClientDisconnected =>
+                broadcastClientDisconnected(players, uniqueId)
+                players -= uniqueId
+              case DisconnectReason.LostConnection =>
+                players.update(
+                  uniqueId,
+                  players(uniqueId).copy(status = PlayerStatus.Disconnected)
+                )
+            }
             Behaviors.same
 
           case SetGameModeCommand(boxId, userId, mode) =>
@@ -555,11 +643,11 @@ object GameManager {
                 Some("Can't switch game mode while game is not stopped")
               )
 
-              webSocketClients(boxId)(userId) ! TextMessage(
+              players(userId).actorRef ! TextMessage(
                 response.toJson.compactPrint
               )
             } else {
-              webSocketClients(boxId)(userId) ! TextMessage(
+              players(userId).actorRef ! TextMessage(
                 CommandResponse(
                   userId,
                   "SetGameModeCommand",
@@ -569,7 +657,7 @@ object GameManager {
 
               gameMode = mode
               logger.debug(s"Game mode changed to $mode")
-              broadcastGameMode(webSocketClients, boxId, gameMode)
+              broadcastGameMode(players, gameMode)
             }
 
             Behaviors.same
@@ -577,10 +665,42 @@ object GameManager {
           case IdleGameCommand(boxId) =>
             gameState = States.IDLE
             logger.debug(s"Game state changed to $gameState")
-            broadcastGameState(webSocketClients, gameState, boxId)
+            broadcastGameState(players, gameState)
 
             Behaviors.same
+          case HeartbeatClient(boxId, uniqueId) =>
+            players.get(uniqueId) match {
+              case Some(player) =>
+                players.update(
+                  uniqueId,
+                  player.copy(heartbeat = System.currentTimeMillis())
+                )
+              case None =>
+                context.log.warn(s"Player $uniqueId not found")
+            }
+            Behaviors.same
+          case CheckInactiveClients() =>
+            val currentTime = System.currentTimeMillis()
+            val inactiveClients = players.filter { case (_, player) =>
+              currentTime - player.heartbeat > 30000
+            }.keys
+            context.log.info(
+              s"Checking inactive clients: ${inactiveClients.mkString(", ")}"
+            )
+            inactiveClients.foreach { uniqueId =>
+              players.get(uniqueId) foreach { player =>
+                players.update(
+                  uniqueId,
+                  player.copy(status = PlayerStatus.Inactive)
+                )
 
+              }
+            }
+            if (players.count(p => p._2.status == Active) == 0) {
+              context.log.info("No active players, stopping game")
+              commandRouter ! GameManagerEvent(boxId, "game-over")
+            }
+            Behaviors.same
           case _ => Behaviors.unhandled
         }
       }
@@ -602,26 +722,23 @@ object GameManager {
     *   The ID of the box for which the game state is being broadcasted.
     */
   private def broadcastGameState(
-      webSocketClients: mutable.Map[Int, mutable.Map[String, ActorRef[
-        TextMessage
-      ]]],
-      newState: States,
-      boxId: Int
+      players: mutable.Map[String, Player],
+      newState: States
   ): Unit = {
     println(s"Broadcasting state (${newState.toString})")
 
     // Iterate over each client connected to the specified boxId
-    webSocketClients(boxId).foreach { case (uniqueId, remote) =>
-      sendGameStateToClient(uniqueId, remote, newState, boxId)
-      println(s"\t - $uniqueId")
-    }
+    players
+      .foreach { case (uniqueId, remote) =>
+        sendGameStateToClient(uniqueId, remote.actorRef, newState)
+        println(s"\t - $uniqueId")
+      }
   }
 
   private def sendGameStateToClient(
       uniqueId: String,
       client: ActorRef[TextMessage],
-      newState: States,
-      boxId: Int
+      newState: States
   ): Unit = {
     val response = CommandResponse(
       uniqueId,
@@ -638,52 +755,46 @@ object GameManager {
     *
     * @param webSocketClients
     *   The map of all connected clients.
-    * @param boxId
-    *   The ID of the box.
     * @param vote
     *   The vote result.
     * @param senderUniqueId
     *   The unique ID of the sender.
     */
   private def broadcastVote(
-      webSocketClients: mutable.Map[Int, mutable.Map[String, ActorRef[
-        TextMessage
-      ]]],
-      boxId: Int,
+      webSocketClients: mutable.Map[String, Player],
       vote: String,
       senderUniqueId: String
   ): Unit = {
     // Iterate over all connected clients and send the vote result to each one.
-    webSocketClients(boxId).foreach { case (uniqueId, remote) =>
-      val response =
-        CommandResponse(
-          uniqueId,
-          "VoteCommand",
-          ResponseState.SUCCESS,
-          senderUniqueId = Some(senderUniqueId),
-          message = Some(vote)
-        )
-      // Send the vote result to the client.
-      remote ! TextMessage(response.toJson.compactPrint)
-    }
+    webSocketClients
+      .foreach { case (uniqueId, remote) =>
+        val response =
+          CommandResponse(
+            uniqueId,
+            "VoteCommand",
+            ResponseState.SUCCESS,
+            senderUniqueId = Some(senderUniqueId),
+            message = Some(vote)
+          )
+        // Send the vote result to the client.
+        remote.actorRef ! TextMessage(response.toJson.compactPrint)
+      }
   }
 
   private def broadcastStickScan(
-      webSocketClients: mutable.Map[Int, mutable.Map[String, ActorRef[
-        TextMessage
-      ]]],
-      boxId: Int
+      webSocketClients: mutable.Map[String, Player]
   ): Unit = {
-    webSocketClients(boxId).foreach { case (uniqueId, remote) =>
-      val response =
-        CommandResponse(
-          uniqueId,
-          "StickScanned",
-          ResponseState.SUCCESS
-        )
-      // Send the vote result to the client.
-      remote ! TextMessage(response.toJson.compactPrint)
-    }
+    webSocketClients
+      .foreach { case (uniqueId, remote) =>
+        val response =
+          CommandResponse(
+            uniqueId,
+            "StickScanned",
+            ResponseState.SUCCESS
+          )
+        // Send the vote result to the client.
+        remote.actorRef ! TextMessage(response.toJson.compactPrint)
+      }
   }
 
   /** Broadcasts the connection of a remote to all connected clients. This
@@ -699,34 +810,30 @@ object GameManager {
     *   The unique ID of the sender.
     */
   private def broadcastRemoteConnection(
-      webSocketClients: mutable.Map[Int, mutable.Map[String, ActorRef[
-        TextMessage
-      ]]],
-      boxId: Int,
+      players: mutable.Map[String, Player],
       senderUniqueId: String,
       username: String
   ): Unit = {
-    webSocketClients(boxId).foreach { case (uniqueId, remote) =>
-      val response = CommandResponse(
-        uniqueId,
-        "ConnectRemote",
-        ResponseState.SUCCESS,
-        senderUniqueId = Some(senderUniqueId),
-        message = Some(username)
-      )
-      remote ! TextMessage(response.toJson.compactPrint)
-    }
+    players
+      .foreach { case (uniqueId, remote) =>
+        val response = CommandResponse(
+          uniqueId,
+          "ConnectRemote",
+          ResponseState.SUCCESS,
+          senderUniqueId = Some(senderUniqueId),
+          message = Some(username)
+        )
+        remote.actorRef ! TextMessage(response.toJson.compactPrint)
+      }
   }
 
   private def broadcastStickExploded(
-      webSocketClients: mutable.Map[Int, mutable.Map[String, ActorRef[
-        TextMessage
-      ]]],
-      boxId: Int
+      webSocketClients: mutable.Map[String, Player]
   ): Unit = {
-    webSocketClients(boxId).foreach { case (uniqueId, remote) =>
-      sendStickExplodedToClient(uniqueId, remote)
-    }
+    webSocketClients
+      .foreach { case (uniqueId, remote) =>
+        sendStickExplodedToClient(uniqueId, remote.actorRef)
+      }
   }
 
   private def sendStickExplodedToClient(
@@ -743,15 +850,13 @@ object GameManager {
   }
 
   private def broadcastAnnecdotTeller(
-      webSocketClients: mutable.Map[Int, mutable.Map[String, ActorRef[
-        TextMessage
-      ]]],
-      boxId: Int,
+      webSocketClients: mutable.Map[String, Player],
       senderUniqueId: String
   ): Unit = {
-    webSocketClients(boxId).foreach { case (uniqueId, remote) =>
-      sendAnnecdotTellerToClient(uniqueId, remote, senderUniqueId)
-    }
+    webSocketClients
+      .foreach { case (uniqueId, remote) =>
+        sendAnnecdotTellerToClient(uniqueId, remote.actorRef, senderUniqueId)
+      }
   }
 
   private def sendAnnecdotTellerToClient(
@@ -770,66 +875,59 @@ object GameManager {
   }
 
   private def broadcastClientDisconnected(
-      webSocketClients: mutable.Map[Int, mutable.Map[String, ActorRef[
-        TextMessage
-      ]]],
-      boxId: Int,
+      players: mutable.Map[String, Player],
       senderUniqueId: String
   ): Unit = {
     logger.debug(s"Broadcast client $senderUniqueId disconnect")
-    webSocketClients(boxId).foreach { case (uniqueId, remote) =>
-      val response = CommandResponse(
-        uniqueId,
-        "ClientDisconnected",
-        ResponseState.SUCCESS,
-        senderUniqueId = Some(senderUniqueId)
-      )
+    players
+      .foreach { case (uniqueId, remote) =>
+        val response = CommandResponse(
+          uniqueId,
+          "ClientDisconnected",
+          ResponseState.SUCCESS,
+          senderUniqueId = Some(senderUniqueId)
+        )
 
-      logger.debug(s"\t$uniqueId")
-      remote ! TextMessage(response.toJson.compactPrint)
-    }
+        logger.debug(s"\t$uniqueId")
+        remote.actorRef ! TextMessage(response.toJson.compactPrint)
+      }
   }
 
   private def broadcastSubject(
-      webSocketClients: mutable.Map[Int, mutable.Map[String, ActorRef[
-        TextMessage
-      ]]],
-      boxId: Int,
+      players: mutable.Map[String, Player],
       subject: String
   ): Unit = {
     logger.debug(s"Broadcast subject $subject")
-    webSocketClients(boxId).foreach { case (uniqueId, remote) =>
-      val response = CommandResponse(
-        uniqueId,
-        "SubjectChanged",
-        ResponseState.SUCCESS,
-        message = Some(subject)
-      )
+    players
+      .foreach { case (uniqueId, remote) =>
+        val response = CommandResponse(
+          uniqueId,
+          "SubjectChanged",
+          ResponseState.SUCCESS,
+          message = Some(subject)
+        )
 
-      logger.debug(s"\t$uniqueId")
-      remote ! TextMessage(response.toJson.compactPrint)
-    }
+        logger.debug(s"\t$uniqueId")
+        remote.actorRef ! TextMessage(response.toJson.compactPrint)
+      }
   }
 
   private def broadcastGameMode(
-      webSocketClients: mutable.Map[Int, mutable.Map[String, ActorRef[
-        TextMessage
-      ]]],
-      boxId: Int,
+      webSocketClients: mutable.Map[String, Player],
       gameMode: String
   ): Unit = {
     logger.debug(s"Broadcast game mode $gameMode")
-    webSocketClients(boxId).foreach { case (uniqueId, remote) =>
-      sendGameModeToClient(uniqueId, remote, gameMode, boxId)
-      logger.debug(s"\t$uniqueId")
-    }
+    webSocketClients
+      .foreach { case (uniqueId, remote) =>
+        sendGameModeToClient(uniqueId, remote.actorRef, gameMode)
+        logger.debug(s"\t$uniqueId")
+      }
   }
 
   private def sendGameModeToClient(
       uniqueId: String,
       client: ActorRef[TextMessage],
-      gameMode: String,
-      boxId: Int
+      gameMode: String
   ): Unit = {
     val response = CommandResponse(
       uniqueId,
