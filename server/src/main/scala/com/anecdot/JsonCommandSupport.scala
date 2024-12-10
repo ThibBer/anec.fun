@@ -32,6 +32,7 @@ trait JsonCommandSupport extends SprayJsonSupport with DefaultJsonProtocol {
     "StartVoting" -> (_.convertTo[StartVoting]),
     "VoiceFlow" -> (_.convertTo[VoiceFlow]),
     "ScannedStickCommand" -> (_.convertTo[ScannedStickCommand]),
+    "ExplodedAnimationPlayed" -> (_.convertTo[ExplodedAnimationPlayed]),
     "SetGameModeCommand" -> (_.convertTo[SetGameModeCommand]),
     "IdleGameCommand" -> (_.convertTo[IdleGameCommand])
   )

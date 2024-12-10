@@ -1,15 +1,18 @@
 package com.anecdot
 
-import akka.actor.typed.*
-import akka.actor.typed.scaladsl.*
+import akka.actor.typed._
+import akka.actor.typed.scaladsl._
 import akka.http.scaladsl.model.ws.TextMessage
 import com.anecdot.CategoryJsonProtocol.categoryFormat
 import com.anecdot.Main.commandResponseFormat
 import com.anecdot.Main.gameStateSnapshotFormat
-import com.anecdot.PlayerStatus.{Active, Connected}
-import com.anecdot.PlayerType.{Box, Remote, Unknown}
-import spray.json.DefaultJsonProtocol.*
-import spray.json.*
+import com.anecdot.PlayerStatus.Active
+import com.anecdot.PlayerStatus.Connected
+import com.anecdot.PlayerType.Box
+import com.anecdot.PlayerType.Remote
+import com.anecdot.PlayerType.Unknown
+import spray.json.DefaultJsonProtocol._
+import spray.json._
 
 import scala.collection.mutable
 import scala.concurrent.duration.DurationInt
@@ -93,31 +96,35 @@ object GameManager {
           *   The behavior for processing subsequent messages.
           */
         Behaviors.receiveMessage {
+
           case AddClient(boxId, uniqueId, ref) =>
-            val player = players.get(uniqueId)
-            // update ref and status of player
-            if (player.isDefined) {
-              players.update(
-                uniqueId,
-                player.get.copy(
-                  status = Active,
-                  actorRef = ref,
-                  heartbeat = System.currentTimeMillis()
+            players
+              .get(uniqueId)
+              .map { player =>
+                // update ref and status of player
+                players.update(
+                  uniqueId,
+                  player.copy(
+                    status = Active,
+                    actorRef = ref,
+                    heartbeat = System.currentTimeMillis()
+                  )
                 )
-              )
-            } else {
-              // add new player
-              players += (uniqueId -> Player(
-                uniqueId,
-                "",
-                0,
-                ref,
-                System.currentTimeMillis(),
-                Unknown,
-                Connected
-              ))
-            }
+              }
+              .getOrElse {
+                // add new player
+                players += (uniqueId -> Player(
+                  uniqueId,
+                  "",
+                  0,
+                  ref,
+                  System.currentTimeMillis(),
+                  Unknown,
+                  Connected
+                ))
+              }
             Behaviors.same
+
           case ConnectBox(boxId, uniqueId) =>
             boxActor match {
               case None =>

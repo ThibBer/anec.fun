@@ -25,14 +25,14 @@ import com.azure.ai.openai.models.ChatRequestMessage
 import com.azure.ai.openai.models.ChatRequestSystemMessage
 import com.azure.ai.openai.models.ChatRequestUserMessage
 import com.azure.core.credential.AzureKeyCredential
-import spray.json.DefaultJsonProtocol.*
-import spray.json.*
+import spray.json.DefaultJsonProtocol._
+import spray.json._
 
 import java.io.ByteArrayInputStream
 import java.util
 import java.util.Base64
 import scala.collection.immutable
-import scala.compat.java8.FutureConverters.*
+import scala.compat.java8.FutureConverters._
 import scala.concurrent.ExecutionContextExecutor
 import scala.concurrent.Future
 
