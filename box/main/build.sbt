@@ -2,7 +2,7 @@ import com.typesafe.sbt.packager.docker.{Cmd, DockerVersion}
 import com.typesafe.sbt.packager.linux.LinuxPlugin.mapGenericFilesToLinux
 import com.typesafe.sbt.packager.docker.DockerPlugin.autoImport.*
 
-ThisBuild / version := "0.1.0-SNAPSHOT"
+ThisBuild / version := "0.0.2"
 
 ThisBuild / scalaVersion := "3.3.4"
 
@@ -29,12 +29,17 @@ lazy val root = project
 enablePlugins(UniversalPlugin)
 enablePlugins(JavaAppPackaging, AshScriptPlugin)
 enablePlugins(DockerPlugin)
+enablePlugins(LinuxPlugin)
+enablePlugins(DebianPlugin)
 
+maintainer := "vsantele"
+debianPackageDependencies := Seq("openjdk-17-jre", "ffmpeg")
+version := "0.0.1"
 dockerBaseImage := "eclipse-temurin:23-jre-alpine"
 dockerUsername := Some("vsantele")
 Docker / packageName := "anecdotfun-box"
 dockerRepository := Some("ghcr.io")
-dockerVersion := DockerVersion.parse("lastest")
+dockerVersion := DockerVersion.parse("latest")
 dockerCommands ++= Seq(
   Cmd("USER", "root"),
   Cmd("RUN", "apk add --no-cache ffmpeg"),

@@ -173,6 +173,10 @@ void serialEvent() {
 void loop() {
   currentTime = millis();
 
+  if(wsState == CLOSED || wsState == FAILED){
+    setGameStateLedColor(255, 0, 0);
+  }
+
   if (status == RECEIVED) {
     if (latestAudioDataReceived != -1 && currentTime - latestAudioDataReceived > MAX_DELAY_AUDIO) {
       isEndOfSequenceReceived = true;
@@ -229,15 +233,20 @@ void loop() {
     if (startButtonPressedTime != -1) {
       // Short press
       if (currentTime - startButtonPressedTime >= BUTTON_SHORT_PRESS_DURATION && currentTime - startButtonPressedTime < BUTTON_LONG_PRESS_DURATION) {
-        if (currentGameState == IDLE) {
+        if(wsState == CONNECTED){
+          if (currentGameState == IDLE) {
+            playButtonClickSound();
+            setGameState(START);
+          } else if(currentGameState == STOPPED) {
+            playButtonClickSound();
+            setGameState(IDLE);
+          }else{
+            playButtonClickSound();
+            setGameState(STOP);
+          }
+        }else if(wsState == CLOSED || wsState == FAILED){
           playButtonClickSound();
-          setGameState(START);
-        } else if(currentGameState == STOPPED) {
-          playButtonClickSound();
-          setGameState(IDLE);
-        }else{
-          playButtonClickSound();
-          setGameState(STOP);
+          Serial.println("RequestWsConn=true");
         }
       }
 

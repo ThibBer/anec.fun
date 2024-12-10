@@ -15,15 +15,18 @@ class SerialThread(portDescriptor: String) extends Thread {
   private var mode = SerialMode.Standard
 
 
-  var onConnected: Unit = {}
+  var onConnected: () => Unit = () => {}
   var onReceiveSerialData: String => Unit = _ => {}
   var onReceiveVoiceSerialData: Array[Byte] => Unit = _ => {}
 
   override def start(): Unit = {
     super.start()
-
-    comPort.openPort(1000)
-    comPort.setBaudRate(115200)
+    if(comPort.openPort(1000)) {
+      onConnected()
+      comPort.setBaudRate(115200)
+    } else {
+      println(s"Failed to open port $portDescriptor")
+    }
   }
 
   override def run(): Unit = {
@@ -75,13 +78,13 @@ class SerialThread(portDescriptor: String) extends Thread {
 
   def send(message: String): Unit = {
     println(s"Send to serial : $message")
-    val msgBytes = (message + "\n").getBytes
+    val msgBytes = (message ++ "\n").getBytes
     val nbBytesWrote = comPort.writeBytes(msgBytes, msgBytes.length)
     println(s"Nb bytes wrote : $nbBytesWrote")
   }
 
   def startVoiceFlow(time: FiniteDuration): Unit = {
-    send(s"${MessageKey.VoiceFlowStart}=${time.toSeconds}")
+    send(s"${MessageKey.VoiceFlowStart}=${time.toSeconds + 1}s")
     mode = SerialMode.VoiceFlow
   }
 

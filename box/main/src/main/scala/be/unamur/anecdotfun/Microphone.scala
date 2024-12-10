@@ -42,7 +42,7 @@ class Microphone(serial: SerialThread) {
 
   def startListening[T](to: Sink[ByteString, Future[T]], duration: FiniteDuration): Option[Future[T]] = {
     try {
-      val (q, s) = Source.queue[ByteString](bufferSize = 1024, overflowStrategy = OverflowStrategy.dropTail)
+      val (q, s) = Source.queue[ByteString](bufferSize = 2048, overflowStrategy = OverflowStrategy.dropTail)
         .watchTermination() { (mat, future) =>
           println("Stream started")
           future.onComplete {
@@ -89,8 +89,8 @@ class Microphone(serial: SerialThread) {
       "16k",
       "-f",
       "wav",
-      //      "--blocksize",
-      //      "256",
+            "-blocksize",
+            "256",
       "pipe:1").start
 
 
