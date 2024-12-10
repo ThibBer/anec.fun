@@ -42,6 +42,8 @@ abstract class Command {
         return SubjectChanged(boxId, json["message"]);
       case 'StickScanned':
         return StickScanned(boxId, uniqueId!);
+      case 'PlayStickExploded':
+        return PlayStickExploded(boxId);
       default:
         throw UnsupportedError('Unknown command type: $commandType');
     }
@@ -130,3 +132,6 @@ class StickScanned extends Command {
   StickScanned(super.boxId, this.uniqueId);
 }
 
+class PlayStickExploded extends Command {
+  PlayStickExploded(super.boxId);
+}

@@ -13,7 +13,10 @@ case class DisconnectRemote(boxId: Int, uniqueId: String) extends Command
 case class ConnectBox(boxId: Int, uniqueId: Option[String]) extends Command
 case class StartVoting(boxId: Int, uniqueId: String) extends Command
 case class StickExploded(boxId: Int) extends Command
-case class ScannedStickCommand(boxId: Int, uniqueId: String) extends Command
+case class ScannedStickCommand(boxId: Int, uniqueId: String, exploded : Boolean) extends Command
+
+case class ExplodedAnimationPlayed(boxId: Int) extends Command
+
 case class StopRoundCommand(boxId: Int) extends Command
 case class SetGameModeCommand(boxId: Int, uniqueId: String, gameMode: String) extends Command
 case class IdleGameCommand(boxId: Int) extends Command

@@ -4,9 +4,9 @@ import akka.actor.typed.ActorRef
 import akka.actor.typed.Behavior
 import akka.actor.typed.scaladsl.Behaviors
 import akka.http.scaladsl.model.ws.TextMessage
-import scala.concurrent.duration.*
 
 import scala.collection.mutable
+import scala.concurrent.duration._
 
 sealed trait CommandRouterTrait
 final case class NewCommand(command: Command, uniqueId: String)
@@ -156,8 +156,11 @@ class CommandRouter {
               case VoiceFlow(boxId, uniqueId, payload) =>
                 manager ! VoiceFlow(boxId, uniqueId, payload)
 
-              case ScannedStickCommand(boxId, uniqueId) =>
-                manager ! ScannedStickCommand(boxId, uniqueId)
+              case ScannedStickCommand(boxId, uniqueId, exploded) =>
+                manager ! ScannedStickCommand(boxId, uniqueId, exploded)
+
+              case ExplodedAnimationPlayed(boxId) =>
+                manager ! ExplodedAnimationPlayed(boxId)
 
               case SetGameModeCommand(boxId, uniqueId, gameMode) =>
                 manager ! SetGameModeCommand(boxId, uniqueId, gameMode)

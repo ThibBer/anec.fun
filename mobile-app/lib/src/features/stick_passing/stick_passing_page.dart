@@ -17,7 +17,8 @@ class StickPassingPage extends StatefulWidget {
   State<StickPassingPage> createState() => _StickPassingPageState();
 }
 
-class _StickPassingPageState extends State<StickPassingPage> {
+class _StickPassingPageState extends State<StickPassingPage>
+    with TickerProviderStateMixin {
   late final StickPassingController _controller;
 
   bool _isNfcAvailable = true; // Default to true until checked
@@ -30,11 +31,13 @@ class _StickPassingPageState extends State<StickPassingPage> {
       webSocketConnection: WebSocketConnection(),
       game: Game(),
       context: context,
+      vsync: this,
     );
     // Listen to controller changes
     _controller.addListener(() {
       setState(() {});
     });
+
     // Check NFC availability
     _checkNfcAvailability();
 
@@ -93,6 +96,13 @@ class _StickPassingPageState extends State<StickPassingPage> {
                   ] else if (_controller.isSuccess) ...[
                     Lottie.asset(
                       'assets/animations/success.json',
+                        controller: _controller.animationController,
+                        onLoaded: (composition) {
+                      _controller.successComposition = composition;
+                      _controller.animationController
+                        ..duration = composition.duration
+                        ..forward();
+                    }
                     ),
                     const Text('Stick successfully passed!'),
                   ] else if (_controller.isExploded) ...[

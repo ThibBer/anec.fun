@@ -56,7 +56,7 @@ class WebSocketConnection {
     game.setConnecting(true);
 
     try {
-      var baseUrl = 'ws://localhost:8080/ws/${game.boxId}';
+      var baseUrl = 'ws://10.0.2.2:8080/ws/${game.boxId}';
       var uri =
           Uri.parse(uniqueId == null ? baseUrl : "$baseUrl?uniqueId=$uniqueId");
       print("WebSocket URI : $uri");
@@ -164,7 +164,7 @@ class WebSocketConnection {
     } else if (command is VoteResult) {
       game.updateScores(int.parse(json['message']), json['senderUniqueId']);
     } else if (command is AnnecdotTeller) {
-      game.annecdotTellerId = json['senderUniqueId'];
+      game.annecdotTellerId.value = json['senderUniqueId'];
     } else if (command is RetrieveStateCommand) {
       game.restoreGameState(json);
     } else if (command is GameModeChanged) {
@@ -175,6 +175,8 @@ class WebSocketConnection {
       game.updateSubject(command.subject);
     } else if (command is StickScanned) {
       // no action required when stick is scanned
+    } else if (command is PlayStickExploded) {
+      game.playStickExploded.value = true;
     } else {
       game.setError("Unknown command received: $command");
     }
@@ -325,7 +327,15 @@ class WebSocketConnection {
     sendCommand({
       "boxId": game.boxId,
       "uniqueId": game.uniqueId,
+      "exploded": game.stickExploded,
       "commandType": "ScannedStickCommand",
+    });
+  }
+
+  void sendExplodedAnimationPlayed() {
+    sendCommand({
+      "boxId": game.boxId,
+      "commandType": "ExplodedAnimationPlayed",
     });
   }
 

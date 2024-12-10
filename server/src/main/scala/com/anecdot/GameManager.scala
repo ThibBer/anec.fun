@@ -311,7 +311,7 @@ object GameManager {
                     boxId
                   )
 
-                  if(anecdoteSpeakerId != ""){
+                  if (anecdoteSpeakerId != "") {
                     sendAnnecdotTellerToClient(
                       uniqueId.getOrElse(""),
                       webSocketClients(boxId)(uniqueId.getOrElse("")),
@@ -319,7 +319,7 @@ object GameManager {
                     )
                   }
 
-                  if(isStickExploded){
+                  if (isStickExploded) {
                     sendStickExplodedToClient(
                       uniqueId.getOrElse(""),
                       webSocketClients(boxId)(uniqueId.getOrElse(""))
@@ -489,14 +489,27 @@ object GameManager {
             isStickExploded = true
             Behaviors.same
 
-          case ScannedStickCommand(boxId, uniqueId) =>
-            broadcastStickScan(webSocketClients, boxId)
-
-            if (isStickExploded) {
+          case ScannedStickCommand(boxId, uniqueId, exploded) =>
+            if (exploded && anecdoteSpeakerId == "") {
+              var responseCommand =
+                CommandResponse(
+                  uniqueId,
+                  "PlayStickExploded",
+                  ResponseState.SUCCESS
+                )
+              webSocketClients(boxId)(uniqueId) ! TextMessage(
+                responseCommand.toJson.compactPrint
+              )
+              logger.info("sent PlayStickExploded")
               anecdoteSpeakerId = uniqueId
-              broadcastGameState(webSocketClients, States.STICK_EXPLODED, boxId)
-              broadcastAnnecdotTeller(webSocketClients, boxId, uniqueId)
+            } else if (!exploded) {
+              broadcastStickScan(webSocketClients, boxId)
             }
+            Behaviors.same
+
+          case ExplodedAnimationPlayed(boxId) =>
+            broadcastGameState(webSocketClients, States.STICK_EXPLODED, boxId)
+            broadcastAnnecdotTeller(webSocketClients, boxId, anecdoteSpeakerId)
             Behaviors.same
 
           case RetrieveStateCommand(boxId, uniqueId) =>
@@ -532,7 +545,9 @@ object GameManager {
             Behaviors.same
 
           case SetGameModeCommand(boxId, userId, mode) =>
-            if (gameState != States.STOPPED && gameState != States.ROUND_STOPPED && gameState != States.IDLE) {
+            if (
+              gameState != States.STOPPED && gameState != States.ROUND_STOPPED && gameState != States.IDLE
+            ) {
               val response = CommandResponse(
                 userId,
                 "SetGameModeCommand",
@@ -565,7 +580,6 @@ object GameManager {
             broadcastGameState(webSocketClients, gameState, boxId)
 
             Behaviors.same
-
 
           case _ => Behaviors.unhandled
         }
@@ -705,7 +719,9 @@ object GameManager {
   }
 
   private def broadcastStickExploded(
-      webSocketClients: mutable.Map[Int, mutable.Map[String, ActorRef[TextMessage]]],
+      webSocketClients: mutable.Map[Int, mutable.Map[String, ActorRef[
+        TextMessage
+      ]]],
       boxId: Int
   ): Unit = {
     webSocketClients(boxId).foreach { case (uniqueId, remote) =>
@@ -714,8 +730,8 @@ object GameManager {
   }
 
   private def sendStickExplodedToClient(
-    uniqueId: String,
-    client: ActorRef[TextMessage]
+      uniqueId: String,
+      client: ActorRef[TextMessage]
   ): Unit = {
     val response = CommandResponse(
       uniqueId,
@@ -739,9 +755,9 @@ object GameManager {
   }
 
   private def sendAnnecdotTellerToClient(
-    uniqueId: String,
-    client: ActorRef[TextMessage],
-    senderUniqueId: String
+      uniqueId: String,
+      client: ActorRef[TextMessage],
+      senderUniqueId: String
   ): Unit = {
     val response = CommandResponse(
       uniqueId,

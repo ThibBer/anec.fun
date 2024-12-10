@@ -33,6 +33,8 @@ class Game extends ChangeNotifier {
 
   ValueNotifier<String> annecdotTellerId = ValueNotifier("");
 
+  ValueNotifier<bool> playStickExploded = ValueNotifier(false);
+
   ValueNotifier<GameMode> mode = ValueNotifier(GameMode.theme);
 
   /// The current state of the game.

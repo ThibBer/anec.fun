@@ -16,7 +16,8 @@ trait JsonCommandSupport extends SprayJsonSupport with DefaultJsonProtocol {
   implicit val gameStateSnapshotFormat: RootJsonFormat[GameStateSnapshot] = jsonFormat5(GameStateSnapshot.apply)
   implicit val voiceFlowFormat: RootJsonFormat[VoiceFlow] = jsonFormat3(VoiceFlow.apply)
   implicit val stickExplodedFormat: RootJsonFormat[StickExploded] = jsonFormat1(StickExploded.apply)
-  implicit val scanStickFormat: RootJsonFormat[ScannedStickCommand] = jsonFormat2(ScannedStickCommand.apply)
+  implicit val scanStickFormat: RootJsonFormat[ScannedStickCommand] = jsonFormat3(ScannedStickCommand.apply)
+  implicit val explodedAnimationPlayedFormat: RootJsonFormat[ExplodedAnimationPlayed] = jsonFormat1(ExplodedAnimationPlayed.apply)
   implicit val setGameModeFormat: RootJsonFormat[SetGameModeCommand] = jsonFormat3(SetGameModeCommand.apply)
   implicit val idleGameFormat: RootJsonFormat[IdleGameCommand] = jsonFormat1(IdleGameCommand.apply)
 
@@ -55,6 +56,7 @@ trait JsonCommandSupport extends SprayJsonSupport with DefaultJsonProtocol {
         case Some(JsString("VoiceFlow")) => json.convertTo[VoiceFlow]
         case Some(JsString("ScannedStickCommand")) => json.convertTo[ScannedStickCommand]
         case Some(JsString("SetGameModeCommand")) => json.convertTo[SetGameModeCommand]
+        case Some(JsString("ExplodedAnimationPlayed")) => json.convertTo[ExplodedAnimationPlayed]
         case Some(JsString("IdleGameCommand")) => json.convertTo[IdleGameCommand]
         case _ =>
           logger.error(s"Invalid command: $json")
