@@ -93,7 +93,8 @@ class VotePageState extends State<VotePage> {
                         final player = players.values
                             .elementAt(index); // Access Player object
                         final voteStatus = player.vote == null
-                            ? voteController.game.annecdotTellerId == player.uniqueId
+                            ? voteController.game.annecdotTellerId.value ==
+                                    player.uniqueId
                               ? "Speaker can't vote"
                               : "No vote yet"
                             : player.vote == "true"
@@ -120,7 +121,7 @@ class VotePageState extends State<VotePage> {
                   if (gameState == GameState.voting) {
                     return Text(
                       voteController.game.uniqueId ==
-                              voteController.game.annecdotTellerId
+                              voteController.game.annecdotTellerId.value
                           ? "you are the speaker, wait other players vote"
                           : "you are the listener, vote true or false",
                       textAlign: TextAlign.center,
@@ -135,7 +136,7 @@ class VotePageState extends State<VotePage> {
                 builder: (context, gameState, child) {
                   // Check if the current game state is 'voting'
                   if (gameState == GameState.voting &&
-                      voteController.game.annecdotTellerId !=
+                      voteController.game.annecdotTellerId.value !=
                           voteController.game.uniqueId) {
                     return Padding(
                       padding: const EdgeInsets.symmetric(vertical: 16.0),

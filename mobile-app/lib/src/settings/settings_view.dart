@@ -13,10 +13,10 @@ class SettingsView extends StatefulWidget {
   final SettingsController controller;
 
   @override
-  _SettingsViewState createState() => _SettingsViewState();
+  SettingsViewState createState() => SettingsViewState();
 }
 
-class _SettingsViewState extends State<SettingsView> {
+class SettingsViewState extends State<SettingsView> {
   @override
   Widget build(BuildContext context) {
     return Stack(

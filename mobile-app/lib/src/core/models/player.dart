@@ -19,8 +19,7 @@ class Player extends ChangeNotifier {
     notifyListeners();
   }
 
-  void setScore(int newScore){
-    print("Set score $newScore");
+  void setScore(int newScore) {
     score = newScore;
     notifyListeners();
   }

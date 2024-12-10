@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:anecdotfun/src/core/services/logger.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
 import 'dart:convert';
@@ -59,8 +60,7 @@ class WebSocketConnection {
       var baseUrl = 'ws://10.0.2.2:8080/ws/${game.boxId}';
       var uri =
           Uri.parse(uniqueId == null ? baseUrl : "$baseUrl?uniqueId=$uniqueId");
-      print("WebSocket URI : $uri");
-
+      AppLogger.instance.i("WebSocket URI: $uri");
       channel = WebSocketChannel.connect(uri);
       await channel.ready;
 
@@ -109,7 +109,7 @@ class WebSocketConnection {
   final int _maxRetries = 5;
 
   void _reconnect(String? uniqueId) {
-    print("Try to reconnect to web socket");
+    AppLogger.instance.i("Reconnecting...");
     if (_retryCount >= _maxRetries) {
       game.setError("Failed to reconnect after $_maxRetries attempts.");
       return;
@@ -128,7 +128,7 @@ class WebSocketConnection {
   /// parsed JSON. It then delegates the handling of the command to the
   /// appropriate method.
   void _handleMessage(String message) async {
-    print("Received : $message");
+    AppLogger.instance.i("Received message: $message");
     final json = jsonDecode(message);
     final command = Command.fromJson(json, game.boxId);
 
@@ -202,7 +202,6 @@ class WebSocketConnection {
       if (response['senderUniqueId'] == game.uniqueId) {
         game.setSuccess("Remote connected");
         game.updateState(GameState.idle);
-        print("Remote connected");
         if (!votingPageReadyCompleter.isCompleted) {
           await votingPageReadyCompleter.future;
         }
@@ -215,8 +214,6 @@ class WebSocketConnection {
           DateTime.now().toString()
         ];
         await prefs.setStringList("connectionSettings", connectionSettings);
-
-        print("Save uniqueId to SharedPreferences : $connectionSettings");
       }
 
       game.addPlayer(response['senderUniqueId'], response['message']);
@@ -302,7 +299,6 @@ class WebSocketConnection {
       "uniqueId": game.uniqueId,
       "commandType": "DisconnectRemote",
     });
-    print("Disconnect command sent");
   }
 
   void vote(String vote, bool speaker) {

@@ -1,3 +1,4 @@
+import 'package:anecdotfun/src/core/services/logger.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:lottie/lottie.dart';
@@ -52,7 +53,6 @@ class StickPassingController extends ChangeNotifier {
 
   void _onPlayStickExploded() {
     if (game.playStickExploded.value) {
-      print("_onPlayStickExploded, playing stick exploded animation");
       isSuccess = false;
       isScanning = false;
       isExploded = true;
@@ -74,7 +74,6 @@ class StickPassingController extends ChangeNotifier {
     isScanning = true;
     isSuccess = false;
     notifyListeners();
-    print("Starting NFC scan");
     NfcManager.instance.startSession(
       pollingOptions: {NfcPollingOption.iso14443},
       onDiscovered: (NfcTag tag) async {
@@ -86,8 +85,6 @@ class StickPassingController extends ChangeNotifier {
 
   /// Validates the NFC tag
   void validateTag(NfcTag tag) {
-    print("Tag discovered: ${tag.data}");
-
     // Navigate the nested structure to get the payload
     final ndef = tag.data['ndef'];
     if (ndef != null) {
@@ -101,26 +98,25 @@ class StickPassingController extends ChangeNotifier {
             const listEquality = ListEquality();
             if (listEquality
                 .equals(payload, [2, 101, 110, 115, 116, 105, 99, 107])) {
-              print("Stick scanned");
               isScanning = false;
               isSuccess = true;
               notifyListeners();
               webSocketConnection.sendStickScanned();
               playSuccessAnimation();
             } else {
-              print("Invalid tag");
+              AppLogger.instance.i("Invalid tag");
             }
           } else {
-            print("Payload is null");
+            AppLogger.instance.i("Invalid tag");
           }
         } else {
-          print("No records found");
+          AppLogger.instance.i("Invalid tag");
         }
       } else {
-        print("No cachedMessage found");
+        AppLogger.instance.i("Invalid tag");
       }
     } else {
-      print("No NDEF data found");
+      AppLogger.instance.i("Invalid tag");
     }
   }
 
@@ -140,14 +136,12 @@ class StickPassingController extends ChangeNotifier {
 
   /// Handles successful scan logic
   void onScanSuccessful() async {
-    print("Scan successful");
     isSuccess = false;
     bool nfcAvailable = await isNfcAvailable();
     if (isStickExploded()) {
       isExploded = false;
       isScanning = false;
       isSuccess = false;
-      print("Stick exploded");
     } else if (nfcAvailable) {
       isScanning = true;
       isExploded = false;

@@ -18,11 +18,9 @@ class GlobalNavigationService {
       final gameState = gameStateNotifier.value;
       switch (gameState) {
         case GameState.idle:
-          print("navigate to vote page");
           navigateTo(VotePage.routeName);
           break;
         case GameState.disconnected:
-          print("navigate to connection page");
           navigateTo(ConnectionPage.routeName);
           break;
         case GameState.roundStarted:
@@ -55,7 +53,6 @@ class GlobalNavigationService {
 
     // Check if the routeName is already the current route
     if (currentRoute == routeName) {
-      print("Already on $routeName, skipping navigation.");
       return;
     }
 

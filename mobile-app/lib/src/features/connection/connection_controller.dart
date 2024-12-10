@@ -65,8 +65,6 @@ class ConnectionController {
     var uniqueId = connectionSettings[1];
     var username = connectionSettings[2];
 
-    print("Reconnect to box $boxId with uniqueId : $uniqueId");
-
     initializeWebSocket(boxId, username, uniqueId: uniqueId);
     game.setReconnecting(true);
   }

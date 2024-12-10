@@ -44,7 +44,6 @@ class _ConnectionPageState extends State<ConnectionPage>
     if (newValue != _isKeyboardVisible) {
       setState(() {
         _isKeyboardVisible = newValue;
-        print('Keyboard visibility changed: $_isKeyboardVisible');
       });
     }
   }
@@ -198,7 +197,6 @@ class _ConnectionPageState extends State<ConnectionPage>
   }
 
   Widget _buildFormWidget() {
-    print("rebuilding form");
     return Column(
       mainAxisAlignment: MainAxisAlignment.spaceAround,
       crossAxisAlignment: CrossAxisAlignment.center,
@@ -237,9 +235,7 @@ class _ConnectionPageState extends State<ConnectionPage>
             key: _controller.formKey,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.center,
-              mainAxisAlignment: _isKeyboardVisible
-                  ? MainAxisAlignment.start
-                  : MainAxisAlignment.spaceAround,
+              mainAxisAlignment: MainAxisAlignment.spaceAround,
               children: [
                 Flexible(
                   child: TextFormField(
