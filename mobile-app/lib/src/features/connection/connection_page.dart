@@ -16,21 +16,37 @@ class ConnectionPage extends StatefulWidget {
   State<ConnectionPage> createState() => _ConnectionPageState();
 }
 
-class _ConnectionPageState extends State<ConnectionPage> {
+class _ConnectionPageState extends State<ConnectionPage>
+    with WidgetsBindingObserver {
   late final ConnectionController _controller;
-
+  bool _isKeyboardVisible = false;
   @override
   void initState() {
     super.initState();
     _controller = ConnectionController(game: Game());
     _checkReconnection();
     GlobalNavigationService.listenToGameState(_controller.game.state);
+    WidgetsBinding.instance.addObserver(this);
   }
 
   @override
   void dispose() {
     _controller.disposeController();
+    WidgetsBinding.instance.removeObserver(this);
     super.dispose();
+  }
+
+  @override
+  void didChangeMetrics() {
+    super.didChangeMetrics();
+    final bottomInset = View.of(context).viewInsets.bottom;
+    final newValue = bottomInset > 0.0;
+    if (newValue != _isKeyboardVisible) {
+      setState(() {
+        _isKeyboardVisible = newValue;
+        print('Keyboard visibility changed: $_isKeyboardVisible');
+      });
+    }
   }
 
   void _checkReconnection() async {
@@ -81,85 +97,86 @@ class _ConnectionPageState extends State<ConnectionPage> {
     return PopScope(
       canPop: false,
       child: ListenableBuilder(
-      listenable: _controller.game,
-      builder: (context, _) {
-        if (_controller.game.isReconnecting) {
-          // Show a loading dialog or page while reconnecting
+        listenable: _controller.game,
+        builder: (context, _) {
+          if (_controller.game.isReconnecting) {
+            // Show a loading dialog or page while reconnecting
+            return Scaffold(
+              body: Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const CircularProgressIndicator(),
+                    const SizedBox(height: 20),
+                    const Text('Reconnecting... Please wait'),
+                  ],
+                ),
+              ),
+            );
+          }
           return Scaffold(
-            body: Center(
+            appBar: AppBar(
+              title: const Text('Connect to Box'),
+              automaticallyImplyLeading: false,
+              actions: [
+                IconButton(
+                  icon: const Icon(Icons.settings),
+                  onPressed: () {
+                    Navigator.restorablePushNamed(
+                        context, SettingsView.routeName);
+                  },
+                ),
+              ],
+            ),
+            body: Padding(
+              padding: const EdgeInsets.all(16.0),
               child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                mainAxisAlignment: MainAxisAlignment.spaceAround,
                 children: [
-                  const CircularProgressIndicator(),
+                  Flexible(
+                    flex: 8,
+                    child: Visibility(
+                      visible: !_controller.game.isConnecting,
+                      replacement:
+                          _buildLoadingWidget(), // Show loading widget while connecting
+                      child:
+                          _buildFormWidget(), // Show form when not connecting
+                    ),
+                  ),
                   const SizedBox(height: 20),
-                  const Text('Reconnecting... Please wait'),
+                  Flexible(
+                    flex: 1,
+                    child: AnimatedBuilder(
+                      animation: _controller.game,
+                      builder: (context, child) {
+                        if (_controller.game.error != null) {
+                          return Text(
+                            _controller.game.error!,
+                            style: const TextStyle(color: Colors.red),
+                          );
+                        } else if (_controller.game.success != null) {
+                          return Text(
+                            _controller.game.success!,
+                            style: const TextStyle(color: Colors.green),
+                          );
+                        }
+                        return const SizedBox.shrink();
+                      },
+                    ),
+                  ),
                 ],
               ),
             ),
           );
-          }
-        return Scaffold(
-          appBar: AppBar(
-            title: const Text('Connect to Box'),
-              automaticallyImplyLeading: false,
-            actions: [
-              IconButton(
-                icon: const Icon(Icons.settings),
-                onPressed: () {
-                  Navigator.restorablePushNamed(
-                      context, SettingsView.routeName);
-                },
-              ),
-            ],
-          ),
-          body: Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              mainAxisAlignment: MainAxisAlignment.spaceAround,
-              children: [
-                Flexible(
-                  flex: 8,
-                  child: Visibility(
-                    visible: !_controller.game.isConnecting,
-                    replacement:
-                        _buildLoadingWidget(), // Show loading widget while connecting
-                    child: _buildFormWidget(), // Show form when not connecting
-                  ),
-                ),
-                const SizedBox(height: 20),
-                Flexible(
-                  flex: 1,
-                  child: AnimatedBuilder(
-                    animation: _controller.game,
-                    builder: (context, child) {
-                      if (_controller.game.error != null) {
-                        return Text(
-                          _controller.game.error!,
-                          style: const TextStyle(color: Colors.red),
-                        );
-                      } else if (_controller.game.success != null) {
-                        return Text(
-                          _controller.game.success!,
-                          style: const TextStyle(color: Colors.green),
-                        );
-                      }
-                      return const SizedBox.shrink();
-                    },
-                  ),
-                ),
-              ],
-            ),
-          ),
-        );
-      },
+        },
       ),
     );
   }
 
   Widget _buildLoadingWidget() {
     return Column(
-        children: [
+      children: [
         Flexible(
           child: ColorFiltered(
             colorFilter: ColorFilter.mode(
@@ -173,23 +190,21 @@ class _ConnectionPageState extends State<ConnectionPage> {
               fit: BoxFit.contain,
             ),
           ),
-          ),
-          const SizedBox(height: 20),
-          const Text('Connecting... Please wait'),
+        ),
+        const SizedBox(height: 20),
+        const Text('Connecting... Please wait'),
       ],
     );
   }
 
   Widget _buildFormWidget() {
-    final isKeyboardVisible = MediaQuery.of(context).viewInsets.bottom > 0;
-
+    print("rebuilding form");
     return Column(
       mainAxisAlignment: MainAxisAlignment.spaceAround,
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
-
         Visibility(
-          visible: !isKeyboardVisible, // Show SVG only when keyboard is hidden
+          visible: !_isKeyboardVisible, // Show SVG only when keyboard is hidden
           child: Flexible(
             child: SvgPicture.asset(
               'assets/images/logo_long.svg',
@@ -200,7 +215,7 @@ class _ConnectionPageState extends State<ConnectionPage> {
         ),
         Visibility(
           visible:
-              !isKeyboardVisible, // Show Lottie animation only when keyboard is hidden
+              !_isKeyboardVisible, // Show Lottie animation only when keyboard is hidden
           child: Flexible(
             child: Theme.of(context).brightness == Brightness.light
                 ? Lottie.asset(
@@ -217,13 +232,14 @@ class _ConnectionPageState extends State<ConnectionPage> {
                   ),
           ),
         ),
-
         Flexible(
           child: Form(
             key: _controller.formKey,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.center,
-              mainAxisAlignment: MainAxisAlignment.spaceAround,
+              mainAxisAlignment: _isKeyboardVisible
+                  ? MainAxisAlignment.start
+                  : MainAxisAlignment.spaceAround,
               children: [
                 Flexible(
                   child: TextFormField(
