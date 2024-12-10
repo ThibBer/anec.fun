@@ -2,7 +2,6 @@ package com.anecdot
 
 import akka.actor.typed.ActorRef
 import akka.http.scaladsl.model.ws.TextMessage
-import com.anecdot.PlayerType.Remote
 
 enum PlayerType:
   case Unknown, Remote, Box

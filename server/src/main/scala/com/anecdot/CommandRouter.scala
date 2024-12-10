@@ -7,7 +7,6 @@ import akka.http.scaladsl.model.ws.TextMessage
 import com.anecdot.DisconnectReason.LostConnection
 
 import scala.collection.mutable
-import scala.concurrent.duration._
 
 sealed trait CommandRouterTrait
 final case class NewCommand(command: Command, uniqueId: String)
@@ -15,13 +14,6 @@ final case class NewCommand(command: Command, uniqueId: String)
 
 final case class RegisterWebSocketActor(
     uniqueId: String,
-    boxId: Int,
-    ref: ActorRef[TextMessage]
-) extends CommandRouterTrait
-
-final case class UpdateWebSocketActor(
-    uniqueId: String,
-    newUniqueId: String,
     boxId: Int,
     ref: ActorRef[TextMessage]
 ) extends CommandRouterTrait
