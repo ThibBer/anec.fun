@@ -580,7 +580,7 @@ object GameManager {
               logger.info("sent PlayStickExploded")
               anecdoteSpeakerId = uniqueId
             } else if (!exploded) {
-              broadcastStickScan(players, boxId)
+              broadcastStickScan(players)
             }
             Behaviors.same
 
