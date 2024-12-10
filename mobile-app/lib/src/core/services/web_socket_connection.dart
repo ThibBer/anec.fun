@@ -170,7 +170,7 @@ class WebSocketConnection {
     } else if (command is GameModeChanged) {
       game.updateMode(GameMode.values.byName(command.gameMode.toLowerCase()));
     } else if (command is ClientDisconnected) {
-      game.removePlayer(command.disconnectedUserId);
+      game.removePlayer(command.senderUniqueId);
     } else if (command is SubjectChanged) {
       game.updateSubject(command.subject);
     } else if (command is StickScanned) {

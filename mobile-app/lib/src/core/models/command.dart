@@ -115,9 +115,9 @@ class GameModeChanged extends Command {
 }
 
 class ClientDisconnected extends Command {
-  final String disconnectedUserId;
+  final String senderUniqueId;
 
-  ClientDisconnected(super.boxId, this.disconnectedUserId);
+  ClientDisconnected(super.boxId, this.senderUniqueId);
 }
 
 class SubjectChanged extends Command {
