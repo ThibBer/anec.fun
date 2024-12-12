@@ -56,10 +56,10 @@ class StickPassingController extends ChangeNotifier {
       isSuccess = false;
       isScanning = false;
       isExploded = true;
+      webSocketConnection.sendExplodedAnimationPlayed();
       notifyListeners();
       Future.delayed(const Duration(seconds: 2), () {
         isExploded = false;
-        webSocketConnection.sendExplodedAnimationPlayed();
         notifyListeners();
       });
     }
