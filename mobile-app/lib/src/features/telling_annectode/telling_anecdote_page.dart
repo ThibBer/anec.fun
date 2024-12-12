@@ -82,12 +82,12 @@ class TellingAnecdotePageState extends State<TellingAnecdotePage> {
           child: Column(
             children: [
               Text(
-                "Mode : ${_controller.game.mode.value.name}",
+                "Subject : ${_controller.game.subject}",
                 style: Theme.of(context).textTheme.headlineSmall,
                 textAlign: TextAlign.center,
               ),
               Text(
-                "Subject : ${_controller.game.subject}",
+                "Mode : ${_controller.game.mode.value.name}",
                 style: Theme.of(context).textTheme.labelSmall,
                 textAlign: TextAlign.center,
               )
