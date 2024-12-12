@@ -442,25 +442,17 @@ object GameManager {
                 broadcastVote(players, vote, uniqueId)
                 votes(uniqueId) = vote
 
-                if (
-                  votes.keys.size == (players
-                    .count(p => p._2.status == Active) - 1)
-                ) {
+                if (votes.keys.size == (players.count(p => p._2.status == Active) - 2)) {
                   logger.info("All remotes voted")
 
                   val trueVotesCount = votes.values.count(v => v == "true")
-                  logger.info(
-                    s"True votes count : $trueVotesCount/${players
-                        .count(p => p._2.status == Active) - 1}"
-                  )
+                  logger.info(s"True votes count : $trueVotesCount/${players.count(p => p._2.status == Active) - 1}")
                   players(anecdoteSpeakerId) = players(anecdoteSpeakerId).copy(
                     score = players(anecdoteSpeakerId).score + trueVotesCount
                   )
 
                   if (detectedIntent.isEmpty) {
-                    logger.info(
-                      "Detected intend null, ignoring result to compute score"
-                    )
+                    logger.info("Detected intend null, ignoring result to compute score")
                   } else {
                     val intent = detectedIntent.getOrElse("")
                     if (intent == subject) {
@@ -544,7 +536,7 @@ object GameManager {
 //            MOCK
 //            Thread.sleep(5000)
 //            gameState = States.VOTING
-//            broadcastGameState(webSocketClients, gameState, boxId)
+//            broadcastGameState(webSocketClients, gameState)
 
             payload match {
               case None =>
