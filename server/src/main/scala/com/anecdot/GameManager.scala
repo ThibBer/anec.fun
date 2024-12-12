@@ -98,21 +98,17 @@ object GameManager {
         Behaviors.receiveMessage {
 
           case AddClient(boxId, uniqueId, ref) =>
-            players
-              .get(uniqueId)
-              .map { player =>
-                // update ref and status of player
+            players.get(uniqueId) match {
+              case Some(p) =>
                 players.update(
                   uniqueId,
-                  player.copy(
-                    status = Active,
+                  p.copy(
+                    status = Connected,
                     actorRef = ref,
                     heartbeat = System.currentTimeMillis()
                   )
                 )
-              }
-              .getOrElse {
-                // add new player
+              case None =>
                 players += (uniqueId -> Player(
                   uniqueId,
                   "",
@@ -122,7 +118,8 @@ object GameManager {
                   Unknown,
                   Connected
                 ))
-              }
+            }
+
             Behaviors.same
 
           case ConnectBox(boxId, uniqueId) =>
@@ -191,7 +188,7 @@ object GameManager {
               players(uniqueId).actorRef ! TextMessage(
                 response.toJson.compactPrint
               )
-            } else if (players.count(p => p._2.status == Active) < minPlayers) {
+            } else if (players.count(p => p._2.playerType == Remote && p._2.status == Active) < minPlayers) {
               val response = CommandResponse(
                 uniqueId,
                 "StartGameCommand",
@@ -441,12 +438,12 @@ object GameManager {
               } else {
                 broadcastVote(players, vote, uniqueId)
                 votes(uniqueId) = vote
-
                 if (votes.keys.size == (players.count(p => p._2.status == Active) - 2)) {
                   logger.info("All remotes voted")
 
                   val trueVotesCount = votes.values.count(v => v == "true")
                   logger.info(s"True votes count : $trueVotesCount/${players.count(p => p._2.status == Active) - 1}")
+
                   players(anecdoteSpeakerId) = players(anecdoteSpeakerId).copy(
                     score = players(anecdoteSpeakerId).score + trueVotesCount
                   )
@@ -672,7 +669,7 @@ object GameManager {
               case Some(player) =>
                 players.update(
                   uniqueId,
-                  player.copy(heartbeat = System.currentTimeMillis())
+                  player.copy(heartbeat = System.currentTimeMillis(), status = Active)
                 )
               case None =>
                 context.log.warn(s"Player $uniqueId not found")
@@ -681,7 +678,7 @@ object GameManager {
           case CheckInactiveClients() =>
             val currentTime = System.currentTimeMillis()
             val inactiveClients = players.filter { case (_, player) =>
-              currentTime - player.heartbeat > 30000
+              player.playerType == Remote && currentTime - player.heartbeat > 30000
             }.keys
             context.log.info(
               s"Checking inactive clients: ${inactiveClients.mkString(", ")}"
