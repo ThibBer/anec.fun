@@ -299,6 +299,7 @@ class WebSocketConnection {
       "uniqueId": game.uniqueId,
       "commandType": "DisconnectRemote",
     });
+    cleanup();
   }
 
   void vote(String vote, bool speaker) {
