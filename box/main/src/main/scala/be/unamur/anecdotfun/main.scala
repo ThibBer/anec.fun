@@ -298,7 +298,7 @@ object Main {
       "commandType" -> JsString(CommandType.STOP_GAME)
     ))
 
-    Process("shutdown -h now")
+    ProcessBuilder("sudo", "poweroff").start
     System.exit(0)
   }
 
