@@ -35,6 +35,7 @@ class Microphone(serial: SerialThread) {
       }
     }
     if (isEndOfSequence(bytes)) {
+      println("End of sequence")
       serial.stopVoiceFlow()
       queue.foreach(_.complete())
     }
@@ -89,8 +90,8 @@ class Microphone(serial: SerialThread) {
       "16k",
       "-f",
       "wav",
-            "-blocksize",
-            "256",
+//            "-blocksize",
+//            "256",
       "pipe:1").start
 
 
@@ -107,7 +108,7 @@ class Microphone(serial: SerialThread) {
   }
 
   private def isEndOfSequence(buffer: Array[Byte]): Boolean = {
-    val eos = Array(127, -128, 127, -128, 127, -128, 127, -128).map(_.toByte)
+    val eos = Array(127, -128, 127, -128, 127, -128, 127, -128,127, -128,127, -128).map(_.toByte)
     buffer.sliding(eos.length).exists(_.sameElements(eos))
   }
 }
