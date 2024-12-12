@@ -726,13 +726,13 @@ object GameManager {
     *   The new state of the game to be broadcasted to clients.
     */
   private def broadcastGameState(
-      players: mutable.Map[String, Player],
-      newState: States
+    players: mutable.Map[String, Player],
+    newState: States
   ): Unit = {
     println(s"Broadcasting state (${newState.toString})")
 
     // Iterate over each client connected to the specified boxId
-    players
+    getActivePlayers(players)
       .foreach { case (uniqueId, remote) =>
         sendGameStateToClient(uniqueId, remote.actorRef, newState)
         println(s"\t - $uniqueId")
@@ -740,9 +740,9 @@ object GameManager {
   }
 
   private def sendGameStateToClient(
-      uniqueId: String,
-      client: ActorRef[TextMessage],
-      newState: States
+    uniqueId: String,
+    client: ActorRef[TextMessage],
+    newState: States
   ): Unit = {
     val response = CommandResponse(
       uniqueId,
@@ -757,7 +757,7 @@ object GameManager {
   /** Broadcasts the vote information to all connected clients. This method is
     * used to inform all clients of the vote result.
     *
-    * @param webSocketClients
+    * @param players
     *   The map of all connected clients.
     * @param vote
     *   The vote result.
@@ -765,12 +765,12 @@ object GameManager {
     *   The unique ID of the sender.
     */
   private def broadcastVote(
-      webSocketClients: mutable.Map[String, Player],
-      vote: String,
-      senderUniqueId: String
+    players: mutable.Map[String, Player],
+    vote: String,
+    senderUniqueId: String
   ): Unit = {
     // Iterate over all connected clients and send the vote result to each one.
-    webSocketClients
+    getActivePlayers(players)
       .foreach { case (uniqueId, remote) =>
         val response =
           CommandResponse(
@@ -786,9 +786,9 @@ object GameManager {
   }
 
   private def broadcastStickScan(
-      webSocketClients: mutable.Map[String, Player]
+    players: mutable.Map[String, Player]
   ): Unit = {
-    webSocketClients
+    getActivePlayers(players)
       .foreach { case (uniqueId, remote) =>
         val response =
           CommandResponse(
@@ -812,11 +812,11 @@ object GameManager {
     *   The unique ID of the sender.
     */
   private def broadcastRemoteConnection(
-      players: mutable.Map[String, Player],
-      senderUniqueId: String,
-      username: String
+    players: mutable.Map[String, Player],
+    senderUniqueId: String,
+    username: String
   ): Unit = {
-    players
+    getActivePlayers(players)
       .foreach { case (uniqueId, remote) =>
         val response = CommandResponse(
           uniqueId,
@@ -830,17 +830,17 @@ object GameManager {
   }
 
   private def broadcastStickExploded(
-      webSocketClients: mutable.Map[String, Player]
+    players: mutable.Map[String, Player]
   ): Unit = {
-    webSocketClients
+    getActivePlayers(players)
       .foreach { case (uniqueId, remote) =>
         sendStickExplodedToClient(uniqueId, remote.actorRef)
       }
   }
 
   private def sendStickExplodedToClient(
-      uniqueId: String,
-      client: ActorRef[TextMessage]
+    uniqueId: String,
+    client: ActorRef[TextMessage]
   ): Unit = {
     val response = CommandResponse(
       uniqueId,
@@ -852,19 +852,19 @@ object GameManager {
   }
 
   private def broadcastAnnecdotTeller(
-      webSocketClients: mutable.Map[String, Player],
-      senderUniqueId: String
+    players: mutable.Map[String, Player],
+    senderUniqueId: String
   ): Unit = {
-    webSocketClients
+    getActivePlayers(players)
       .foreach { case (uniqueId, remote) =>
         sendAnnecdotTellerToClient(uniqueId, remote.actorRef, senderUniqueId)
       }
   }
 
   private def sendAnnecdotTellerToClient(
-      uniqueId: String,
-      client: ActorRef[TextMessage],
-      senderUniqueId: String
+    uniqueId: String,
+    client: ActorRef[TextMessage],
+    senderUniqueId: String
   ): Unit = {
     val response = CommandResponse(
       uniqueId,
@@ -877,11 +877,11 @@ object GameManager {
   }
 
   private def broadcastClientDisconnected(
-      players: mutable.Map[String, Player],
-      senderUniqueId: String
+    players: mutable.Map[String, Player],
+    senderUniqueId: String
   ): Unit = {
     logger.debug(s"Broadcast client $senderUniqueId disconnect")
-    players
+    getActivePlayers(players)
       .foreach { case (uniqueId, remote) =>
         val response = CommandResponse(
           uniqueId,
@@ -896,11 +896,11 @@ object GameManager {
   }
 
   private def broadcastSubject(
-      players: mutable.Map[String, Player],
-      subject: String
+    players: mutable.Map[String, Player],
+    subject: String
   ): Unit = {
     logger.debug(s"Broadcast subject $subject")
-    players
+    getActivePlayers(players)
       .foreach { case (uniqueId, remote) =>
         val response = CommandResponse(
           uniqueId,
@@ -915,14 +915,15 @@ object GameManager {
   }
 
   private def broadcastGameMode(
-      webSocketClients: mutable.Map[String, Player],
-      gameMode: String
+    players: mutable.Map[String, Player],
+    gameMode: String
   ): Unit = {
     logger.debug(s"Broadcast game mode $gameMode")
-    webSocketClients
-      .foreach { case (uniqueId, remote) =>
-        sendGameModeToClient(uniqueId, remote.actorRef, gameMode)
-        logger.debug(s"\t$uniqueId")
+    getActivePlayers(players)
+      .foreach {
+        case (uniqueId, remote) =>
+          sendGameModeToClient(uniqueId, remote.actorRef, gameMode)
+          logger.debug(s"\t$uniqueId")
       }
   }
 
@@ -938,6 +939,10 @@ object GameManager {
       Some(gameMode)
     )
     client ! TextMessage(response.toJson.compactPrint)
+  }
+
+  private def getActivePlayers(players: mutable.Map[String, Player]): mutable.Map[String, Player] = {
+    players.filter(p => p._2.status == PlayerStatus.Active)
   }
 
   private def getRandomSubjectForGameMode(gameMode: String): String = {
