@@ -1,6 +1,6 @@
 package be.unamur.anecdotfun
 
-import akka.actor.ActorSystem
+import akka.actor.{ActorSystem, Cancellable}
 import akka.http.scaladsl.model.{DateTime, StatusCode}
 
 import java.util.Base64
@@ -13,9 +13,8 @@ import be.unamur.anecdotfun.WebSocketState.{CONNECTED, DISCONNECTED}
 import com.typesafe.config.ConfigFactory
 import spray.json.*
 
-import scala.concurrent.Future
 import scala.concurrent.duration.*
-import scala.concurrent.duration.DurationInt
+import scala.concurrent.{ExecutionContext, Future}
 import scala.sys.process.Process
 
 val config = ConfigFactory.load()
@@ -34,6 +33,7 @@ val mic = Microphone(serial)
 var exponentialRetryCount = 0
 val exponentialRetryMaxCount = 5
 var webSocketState = DISCONNECTED
+var heartbeatTimer: Cancellable = null
 
 object Main {
   def main(args: Array[String]): Unit = {
@@ -72,6 +72,10 @@ object Main {
       webSocketState = DISCONNECTED
     }
 
+    if(heartbeatTimer != null){
+      heartbeatTimer.cancel()
+    }
+
     websocketConnectionExponentialRetry()
   }
 
@@ -81,6 +85,11 @@ object Main {
       serial.send("WebSocketStateChanged=FAILED")
       webSocketState = DISCONNECTED
     }
+    
+    if(heartbeatTimer != null){
+      heartbeatTimer.cancel()
+    }
+    
     websocketConnectionExponentialRetry()
   }
 
@@ -91,6 +100,15 @@ object Main {
 
     println(s"WebSocket connection established ${dateTimeString()}")
     connectBoxToServer()
+
+    heartbeatTimer = system.scheduler.scheduleWithFixedDelay(
+      initialDelay = 20.seconds,
+      delay = 20.seconds
+    )(() => sendHeartbeat())
+  }
+
+  private def sendHeartbeat(): Unit = {
+    webSocketClient.send("heartbeat")
   }
 
   private def connectToWebsocket(): Unit = {
