@@ -19,7 +19,7 @@ A simple script to create a Wi-Fi hotspot on a Raspberry Pi that allows users to
 ## Structure of hotspoter
 
 - `setup.sh` - The setup script for the project
-- `app.py` - Flutter app that creates the web interface for the hotspot
+- `app.py` - Flask app that creates the web interface for the hotspot
 - `check_wifi.sh` - Script that checks if the device is connected to a Wi-Fi network and if not, starts the hotspot
 - `check_wifi.service` - Systemd service file that runs the `check_wifi.sh` script on boot
 - `hostapd.conf` - Configuration file for the hostapd service
